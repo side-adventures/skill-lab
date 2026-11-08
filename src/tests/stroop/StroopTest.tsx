@@ -3,7 +3,7 @@ import { GetReady } from '../../components/GetReady'
 import { TimerBar } from '../../components/TimerBar'
 import { useCountdown, useLatest } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { COLORS, DURATION_MS, nextTrial, stroopScore } from './scoring'
+import { COLORS, DURATION_MS, averageTimes, nextTrial, stroopScore, type Answer } from './scoring'
 
 export default function StroopTest({ onFinish }: TestComponentProps) {
   const [started, setStarted] = useState(false)
@@ -13,21 +13,38 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
   const [flash, setFlash] = useState<'ok' | 'bad' | null>(null)
   const flashTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(flashTimer.current), [])
+  // When the current word appeared, and every answer's timing (no re-render needed).
+  const shownAt = useRef(0)
+  const answers = useRef<Answer[]>([])
 
-  const remaining = useCountdown(DURATION_MS, started, () =>
+  const remaining = useCountdown(DURATION_MS, started, () => {
+    const { matchMs, mismatchMs } = averageTimes(answers.current)
+    const fmt = (ms: number | undefined) => (ms === undefined ? '–' : `${Math.round(ms)} ms`)
     onFinish({
       score: stroopScore(correct, wrong),
       details: {
         Correct: String(correct),
         Wrong: String(wrong),
-        'Per minute': String(Math.round((correct / DURATION_MS) * 60_000)),
+        'Avg · same color': fmt(matchMs),
+        'Avg · different color': fmt(mismatchMs),
+        ...(matchMs !== undefined && mismatchMs !== undefined && {
+          'Mismatch slowdown': `${mismatchMs >= matchMs ? '+' : '−'}${Math.round(Math.abs(mismatchMs - matchMs))} ms`,
+        }),
       },
-    }),
-  )
+    })
+  })
+
+  const start = () => {
+    shownAt.current = performance.now()
+    setStarted(true)
+  }
 
   const answer = (color: number) => {
     if (!started || remaining <= 0) return
+    const now = performance.now()
     const ok = color === trial.ink
+    answers.current.push({ ms: now - shownAt.current, congruent: trial.word === trial.ink, correct: ok })
+    shownAt.current = now
     if (ok) setCorrect((c) => c + 1)
     else setWrong((w) => w + 1)
     setFlash(ok ? 'ok' : 'bad')
@@ -47,7 +64,7 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [answerRef])
 
-  if (!started) return <GetReady onDone={() => setStarted(true)} />
+  if (!started) return <GetReady onDone={start} />
 
   const ring = flash === 'ok' ? 'ring-emerald-500' : flash === 'bad' ? 'ring-rose-500' : 'ring-transparent'
   return (
@@ -70,7 +87,6 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
             onPointerDown={() => answer(i)}
             className="flex h-16 items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white text-lg font-semibold active:scale-[0.98] dark:border-zinc-700 dark:bg-zinc-900"
           >
-            <span className="size-4 rounded-full" style={{ background: c.hex }} aria-hidden />
             {c.name[0].toUpperCase() + c.name.slice(1)}
             <kbd className="ml-1 hidden text-xs text-zinc-400 sm:inline">{i + 1}</kbd>
           </button>

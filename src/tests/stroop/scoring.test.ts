@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COLORS, nextTrial, stroopScore, type Trial } from './scoring'
+import { COLORS, averageTimes, nextTrial, stroopScore, type Trial } from './scoring'
 
 describe('stroop', () => {
   it('produces valid trials that never repeat back to back', () => {
@@ -16,4 +16,15 @@ describe('stroop', () => {
     expect(congruent / 2000).toBeLessThan(0.35)
   })
   it('scores correct minus wrong', () => expect(stroopScore(30, 4)).toBe(26))
+  it('averages correct answers by same/different color', () => {
+    expect(
+      averageTimes([
+        { ms: 500, congruent: true, correct: true },
+        { ms: 700, congruent: true, correct: true },
+        { ms: 800, congruent: false, correct: true },
+        { ms: 100, congruent: false, correct: false }, // wrong answers are ignored
+      ]),
+    ).toEqual({ matchMs: 600, mismatchMs: 800 })
+    expect(averageTimes([])).toEqual({ matchMs: undefined, mismatchMs: undefined })
+  })
 })

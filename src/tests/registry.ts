@@ -45,7 +45,7 @@ export const TESTS: TestDefinition[] = [
     instructions: [
       'A color word appears in a colored ink — e.g. RED written in blue.',
       'Tap the button for the INK color, ignore the word.',
-      '45 seconds. Correct +1, wrong −1.',
+      '45 seconds. Correct +1, wrong −1. You also see how much the mismatch slows you down.',
     ],
     durationHint: '45 s',
     scoreLabel: 'Points (correct − wrong)',

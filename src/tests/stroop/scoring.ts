@@ -27,3 +27,19 @@ export function nextTrial(prev: Trial | undefined, rand: Rand = Math.random): Tr
 }
 
 export const stroopScore = (correct: number, wrong: number) => correct - wrong
+
+export interface Answer {
+  ms: number
+  congruent: boolean // word matched ink
+  correct: boolean
+}
+
+/** Mean response time of correct answers, split by same vs different word/ink color. */
+export function averageTimes(answers: Answer[]) {
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : undefined)
+  const ok = answers.filter((a) => a.correct)
+  return {
+    matchMs: avg(ok.filter((a) => a.congruent).map((a) => a.ms)),
+    mismatchMs: avg(ok.filter((a) => !a.congruent).map((a) => a.ms)),
+  }
+}
