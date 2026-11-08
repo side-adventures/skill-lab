@@ -67,7 +67,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '~1 min',
     scoreLabel: 'Average error',
     higherIsBetter: false,
-    formatScore: (s) => `${s.toFixed(1)} %`,
+    formatScore: (s) => `${s.toFixed(1)} % off`,
     Component: lazy(() => import('./time-estimation/TimeEstimationTest')),
   },
   {

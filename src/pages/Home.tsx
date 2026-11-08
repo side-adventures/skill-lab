@@ -1,8 +1,23 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Button } from '../components/Button'
+import { buildAllScoresText, homeUrl, shareResult } from '../lib/share'
 import { getBest } from '../lib/storage'
 import { TESTS } from '../tests/registry'
 
 export function Home() {
+  const [shareState, setShareState] = useState<string>()
+  const tests = TESTS.map((t) => ({ test: t, best: getBest(t.id, t.higherIsBetter) }))
+  const played = tests.filter((t) => t.best)
+
+  const shareAll = async () => {
+    const text = buildAllScoresText(
+      played.map(({ test, best }) => ({ icon: test.icon, name: test.name, score: test.formatScore(best!.score) })),
+    )
+    const outcome = await shareResult(text, homeUrl())
+    setShareState(outcome === 'copied' ? 'Copied to clipboard!' : outcome === 'failed' ? 'Could not share' : undefined)
+  }
+
   return (
     <>
       <section className="py-6 sm:py-10">
@@ -12,8 +27,7 @@ export function Home() {
         </p>
       </section>
       <ul className="grid gap-3 sm:grid-cols-2">
-        {TESTS.map((t) => {
-          const best = getBest(t.id, t.higherIsBetter)
+        {tests.map(({ test: t, best }) => {
           const available = Boolean(t.Component)
           return (
             <li key={t.id}>
@@ -39,6 +53,20 @@ export function Home() {
           )
         })}
       </ul>
+
+      <section className="mt-8 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-zinc-300 p-6 text-center dark:border-zinc-700">
+        {played.length ? (
+          <>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              You've played {played.length} of {TESTS.length} tests. Send all your best scores at once.
+            </p>
+            <Button onClick={shareAll} className="mt-1">Share all my scores</Button>
+            {shareState && <p className="text-sm text-zinc-500" role="status">{shareState}</p>}
+          </>
+        ) : (
+          <p className="text-zinc-500">Play a test to start collecting scores you can share.</p>
+        )}
+      </section>
     </>
   )
 }

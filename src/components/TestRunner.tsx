@@ -26,65 +26,70 @@ export function TestRunner({ test }: { test: TestDefinition }) {
     setPhase({ name: 'result', result, isBest, previousBest })
   }
 
+  const barLink = (
+    <Link to="/" className={barButton}>
+      All tests
+    </Link>
+  )
+
+  // The test's name bar stays on top in every phase: rules, play and result.
+  let action: React.ReactNode = barLink
+  let body: React.ReactNode
+
   if (!Component) {
-    return (
+    body = (
       <Card>
-        <Header test={test} />
+        <p className="mb-2 text-zinc-600 dark:text-zinc-400">{test.tagline}</p>
         <p className="text-zinc-500">This test is coming soon.</p>
-        <Link to="/" className="mt-6 inline-block text-violet-600 hover:underline">← All tests</Link>
+      </Card>
+    )
+  } else if (phase.name === 'playing') {
+    action = (
+      <button onClick={() => setPhase({ name: 'intro' })} className={barButton}>
+        Quit
+      </button>
+    )
+    body = (
+      <Suspense fallback={<p className="py-20 text-center text-zinc-500">Loading…</p>}>
+        <Component key={attempt} onFinish={finish} />
+      </Suspense>
+    )
+  } else if (phase.name === 'result') {
+    body = <ResultScreen test={test} phase={phase} onRetry={start} />
+  } else {
+    const best = getBest(test.id, test.higherIsBetter)
+    body = (
+      <Card>
+        <p className="mb-5 text-lg text-zinc-600 dark:text-zinc-400">{test.tagline}</p>
+        <ul className="mb-6 space-y-2 text-zinc-700 dark:text-zinc-300">
+          {test.instructions.map((line) => (
+            <li key={line} className="flex gap-2">
+              <span className="text-violet-500">•</span>
+              {line}
+            </li>
+          ))}
+        </ul>
+        <p className="mb-6 text-sm text-zinc-500">
+          Score: {test.scoreLabel.toLowerCase()} ({test.higherIsBetter ? 'higher' : 'lower'} is better)
+          {best && <> · Your best: <b>{test.formatScore(best.score)}</b></>}
+        </p>
+        <Button onClick={start} className="w-full sm:w-auto" autoFocus>
+          Start
+        </Button>
       </Card>
     )
   }
 
-  if (phase.name === 'playing') {
-    return (
-      <>
-        <TestBar test={test}>
-          <button
-            onClick={() => setPhase({ name: 'intro' })}
-            className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-          >
-            Quit
-          </button>
-        </TestBar>
-        <Suspense fallback={<p className="py-20 text-center text-zinc-500">Loading…</p>}>
-          <Component key={attempt} onFinish={finish} />
-        </Suspense>
-      </>
-    )
-  }
-
-  if (phase.name === 'result') {
-    return (
-      <>
-        <TestBar test={test} />
-        <ResultScreen test={test} phase={phase} onRetry={start} />
-      </>
-    )
-  }
-
-  const best = getBest(test.id, test.higherIsBetter)
   return (
-    <Card>
-      <Header test={test} />
-      <ul className="mb-6 space-y-2 text-zinc-700 dark:text-zinc-300">
-        {test.instructions.map((line) => (
-          <li key={line} className="flex gap-2">
-            <span className="text-violet-500">•</span>
-            {line}
-          </li>
-        ))}
-      </ul>
-      <p className="mb-6 text-sm text-zinc-500">
-        Score: {test.scoreLabel.toLowerCase()} ({test.higherIsBetter ? 'higher' : 'lower'} is better)
-        {best && <> · Your best: <b>{test.formatScore(best.score)}</b></>}
-      </p>
-      <Button onClick={start} className="w-full sm:w-auto" autoFocus>
-        Start
-      </Button>
-    </Card>
+    <>
+      <TestBar test={test}>{action}</TestBar>
+      {body}
+    </>
   )
 }
+
+const barButton =
+  'rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
 
 function ResultScreen({
   test,
@@ -140,27 +145,15 @@ function ResultScreen({
   )
 }
 
-/** Compact "which test am I on" bar shown while playing and on the result screen. */
+/** "Which test am I on" bar, shown on every screen of a test. */
 function TestBar({ test, children }: { test: TestDefinition; children?: React.ReactNode }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-3">
-      <h1 className="flex items-center gap-2 text-lg font-semibold">
+      <h1 className="flex items-center gap-2 text-xl font-bold">
         <span aria-hidden>{test.icon}</span>
         {test.name}
       </h1>
       {children}
-    </div>
-  )
-}
-
-function Header({ test }: { test: TestDefinition }) {
-  return (
-    <div className="mb-5 flex items-center gap-3">
-      <span className="text-4xl" aria-hidden>{test.icon}</span>
-      <div>
-        <h1 className="text-2xl font-bold">{test.name}</h1>
-        <p className="text-zinc-500">{test.tagline}</p>
-      </div>
     </div>
   )
 }
