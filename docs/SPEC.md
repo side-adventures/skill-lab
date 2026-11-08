@@ -19,7 +19,13 @@ player can share and compare with friends.
 2. **Play** — the test itself.
 3. **Result** — score, personal best, "new best!" badge, Share, Try again, Back home.
 
-## Tests (v1)
+## Tests
+
+The home page groups tests by category (Speed, Memory, Focus, Thinking, Estimation, Motor).
+A run can also end **without a score** (e.g. Line Tracing when you leave the path): the result
+screen then shows why, and nothing is saved.
+
+### Batch 1
 
 | id | Name | How it works | Score | Better |
 |---|---|---|---|---|
@@ -31,7 +37,26 @@ player can share and compare with friends.
 | `mental-math` | Mental Math Sprint | Simple arithmetic (+ − × ÷), non-negative integer answers, numbers grow slightly every 5 correct. On-screen keypad or keyboard. 60 s. | Correct answers | Higher |
 | `steady-hand` | Steady Hand | Starts when the pointer enters the centred circle. The circle drifts on a smooth random path, speeds up (×1.8) and shrinks (radius 14 % → 5.5 % of the area). 30 s. | % of time inside | Higher |
 
+### Batch 2
+
+| id | Name | Category | How it works | Score | Better |
+|---|---|---|---|---|---|
+| `number-memory` | Number Memory | Memory | A number is shown for 1 s + 0.5 s per digit, then typed back. Starts at 3 digits, +1 per round. One mistake ends it. | Longest number typed correctly (0 if none) | Higher |
+| `sequence-memory` | Sequence Memory | Memory | 3×3 grid; tiles flash one after another (450 ms on, 200 ms gap), repeat the order. Sequence grows by 1 each round (never the same tile twice in a row). One mistake ends it. | Longest sequence repeated | Higher |
+| `number-order` | Number Order | Memory | Numbers 1–N on a 6×5 grid, visible 15 s (tapping "1" hides them early), then tap the hidden tiles in order. Starts at 5 tiles, +1 per round. No lives. | Most tiles completed (0 if none) | Higher |
+| `flash-order` | Flash Order | Memory | Same as Number Order but always 5 tiles; the visible time starts at 1 s and shrinks 10 % per cleared round. No lives. | Shortest flash cleared (no score if round 1 fails) | Lower |
+| `word-memory` | Word Memory | Memory | Words one at a time (548-word built-in list); answer SEEN / NEW. Once 3 words are known, 40 % of items are repeats (never the word just shown). 3 lives. | Correct answers | Higher |
+| `n-back` | N-Back | Focus | Positions on a 3×3 grid, one every 2.5 s (lit 0.5 s). Tap MATCH if same spot as N steps back. Starts at 2-back; blocks of 20 + N items with exactly 30 % matches among scored items. Balanced accuracy (avg of matches caught and non-matches ignored, so never tapping = 50 %) ≥ 80 % moves up a level, otherwise the test ends. | Highest N passed (0 if none) | Higher |
+| `go-no-go` | Go / No-Go | Focus | 40 green + 10 red circles (first two green), 0.7–1.5 s apart, each visible 0.8 s. Tap on green only. | Total of green reaction times + 800 ms per missed green + 100 ms per mistake (miss, tap on red, tap before a circle) | Lower |
+| `aim-trainer` | Aim Trainer | Speed | One target (52 px) at a time at random spots (always a real jump away). 60 s. Misses are shown but not penalised. | Targets hit | Higher |
+| `tap-speed` | Tap Speed | Speed | Tap one big button for 10 s (timer starts at first tap, multi-finger allowed). | Taps per second | Higher |
+| `stop-the-bar` | Stop the Bar | Speed | 5 rounds, each at a different speed (0.35–1 track widths/s, shuffled); green line at 45–85 % of the track. Tap to start, tap to stop. | Average absolute timing error (ms) | Lower |
+| `mental-rotation` | Mental Rotation | Thinking | Two 2D 7-square shapes (chiral, so mirrors are never identical); the right one is rotated 45°–315° and mirrored half the time. Answer SAME / MIRRORED. 60 s. | Correct − wrong | Higher |
+| `line-tracing` | Line Tracing | Motor | Random smooth path (7 alternating turns) on a 1000×600 board, corridor 60 units wide. Start on GO, finish on the flag. Leaving the corridor (or lifting the finger) ends the run with no score. | Time | Lower |
+| `geometry` | Eye for Geometry | Estimation | 10 rounds, one of each task in random order: middle of a line, center of a circle, make an angle, name an angle (typed), halve an angle, make it level/vertical, complete a square, copy a length, point equally far from 3 dots, slide a fixed-angle cut to halve an irregular shape. Each round gives 0–100 points, falling linearly with error (tolerances: 8 % of length, 25 % of radius, 25°, 25°, 15°, 8°, 25 % of side, 25 % of length, 30 % of radius, 10 % of area). Result lists every round. | Average points (%) | Higher |
+
 ## Share format
 
 `I scored 243 ms on Reaction Time at Skill Lab — can you beat it? <url>#/test/reaction`
-Uses the Web Share API when available, otherwise copies to clipboard.
+Uses the Web Share API when available, otherwise copies to clipboard. The home page can also share
+all best scores in one message.

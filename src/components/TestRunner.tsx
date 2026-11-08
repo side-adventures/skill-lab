@@ -22,6 +22,9 @@ export function TestRunner({ test }: { test: TestDefinition }) {
   }
 
   const finish = (result: TestResult) => {
+    if (result.failed) {
+      return setPhase({ name: 'result', result, isBest: false, previousBest: getBest(test.id, test.higherIsBetter) })
+    }
     const { isBest, previousBest } = saveResult(test.id, result.score, test.higherIsBetter)
     setPhase({ name: 'result', result, isBest, previousBest })
   }
@@ -108,10 +111,20 @@ function ResultScreen({
     setShareState(outcome === 'copied' ? 'Copied to clipboard!' : outcome === 'failed' ? 'Could not share' : undefined)
   }
 
+  const failed = phase.result.failed
   return (
     <Card>
-      <p className="text-center text-sm font-medium tracking-wide text-zinc-500 uppercase">{test.scoreLabel}</p>
-      <p className="my-2 text-center text-5xl font-bold tabular-nums sm:text-6xl">{formatted}</p>
+      {failed ? (
+        <>
+          <p className="text-center text-sm font-medium tracking-wide text-zinc-500 uppercase">No score</p>
+          <p className="my-2 text-center text-3xl font-bold sm:text-4xl">{failed}</p>
+        </>
+      ) : (
+        <>
+          <p className="text-center text-sm font-medium tracking-wide text-zinc-500 uppercase">{test.scoreLabel}</p>
+          <p className="my-2 text-center text-5xl font-bold tabular-nums sm:text-6xl">{formatted}</p>
+        </>
+      )}
       <p className="mb-6 text-center text-sm">
         {phase.isBest ? (
           <span className="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
@@ -135,7 +148,7 @@ function ResultScreen({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Button onClick={onRetry} autoFocus>Try again</Button>
-        <Button variant="secondary" onClick={share}>Share score</Button>
+        {!failed && <Button variant="secondary" onClick={share}>Share score</Button>}
         <Link to="/" className="self-center px-3 py-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
           All tests
         </Link>

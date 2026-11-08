@@ -17,3 +17,7 @@ body {
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Countdown bar that empties over --duration (used while memorizing) */
+@keyframes drain { from { width: 100%; } to { width: 0%; } }
+.drain { animation: drain var(--duration, 1s) linear forwards; }

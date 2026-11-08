@@ -1,10 +1,18 @@
 import type { ComponentType, LazyExoticComponent } from 'react'
 
-export type Category = 'Speed' | 'Memory' | 'Focus' | 'Estimation' | 'Thinking' | 'Motor'
+export type Category = 'Speed' | 'Memory' | 'Focus' | 'Thinking' | 'Estimation' | 'Motor'
+
+/** Display order of categories on the home page. */
+export const CATEGORIES: Category[] = ['Speed', 'Memory', 'Focus', 'Thinking', 'Estimation', 'Motor']
 
 /** What a test reports when the player finishes. */
 export interface TestResult {
   score: number
+  /**
+   * Set when the run ended without a valid score (e.g. left the line in Line Tracing).
+   * The message is shown instead of a score and nothing is saved; `score` is ignored.
+   */
+  failed?: string
   /** Optional per-test breakdown shown on the result screen (label -> value). */
   details?: Record<string, string>
 }
