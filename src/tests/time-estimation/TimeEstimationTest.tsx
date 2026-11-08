@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { ROUNDS, errorPct, makeTargets, scoreRounds } from './scoring'
+import { ROUNDS, errorPct, makeTargets, scoreRounds, signedErrorLabel } from './scoring'
 
 type Phase = 'ready' | 'timing' | 'shown'
 interface Round { target: number; actual: number }
@@ -27,7 +27,7 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
     } else if (rounds.length >= ROUNDS) {
       onFinish({
         score: scoreRounds(rounds),
-        details: Object.fromEntries(rounds.map((r, i) => [`Round ${i + 1} · ${r.target} s`, `${r.actual.toFixed(2)} s`])),
+        details: Object.fromEntries(rounds.map((r, i) => [`Round ${i + 1} · ${r.target} s`, `${r.actual.toFixed(2)} s (${signedErrorLabel(r.target, r.actual)})`])),
       })
     } else {
       setPhase('ready')

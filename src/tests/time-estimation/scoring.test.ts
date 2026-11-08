@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { ROUNDS, errorPct, makeTargets, scoreRounds } from './scoring'
+import { ROUNDS, errorPct, makeTargets, scoreRounds, signedErrorLabel } from './scoring'
 
 describe('time estimation', () => {
-  it('makes distinct targets in range', () => {
-    const t = makeTargets()
-    expect(t).toHaveLength(ROUNDS)
-    expect(new Set(t).size).toBe(ROUNDS)
-    t.forEach((s) => expect(s >= 3 && s <= 10).toBe(true))
+  it('makes distinct, spread-out targets in range', () => {
+    for (let i = 0; i < 500; i++) {
+      const t = makeTargets()
+      expect(t).toHaveLength(ROUNDS)
+      expect(new Set(t).size).toBe(ROUNDS)
+      t.forEach((s) => expect(s >= 3 && s <= 10).toBe(true))
+      expect(t.some((s) => s <= 4)).toBe(true) // short
+      expect(t.some((s) => s >= 5 && s <= 7)).toBe(true) // medium
+      expect(t.some((s) => s >= 8)).toBe(true) // long
+    }
+  })
+  it('labels signed error', () => {
+    expect(signedErrorLabel(10, 9)).toBe('−10.0 %')
+    expect(signedErrorLabel(5, 5.5)).toBe('+10.0 %')
   })
   it('computes symmetric relative error', () => {
     expect(errorPct(10, 9)).toBeCloseTo(10)

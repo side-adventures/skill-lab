@@ -1,14 +1,21 @@
-import { mean, randInt, round1, type Rand } from '../../lib/random'
+import { mean, randInt, round1, spreadInts, type Rand } from '../../lib/random'
 
 export const ROUNDS = 10
 export const MIN_DOTS = 5
-export const MAX_DOTS = 40
+export const MAX_DOTS = 60
+/** First round is always mid-sized, to calibrate what ~30 dots look like. */
+export const FIRST_MIN = 20
+export const FIRST_MAX = 40
 export const FLASH_MS = 600
 export const DOT_RADIUS = 2.4 // in a 100×100 viewBox
 
 export interface Dot { x: number; y: number }
 
-export const randomCount = (rand?: Rand) => randInt(MIN_DOTS, MAX_DOTS, rand)
+/** Dot counts for all rounds: a mid-sized first round, then one from each band of 5–60, shuffled. */
+export const makeCounts = (rand?: Rand): number[] => [
+  randInt(FIRST_MIN, FIRST_MAX, rand),
+  ...spreadInts(MIN_DOTS, MAX_DOTS, ROUNDS - 1, rand),
+]
 
 /** Non-overlapping random dots inside a 100×100 box (rejection sampling). */
 export function placeDots(n: number, rand: Rand = Math.random): Dot[] {

@@ -77,7 +77,7 @@ export const TESTS: TestDefinition[] = [
     category: 'Estimation',
     tagline: 'How many dots did you just see?',
     instructions: [
-      'Between 5 and 40 dots flash for 0.6 seconds.',
+      'Between 5 and 60 dots flash for 0.6 seconds (the first round always has 20–40).',
       'Enter how many you think you saw — no time to count, just estimate.',
       '10 rounds — score is your average accuracy.',
     ],

@@ -38,22 +38,29 @@ export function TestRunner({ test }: { test: TestDefinition }) {
 
   if (phase.name === 'playing') {
     return (
-      <Suspense fallback={<p className="py-20 text-center text-zinc-500">Loading…</p>}>
-        <Component key={attempt} onFinish={finish} />
-        <div className="mt-4 text-center">
+      <>
+        <TestBar test={test}>
           <button
             onClick={() => setPhase({ name: 'intro' })}
-            className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+            className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
           >
             Quit
           </button>
-        </div>
-      </Suspense>
+        </TestBar>
+        <Suspense fallback={<p className="py-20 text-center text-zinc-500">Loading…</p>}>
+          <Component key={attempt} onFinish={finish} />
+        </Suspense>
+      </>
     )
   }
 
   if (phase.name === 'result') {
-    return <ResultScreen test={test} phase={phase} onRetry={start} />
+    return (
+      <>
+        <TestBar test={test} />
+        <ResultScreen test={test} phase={phase} onRetry={start} />
+      </>
+    )
   }
 
   const best = getBest(test.id, test.higherIsBetter)
@@ -130,6 +137,19 @@ function ResultScreen({
       </div>
       {shareState && <p className="mt-3 text-center text-sm text-zinc-500" role="status">{shareState}</p>}
     </Card>
+  )
+}
+
+/** Compact "which test am I on" bar shown while playing and on the result screen. */
+function TestBar({ test, children }: { test: TestDefinition; children?: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <h1 className="flex items-center gap-2 text-lg font-semibold">
+        <span aria-hidden>{test.icon}</span>
+        {test.name}
+      </h1>
+      {children}
+    </div>
   )
 }
 

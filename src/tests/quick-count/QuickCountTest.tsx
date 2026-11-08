@@ -2,15 +2,14 @@ import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
 import { NumberPad } from '../../components/NumberPad'
 import type { TestComponentProps } from '../types'
-import { DOT_RADIUS, FLASH_MS, ROUNDS, accuracy, placeDots, randomCount, scoreRounds, type Dot } from './scoring'
+import { DOT_RADIUS, FLASH_MS, ROUNDS, accuracy, makeCounts, placeDots, scoreRounds, type Dot } from './scoring'
 
 type Phase = 'ready' | 'flash' | 'answer' | 'feedback'
 interface Round { actual: number; guess: number }
 
-const newDots = () => placeDots(randomCount())
-
 export default function QuickCountTest({ onFinish }: TestComponentProps) {
-  const [dots, setDots] = useState<Dot[]>(newDots)
+  const [counts] = useState(makeCounts)
+  const [dots, setDots] = useState<Dot[]>(() => placeDots(counts[0]))
   const [phase, setPhase] = useState<Phase>('ready')
   const [guess, setGuess] = useState('')
   const [rounds, setRounds] = useState<Round[]>([])
@@ -36,7 +35,7 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
         },
       })
     }
-    setDots(newDots())
+    setDots(placeDots(counts[rounds.length]))
     setGuess('')
     setPhase('ready')
   }

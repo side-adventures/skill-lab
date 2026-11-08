@@ -85,9 +85,9 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
             key={c.name}
             type="button"
             onPointerDown={() => answer(i)}
-            className="flex h-16 items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white text-lg font-semibold active:scale-[0.98] dark:border-zinc-700 dark:bg-zinc-900"
+            className="flex h-16 items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white text-lg font-bold tracking-wider active:scale-[0.98] dark:border-zinc-700 dark:bg-zinc-900"
           >
-            {c.name[0].toUpperCase() + c.name.slice(1)}
+            {c.label}
             <kbd className="ml-1 hidden text-xs text-zinc-400 sm:inline">{i + 1}</kbd>
           </button>
         ))}

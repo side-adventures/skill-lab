@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DOT_RADIUS, MAX_DOTS, accuracy, placeDots, scoreRounds } from './scoring'
+import { DOT_RADIUS, MAX_DOTS, MIN_DOTS, ROUNDS, accuracy, makeCounts, placeDots, scoreRounds } from './scoring'
 
 describe('quick count', () => {
   it('places the requested number of non-overlapping dots', () => {
@@ -9,6 +9,16 @@ describe('quick count', () => {
       for (let a = 0; a < dots.length; a++)
         for (let b = a + 1; b < dots.length; b++)
           expect(Math.hypot(dots[a].x - dots[b].x, dots[a].y - dots[b].y)).toBeGreaterThan(DOT_RADIUS * 2)
+    }
+  })
+  it('starts mid-sized and spreads the other rounds over the full range', () => {
+    for (let i = 0; i < 500; i++) {
+      const [first, ...rest] = makeCounts()
+      expect(first >= 20 && first <= 40).toBe(true)
+      expect(rest).toHaveLength(ROUNDS - 1)
+      rest.forEach((n) => expect(n >= MIN_DOTS && n <= MAX_DOTS).toBe(true))
+      expect(Math.min(...rest)).toBeLessThanOrEqual(11)
+      expect(Math.max(...rest)).toBeGreaterThanOrEqual(54)
     }
   })
   it('scores accuracy', () => {
