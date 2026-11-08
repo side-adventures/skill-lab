@@ -24,12 +24,12 @@ player can share and compare with friends.
 | id | Name | How it works | Score | Better |
 |---|---|---|---|---|
 | `reaction` | Reaction Time | Screen turns green after a random 1.5–5 s delay; tap as fast as possible. Tapping too early restarts the round. 5 rounds. | Average ms | Lower |
-| `visual-memory` | Visual Memory | A grid flashes some tiles for ~1 s; tap them back. Each level adds a tile and the grid grows. 3 mistakes per level allowed, 3 failed levels end the game. | Highest level reached | Higher |
-| `stroop` | Stroop Test | A color word is shown in a different ink color; tap the button matching the **ink**. 45 s. | Correct − wrong | Higher |
+| `visual-memory` | Visual Memory | A grid flashes some tiles (level + 2) for 1 s; tap them back. Grid grows 3×3 → 7×7 with level. 3 wrong taps fail a level (retry with a new pattern); 3 failed levels end the game. | Levels cleared | Higher |
+| `stroop` | Stroop Test | A color word (red/blue/green/yellow) is shown in an ink color (75 % mismatched); tap the button matching the **ink**. 45 s after a 3-2-1 countdown. | Correct − wrong | Higher |
 | `time-estimation` | Time Estimation | Given a target (3–10 s), press Start and Stop when you think the time has passed. Timer is hidden. 5 rounds. | Average error in % | Lower |
 | `quick-count` | Quick Count | A random number of dots (5–40) flashes for 0.6 s; enter how many you saw. 10 rounds. | Average accuracy % | Higher |
-| `mental-math` | Mental Math Sprint | Simple arithmetic (+ − × ÷, small integers), answer via on-screen keypad. 60 s. | Correct answers | Higher |
-| `steady-hand` | Steady Hand | Keep your pointer/finger inside a circle that drifts around and slowly shrinks. 30 s. | % of time inside | Higher |
+| `mental-math` | Mental Math Sprint | Simple arithmetic (+ − × ÷), non-negative integer answers, numbers grow slightly every 5 correct. On-screen keypad or keyboard. 60 s. | Correct answers | Higher |
+| `steady-hand` | Steady Hand | Starts when the pointer enters the centred circle. The circle drifts on a smooth random path, speeds up (×1.8) and shrinks (radius 14 % → 5.5 % of the area). 30 s. | % of time inside | Higher |
 
 ## Share format
 

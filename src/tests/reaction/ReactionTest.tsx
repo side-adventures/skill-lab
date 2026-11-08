@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { ROUNDS, randomDelay, summarize } from './scoring'
 
@@ -58,20 +59,7 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
   }
 
   // Space / Enter also work, for keyboard players.
-  const pressRef = useRef(handlePress)
-  useEffect(() => {
-    pressRef.current = handlePress
-  })
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat) {
-        e.preventDefault()
-        pressRef.current()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  useActionKey(handlePress)
 
   const round = Math.min(times.length + (state.name === 'shown' ? 0 : 1), ROUNDS)
   const view = VIEWS[state.name]
