@@ -10,7 +10,7 @@ npm test        # unit tests
 npm run build   # static build into dist/
 ```
 
-Pushing to `main` deploys via `.github/workflows/deploy.yml`
-(enable it once in the repo: Settings → Pages → Source: **GitHub Actions**).
+Deploys via `.github/workflows/deploy.yml`, currently started by hand (Actions → Deploy to GitHub Pages →
+Run workflow). Enable Pages once in the repo first: Settings → Pages → Source: **GitHub Actions**.
 
 See [docs/SPEC.md](docs/SPEC.md) for the product spec.
