@@ -13,10 +13,12 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 (GitHub Pages has no SPA fallback), `base: './'` in vite config. Vitest for unit tests, oxlint for lint.
 
 ## Git workflow
+- `develop` is the working branch. Branch every feature or fix off `develop` (`feat/<topic>`,
+  `fix/<topic>`, `chore/<topic>`), commit and push there, then merge back into `develop` (`--no-ff`)
+  when it's done and checked.
 - `main` is the live site: every push to `main` deploys to GitHub Pages
-  (https://side-adventures.github.io/skill-lab/).
-- Do new work on a feature branch (e.g. `feat/<topic>`, `fix/<topic>`), commit and push there.
-  Merge into `main` only when the user says it should go live.
+  (https://side-adventures.github.io/skill-lab/). Only `develop` is merged into `main`, and only when
+  the user says to publish. Never commit directly on `main`.
 
 ## Commands
 - `npm run dev` — dev server (browser preview: `.claude/launch.json` config `dev`, port 5173; always test on localhost)
