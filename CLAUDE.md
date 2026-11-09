@@ -12,6 +12,12 @@ Static skill-test website (reaction, memory, focus…). Product spec: `docs/SPEC
 Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `HashRouter`
 (GitHub Pages has no SPA fallback), `base: './'` in vite config. Vitest for unit tests, oxlint for lint.
 
+## Git workflow
+- `main` is the live site: every push to `main` deploys to GitHub Pages
+  (https://side-adventures.github.io/skill-lab/).
+- Do new work on a feature branch (e.g. `feat/<topic>`, `fix/<topic>`), commit and push there.
+  Merge into `main` only when the user says it should go live.
+
 ## Commands
 - `npm run dev` — dev server (also `.claude/launch.json` in the parent folder: config `skill-lab`, port 5173)
 - `npm test` · `npm run lint` · `npm run build` — all three must pass before committing.

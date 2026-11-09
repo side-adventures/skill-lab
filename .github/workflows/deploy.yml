@@ -1,9 +1,9 @@
 name: Deploy to GitHub Pages
 
-# Manual only for now (Actions tab → Run workflow). To deploy on every push to main, add:
-#   push:
-#     branches: [main]
+# main = the live site: every push to main deploys. Work happens on feature branches.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
