@@ -4,11 +4,11 @@ import { Button } from '../components/Button'
 import { buildAllScoresText, homeUrl, shareResult } from '../lib/share'
 import { getBest } from '../lib/storage'
 import { TESTS } from '../tests/registry'
-import { CATEGORIES } from '../tests/types'
+import { CATEGORIES, storageId } from '../tests/types'
 
 export function Home() {
   const [shareState, setShareState] = useState<string>()
-  const tests = TESTS.map((t) => ({ test: t, best: getBest(t.id, t.higherIsBetter) }))
+  const tests = TESTS.map((t) => ({ test: t, best: getBest(storageId(t), t.higherIsBetter) }))
   const played = tests.filter((t) => t.best)
 
   const shareAll = async () => {

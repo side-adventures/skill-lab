@@ -36,6 +36,15 @@ export interface TestDefinition {
   scoreLabel: string
   higherIsBetter: boolean
   formatScore: (score: number) => string
+  /**
+   * Bump when scoring changes so old saved scores aren't compared with new ones
+   * (results are stored under a separate key per version).
+   */
+  scoreVersion?: number
   /** Missing => shown as "coming soon". */
   Component?: LazyExoticComponent<ComponentType<TestComponentProps>>
 }
+
+/** localStorage id for a test's results; changes when its scoring version is bumped. */
+export const storageId = (t: Pick<TestDefinition, 'id' | 'scoreVersion'>) =>
+  t.scoreVersion && t.scoreVersion > 1 ? `${t.id}@v${t.scoreVersion}` : t.id

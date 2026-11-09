@@ -47,16 +47,20 @@ screen then shows why, and nothing is saved.
 | `flash-order` | Flash Order | Memory | Same as Number Order but always 5 tiles; the visible time starts at 1 s and shrinks 10 % per cleared round. No lives. | Shortest flash cleared (no score if round 1 fails) | Lower |
 | `word-memory` | Word Memory | Memory | Words one at a time (548-word built-in list); answer SEEN / NEW. Once 3 words are known, 40 % of items are repeats (never the word just shown). 3 lives. | Correct answers | Higher |
 | `n-back` | N-Back | Focus | Positions on a 3×3 grid, one every 2.5 s (lit 0.5 s). Tap MATCH if same spot as N steps back. Starts at 2-back; blocks of 20 + N items with exactly 30 % matches among scored items. Balanced accuracy (avg of matches caught and non-matches ignored, so never tapping = 50 %) ≥ 80 % moves up a level, otherwise the test ends. | Highest N passed (0 if none) | Higher |
-| `go-no-go` | Go / No-Go | Focus | 40 green + 10 red circles (first two green), 0.7–1.5 s apart, each visible 0.8 s. Tap on green only. | Total of green reaction times + 800 ms per missed green + 100 ms per mistake (miss, tap on red, tap before a circle) | Lower |
-| `aim-trainer` | Aim Trainer | Speed | One target (52 px) at a time at random spots (always a real jump away). 60 s. Misses are shown but not penalised. | Targets hit | Higher |
-| `tap-speed` | Tap Speed | Speed | Tap one big button for 10 s (timer starts at first tap, multi-finger allowed). | Taps per second | Higher |
-| `stop-the-bar` | Stop the Bar | Speed | 5 rounds, each at a different speed (0.35–1 track widths/s, shuffled); green line at 45–85 % of the track. Tap to start, tap to stop. | Average absolute timing error (ms) | Lower |
+| `go-no-go` | Go / No-Go | Focus | 24 green + 6 red circles in 6 blocks of 5 with one red each (no red in the first two, never two reds in a row, so at most 8 greens in a row), 0.7–1.5 s apart, each visible 0.8 s. Tap on green only. | Total of green reaction times + 800 ms per missed green + 100 ms per mistake (miss, tap on red, tap before a circle) | Lower |
+| `aim-trainer` | Aim Trainer | Speed | One target (56 px, solid ring + bullseye of half the diameter) at a time at random spots (always a real jump away). 30 s. Bullseye hit = 2 pts, ring = 1 pt. Misses are shown but not penalised. | Points | Higher |
+| `tap-speed` | Tap Speed | Speed | Tap one big button for 10 s (timer starts at first tap). | Taps per second | Higher |
+| `stop-the-bar` | Stop the Bar | Speed | 5 rounds, each at a different speed (0.35–1 track widths/s, shuffled); green line at 45–90 % of the track, but always at least 0.8 s of travel away (so fast rounds get a far line). Tap to start, tap to stop. | Average absolute timing error (ms) | Lower |
 | `mental-rotation` | Mental Rotation | Thinking | Two 2D 7-square shapes (chiral, so mirrors are never identical); the right one is rotated 45°–315° and mirrored half the time. Answer SAME / MIRRORED. 60 s. | Correct − wrong | Higher |
 | `line-tracing` | Line Tracing | Motor | Random smooth path (7 alternating turns) on a 1000×600 board, corridor 60 units wide. Start on GO, finish on the flag. Leaving the corridor (or lifting the finger) ends the run with no score. | Time | Lower |
-| `geometry` | Eye for Geometry | Estimation | 10 rounds, one of each task in random order: middle of a line, center of a circle, make an angle, name an angle (typed), halve an angle, make it level/vertical, complete a square, copy a length, point equally far from 3 dots, slide a fixed-angle cut to halve an irregular shape. Each round gives 0–100 points, falling linearly with error (tolerances: 8 % of length, 25 % of radius, 25°, 25°, 15°, 8°, 25 % of side, 25 % of length, 30 % of radius, 10 % of area). Result lists every round. | Average points (%) | Higher |
+| `geometry` | Eye for Geometry | Estimation | 10 rounds, one of each task in random order: middle of a line, center of a circle, make an angle, name the marked angle (typed), halve the marked angle (the arm can't leave the angle), make a line parallel to another (rotate around a fixed end; either direction counts), complete a square, copy a length, point equally far from 3 dots, slide a fixed-angle cut to halve an irregular shape. Each round gives 0–100 points, falling linearly with error (tolerances: 8 % of length, 25 % of radius, 25°, 25°, 15°, 10°, 25 % of side, 25 % of length, 30 % of radius, 10 % of area). Result lists every round. | Average points (%) | Higher |
 
 ## Share format
 
 `I scored 243 ms on Reaction Time at Skill Lab — can you beat it? <url>#/test/reaction`
 Uses the Web Share API when available, otherwise copies to clipboard. The home page can also share
 all best scores in one message.
+
+## Shared behaviour
+- The result screen ignores taps/clicks for 0.8 s so a last tap in the test can't hit "Try again" by accident.
+- When a test's scoring changes, its `scoreVersion` is bumped in the registry: results are then stored under a new key and old bests are no longer compared (v2: Aim Trainer, Go / No-Go, Eye for Geometry).

@@ -73,7 +73,12 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
         className={`play-area mx-auto grid w-full max-w-[520px] gap-1.5 rounded-2xl p-2 transition-colors sm:gap-2 ${
           phase === 'success' ? 'bg-emerald-500/25' : phase === 'fail' ? 'bg-rose-500/25' : 'bg-zinc-200 dark:bg-zinc-800'
         }`}
-        style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`, aspectRatio: `${COLS} / ${ROWS}` }}
+        // Fixed rows + columns: tiles keep their size whether they show a number or not.
+        style={{
+          gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
+          aspectRatio: `${COLS} / ${ROWS}`,
+        }}
       >
         {Array.from({ length: COLS * ROWS }, (_, cell) => {
           const index = cells.indexOf(cell)
@@ -86,7 +91,7 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
               type="button"
               aria-label={reveal ? String(index + 1) : 'Hidden tile'}
               onPointerDown={() => tap(cell)}
-              className={`grid place-items-center rounded-lg text-xl font-bold sm:text-2xl ${
+              className={`grid min-h-0 place-items-center overflow-hidden rounded-lg text-xl leading-none font-bold sm:text-2xl ${
                 wrongCell === cell ? 'bg-rose-500 text-white'
                 : done ? 'bg-violet-500/30 text-violet-700 dark:text-violet-300'
                 : reveal ? 'bg-white text-zinc-900 dark:bg-zinc-100'

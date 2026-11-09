@@ -10,8 +10,9 @@ export type Shape =
   | { t: 'poly'; pts: Pt[] }
   | { t: 'ray'; from: Pt; angle: number; len: number }
   | { t: 'line'; through: Pt; angle: number } // infinite line (clipped by the board)
+  | { t: 'arc'; c: Pt; r: number; from: number; span: number } // marks an angle: from `from`, CCW by `span`
 
-export type Input = 'point' | 'ray' | 'line' | 'length' | 'offset' | 'number'
+export type Input = 'point' | 'ray' | 'length' | 'offset' | 'number'
 
 export interface Answer { point?: Pt; angle?: number; length?: number; offset?: number; number?: number }
 
@@ -23,8 +24,12 @@ export interface Task {
   prompt: string
   input: Input
   shapes: Shape[]
-  /** ray / line inputs rotate around this point; length input starts here */
+  /** ray input rotates around this point; length input starts here */
   pivot?: Pt
+  /** length of the ray input's arm (default 42) */
+  armLen?: number
+  /** ray input can only point inside this angle (CCW from `from` by `span`) */
+  range?: { from: number; span: number }
   /** length input direction; offset input normal (unit vectors) */
   dir?: Pt
   /** starting value shown before the player moves anything */
@@ -45,6 +50,14 @@ export const angleDiff = (a: number, b: number, period = 360) => {
   return Math.min(d, period - d)
 }
 const between = (rand: Rand, lo: number, hi: number) => lo + rand() * (hi - lo)
+const norm360 = (a: number) => ((a % 360) + 360) % 360
+
+/** Keeps a direction inside an angle (CCW from `from` by `span`), snapping to the nearer arm. */
+export function clampToRange(angle: number, { from, span }: { from: number; span: number }) {
+  const rel = norm360(angle - from)
+  if (rel <= span) return from + rel
+  return rel - span < 360 - rel ? from + span : from
+}
 
 /** 100 points for a perfect answer, falling linearly to 0 at `tolerance` error. */
 export const pointsFor = (error: number, tolerance: number) => Math.round(100 * Math.max(0, 1 - error / tolerance))
@@ -135,8 +148,12 @@ export function setAngle(rand: Rand): Task {
 export function guessAngle(rand: Rand): Task {
   const base = between(rand, 0, 360), target = Math.round(between(rand, 10, 170))
   return {
-    kind: 'guess-angle', title: 'Name the angle', prompt: 'How many degrees is this angle? Type your guess.', input: 'number',
-    shapes: [{ t: 'ray', from: C, angle: base, len: 42 }, { t: 'ray', from: C, angle: base + target, len: 42 }],
+    kind: 'guess-angle', title: 'Name the angle', prompt: 'How many degrees is the marked angle? Type your guess.', input: 'number',
+    shapes: [
+      { t: 'arc', c: C, r: 10, from: base, span: target },
+      { t: 'ray', from: C, angle: base, len: 42 },
+      { t: 'ray', from: C, angle: base + target, len: 42 },
+    ],
     evaluate: ({ number }) => {
       const e = Math.abs(number! - target)
       return { points: pointsFor(e, 25), label: `It was ${target}° · ${deg(e)}`, solution: [] }
@@ -147,9 +164,15 @@ export function guessAngle(rand: Rand): Task {
 export function bisectAngle(rand: Rand): Task {
   const base = between(rand, 0, 360), spread = between(rand, 45, 160), bis = base + spread / 2
   return {
-    kind: 'bisect', title: 'Half the angle', prompt: 'Rotate the arm so it splits the angle into two equal halves.', input: 'ray',
-    shapes: [{ t: 'ray', from: C, angle: base, len: 42 }, { t: 'ray', from: C, angle: base + spread, len: 42 }],
-    pivot: C, initial: { angle: bis + 180 },
+    kind: 'bisect', title: 'Half the angle', prompt: 'Rotate the arm so it splits the marked angle into two equal halves.', input: 'ray',
+    shapes: [
+      { t: 'arc', c: C, r: 10, from: base, span: spread },
+      { t: 'ray', from: C, angle: base, len: 42 },
+      { t: 'ray', from: C, angle: base + spread, len: 42 },
+    ],
+    // The arm stays inside the angle and starts close to one of its sides.
+    pivot: C, range: { from: base, span: spread },
+    initial: { angle: rand() < 0.5 ? base + spread * 0.08 : base + spread * 0.92 },
     evaluate: ({ angle }) => {
       const e = angleDiff(angle!, bis)
       return { points: pointsFor(e, 15), label: deg(e), solution: [{ t: 'ray', from: C, angle: bis, len: 42 }] }
@@ -157,16 +180,21 @@ export function bisectAngle(rand: Rand): Task {
   }
 }
 
-export function levelIt(rand: Rand): Task {
-  const vertical = rand() < 0.5, target = vertical ? 90 : 0
-  const tilt = (rand() < 0.5 ? -1 : 1) * between(rand, 6, 25)
+export function makeParallel(rand: Rand): Task {
+  const L = between(rand, 24, 30), refAng = between(rand, 0, 180)
+  // Reference line in one top corner, the movable one starts in the opposite bottom corner.
+  const left = rand() < 0.5
+  const refMid = { x: left ? between(rand, 28, 36) : between(rand, 64, 72), y: between(rand, 26, 34) }
+  const a = add(refMid, dirOf(refAng), -L / 2), b = add(refMid, dirOf(refAng), L / 2)
+  const pivot = { x: left ? between(rand, 58, 66) : between(rand, 34, 42), y: between(rand, 62, 68) }
+  const start = refAng + (rand() < 0.5 ? -1 : 1) * between(rand, 30, 70)
   return {
-    kind: 'level', title: vertical ? 'Make it vertical' : 'Make it level',
-    prompt: vertical ? 'Rotate the line until it is perfectly vertical.' : 'Rotate the line until it is perfectly horizontal.',
-    input: 'line', shapes: [], pivot: C, initial: { angle: target + tilt },
+    kind: 'parallel', title: 'Make it parallel', prompt: 'Rotate the lower line until it is exactly parallel to the upper one.', input: 'ray',
+    shapes: [{ t: 'seg', a, b }], pivot, armLen: L, initial: { angle: start },
     evaluate: ({ angle }) => {
-      const e = angleDiff(angle!, target, 180)
-      return { points: pointsFor(e, 8), label: deg(e), solution: [{ t: 'line', through: C, angle: target }] }
+      const e = angleDiff(angle!, refAng, 180) // either direction counts
+      const right = angleDiff(angle!, refAng) <= 90 ? refAng : refAng + 180
+      return { points: pointsFor(e, 10), label: deg(e), solution: [{ t: 'ray', from: pivot, angle: right, len: L }] }
     },
   }
 }
@@ -245,7 +273,7 @@ export function splitShape(rand: Rand): Task {
 
 export const TASK_MAKERS = [
   middleOfLine, centerOfCircle, setAngle, guessAngle, bisectAngle,
-  levelIt, completeSquare, copyLength, equalDistance, splitShape,
+  makeParallel, completeSquare, copyLength, equalDistance, splitShape,
 ]
 
 /** One round of every task type, in random order. */

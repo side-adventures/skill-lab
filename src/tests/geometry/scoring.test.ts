@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   angleDiff, angleTo, areaFraction, bisectAngle, centerOfCircle, completeSquare, copyLength, dirOf, equalDistance,
-  halvingOffset, levelIt, makeTasks, middleOfLine, pointsFor, polygonArea, setAngle, splitShape, totalScore,
+  clampToRange, halvingOffset, makeParallel, makeTasks, middleOfLine, pointsFor, polygonArea, setAngle, splitShape, totalScore,
 } from './scoring'
 
 describe('geometry helpers', () => {
@@ -38,14 +38,30 @@ describe('geometry tasks', () => {
     if (s3.t === 'ray') expect(t3.evaluate({ angle: s3.angle }).points).toBe(100)
     const t4 = bisectAngle(r); const s4 = t4.evaluate({ angle: 0 }).solution[0]
     if (s4.t === 'ray') expect(t4.evaluate({ angle: s4.angle }).points).toBe(100)
-    const t5 = levelIt(r); const s5 = t5.evaluate({ angle: 0 }).solution[0]
-    if (s5.t === 'line') expect(t5.evaluate({ angle: s5.angle + 180 }).points).toBe(100)
+    const t5 = makeParallel(r); const s5 = t5.evaluate({ angle: 0 }).solution[0]
+    if (s5.t === 'ray') {
+      expect(t5.evaluate({ angle: s5.angle }).points).toBe(100)
+      expect(t5.evaluate({ angle: s5.angle + 180 }).points).toBe(100) // pointing the other way is parallel too
+      expect(t5.evaluate({ angle: s5.angle + 5 }).points).toBe(50)
+    }
     const t6 = completeSquare(r); const s6 = t6.evaluate({ point: { x: 0, y: 0 } }).solution.at(-1)!
     if (s6.t === 'dot') expect(t6.evaluate({ point: s6.p }).points).toBe(100)
     const t7 = copyLength(r); const s7 = t7.evaluate({ length: 0 }).solution[0]
     if (s7.t === 'seg') expect(t7.evaluate({ length: Math.hypot(s7.b.x - s7.a.x, s7.b.y - s7.a.y) }).points).toBe(100)
     const t8 = equalDistance(r); const s8 = t8.evaluate({ point: { x: 0, y: 0 } }).solution[0]
     if (s8.t === 'dot') expect(t8.evaluate({ point: s8.p }).points).toBe(100)
+  })
+  it('keeps the bisect arm inside the angle', () => {
+    const range = { from: 350, span: 60 } // 350° … 50°
+    expect(clampToRange(20, range)).toBeCloseTo(380)
+    expect(clampToRange(150, range)).toBeCloseTo(410) // nearer to the 50° arm
+    expect(clampToRange(250, range)).toBeCloseTo(350) // nearer to the 350° arm
+    for (let i = 0; i < 50; i++) {
+      const t = bisectAngle(r)
+      const a = clampToRange(t.initial!.angle!, t.range!)
+      expect(a).toBeCloseTo(t.initial!.angle!) // starts inside
+      expect(t.evaluate({ angle: a }).points).toBeLessThan(100)
+    }
   })
   it('splits shapes fairly and reports the split', () => {
     for (let i = 0; i < 50; i++) {

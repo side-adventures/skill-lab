@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GREENS, REDS, makeTrials, totalMs } from './scoring'
+import { BLOCK, GREENS, REDS, longestGreenRun, makeTrials, totalMs } from './scoring'
 
 describe('go / no-go', () => {
   it('has a fixed number of greens and reds, starting green', () => {
@@ -7,6 +7,15 @@ describe('go / no-go', () => {
     expect(t.filter(Boolean)).toHaveLength(GREENS)
     expect(t.filter((x) => !x)).toHaveLength(REDS)
     expect(t[0] && t[1]).toBe(true)
+  })
+  it('spreads the reds out', () => {
+    for (let i = 0; i < 500; i++) {
+      const t = makeTrials()
+      expect(t).toHaveLength(GREENS + REDS)
+      expect(longestGreenRun(t)).toBeLessThanOrEqual(2 * (BLOCK - 1))
+      expect(t.some((g, j) => !g && t[j + 1] === false)).toBe(false)
+    }
+    expect(longestGreenRun([true, true, false, true])).toBe(2)
   })
   it('adds penalties', () => {
     expect(totalMs({ rts: [300, 400], misses: 0, falseTaps: 0 })).toBe(700)

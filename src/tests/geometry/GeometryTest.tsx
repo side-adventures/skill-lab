@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Button } from '../../components/Button'
 import { NumberPad } from '../../components/NumberPad'
 import type { TestComponentProps } from '../types'
-import { add, angleTo, dirOf, makeTasks, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
+import { add, angleTo, clampToRange, dirOf, makeTasks, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
 
 const STROKE = 0.9
 
@@ -28,6 +28,18 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
         </g>
       )
     }
+    case 'arc': {
+      // Marks which angle is meant: a filled wedge with an arc edge (always violet).
+      const p1 = add(shape.c, dirOf(shape.from), shape.r), p2 = add(shape.c, dirOf(shape.from + shape.span), shape.r)
+      const large = shape.span > 180 ? 1 : 0
+      return (
+        <path
+          d={`M ${shape.c.x} ${shape.c.y} L ${p1.x} ${p1.y} A ${shape.r} ${shape.r} 0 ${large} 0 ${p2.x} ${p2.y} Z`}
+          className="fill-violet-500/20 stroke-violet-500"
+          strokeWidth={0.6}
+        />
+      )
+    }
     case 'line': {
       const a = add(shape.through, dirOf(shape.angle), -150), b = add(shape.through, dirOf(shape.angle), 150)
       return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth={STROKE} strokeDasharray={dashed} className={color} />
@@ -39,8 +51,7 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
 function answerShapes(task: Task, a: Answer): Shape[] {
   switch (task.input) {
     case 'point': return a.point ? [{ t: 'dot', p: a.point }] : []
-    case 'ray': return a.angle === undefined ? [] : [{ t: 'ray', from: task.pivot!, angle: a.angle, len: 42 }]
-    case 'line': return a.angle === undefined ? [] : [{ t: 'line', through: task.pivot!, angle: a.angle }]
+    case 'ray': return a.angle === undefined ? [] : [{ t: 'ray', from: task.pivot!, angle: a.angle, len: task.armLen ?? 42 }]
     case 'length': return a.length === undefined ? [] : [{ t: 'seg', a: task.pivot!, b: add(task.pivot!, task.dir!, a.length) }]
     case 'offset':
       return a.offset === undefined ? [] : [{ t: 'line', through: add(task.pivot!, task.dir!, a.offset), angle: angleTo({ x: 0, y: 0 }, task.dir!) - 90 }]
@@ -50,8 +61,7 @@ function answerShapes(task: Task, a: Answer): Shape[] {
 
 /** Where the drag handle sits (if any). */
 function handleAt(task: Task, a: Answer): Pt | undefined {
-  if (task.input === 'ray' && a.angle !== undefined) return add(task.pivot!, dirOf(a.angle), 42)
-  if (task.input === 'line' && a.angle !== undefined) return add(task.pivot!, dirOf(a.angle), 35)
+  if (task.input === 'ray' && a.angle !== undefined) return add(task.pivot!, dirOf(a.angle), task.armLen ?? 42)
   if (task.input === 'length' && a.length !== undefined) return add(task.pivot!, task.dir!, a.length)
   if (task.input === 'offset' && a.offset !== undefined) return add(task.pivot!, task.dir!, a.offset)
   return undefined
@@ -76,7 +86,10 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
     const p = { x: Math.min(100, Math.max(0, sp.x)), y: Math.min(100, Math.max(0, sp.y)) }
     const rel = task.pivot && { x: p.x - task.pivot.x, y: p.y - task.pivot.y }
     if (task.input === 'point') setAnswer({ point: p })
-    if (task.input === 'ray' || task.input === 'line') setAnswer({ angle: angleTo(task.pivot!, p) })
+    if (task.input === 'ray') {
+      const angle = angleTo(task.pivot!, p)
+      setAnswer({ angle: task.range ? clampToRange(angle, task.range) : angle })
+    }
     if (task.input === 'length') setAnswer({ length: Math.max(0, rel!.x * task.dir!.x + rel!.y * task.dir!.y) })
     if (task.input === 'offset') setAnswer({ offset: rel!.x * task.dir!.x + rel!.y * task.dir!.y })
     setTouched(true)

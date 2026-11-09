@@ -232,14 +232,15 @@ export const TESTS: TestDefinition[] = [
     category: 'Focus',
     tagline: 'Tap on green. Hold back on red.',
     instructions: [
-      '50 circles appear: tap as fast as you can when one is green.',
+      '30 circles appear: tap as fast as you can when one is green.',
       'Do NOT tap when it is red (or before anything appears).',
       'Score is your total green reaction time; every mistake adds 100 ms.',
     ],
-    durationHint: '~1.5 min',
+    durationHint: '~1 min',
     scoreLabel: 'Total time',
     higherIsBetter: false,
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
+    scoreVersion: 2, // was: 50 trials
     Component: lazy(() => import('./go-no-go/GoNoGoTest')),
   },
   {
@@ -248,11 +249,15 @@ export const TESTS: TestDefinition[] = [
     icon: '🏹',
     category: 'Speed',
     tagline: 'Hit as many targets as you can.',
-    instructions: ['A target appears — hit it, the next one appears somewhere else.', '60 seconds.'],
-    durationHint: '60 s',
-    scoreLabel: 'Targets hit',
+    instructions: [
+      'A target appears — hit it, the next one appears somewhere else.',
+      'Center hit: 2 points. Outer ring: 1 point. 30 seconds.',
+    ],
+    durationHint: '30 s',
+    scoreLabel: 'Points',
     higherIsBetter: true,
-    formatScore: (s) => `${s} targets`,
+    formatScore: (s) => `${s} pts`,
+    scoreVersion: 2, // was: targets hit in 60 s
     Component: lazy(() => import('./aim-trainer/AimTrainerTest')),
   },
   {
@@ -261,7 +266,7 @@ export const TESTS: TestDefinition[] = [
     icon: '👆',
     category: 'Speed',
     tagline: 'How fast can you tap?',
-    instructions: ['Tap the button as fast as you can for 10 seconds.', 'The timer starts with your first tap. Any finger(s) allowed.'],
+    instructions: ['Tap the button as fast as you can for 10 seconds.', 'The timer starts with your first tap.'],
     durationHint: '10 s',
     scoreLabel: 'Taps per second',
     higherIsBetter: true,
@@ -333,6 +338,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Accuracy',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
+    scoreVersion: 2, // "Make it level" replaced by "Make it parallel"
     Component: lazy(() => import('./geometry/GeometryTest')),
   },
 ]

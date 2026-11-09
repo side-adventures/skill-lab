@@ -1,8 +1,8 @@
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { buildShareText, shareResult, testUrl } from '../lib/share'
 import { getBest, saveResult, type ResultEntry } from '../lib/storage'
-import type { TestDefinition, TestResult } from '../tests/types'
+import { storageId, type TestDefinition, type TestResult } from '../tests/types'
 import { Button } from './Button'
 
 type Phase =
@@ -23,9 +23,9 @@ export function TestRunner({ test }: { test: TestDefinition }) {
 
   const finish = (result: TestResult) => {
     if (result.failed) {
-      return setPhase({ name: 'result', result, isBest: false, previousBest: getBest(test.id, test.higherIsBetter) })
+      return setPhase({ name: 'result', result, isBest: false, previousBest: getBest(storageId(test), test.higherIsBetter) })
     }
-    const { isBest, previousBest } = saveResult(test.id, result.score, test.higherIsBetter)
+    const { isBest, previousBest } = saveResult(storageId(test), result.score, test.higherIsBetter)
     setPhase({ name: 'result', result, isBest, previousBest })
   }
 
@@ -60,7 +60,7 @@ export function TestRunner({ test }: { test: TestDefinition }) {
   } else if (phase.name === 'result') {
     body = <ResultScreen test={test} phase={phase} onRetry={start} />
   } else {
-    const best = getBest(test.id, test.higherIsBetter)
+    const best = getBest(storageId(test), test.higherIsBetter)
     body = (
       <Card>
         <p className="mb-5 text-lg text-zinc-600 dark:text-zinc-400">{test.tagline}</p>
@@ -94,6 +94,8 @@ export function TestRunner({ test }: { test: TestDefinition }) {
 const barButton =
   'rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
 
+const RESULT_INPUT_DELAY_MS = 800
+
 function ResultScreen({
   test,
   phase,
@@ -104,6 +106,17 @@ function ResultScreen({
   onRetry: () => void
 }) {
   const [shareState, setShareState] = useState<string>()
+  // Ignore input for a moment so a last tap in the test doesn't hit "Try again" by accident.
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => setArmed(true), RESULT_INPUT_DELAY_MS)
+    return () => window.clearTimeout(t)
+  }, [])
+  const block = (e: React.SyntheticEvent) => {
+    if (armed) return
+    e.preventDefault()
+    e.stopPropagation()
+  }
   const formatted = test.formatScore(phase.result.score)
 
   const share = async () => {
@@ -146,7 +159,11 @@ function ResultScreen({
         </dl>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+      <div
+        className={`flex flex-col gap-3 transition-opacity duration-300 sm:flex-row sm:justify-center ${armed ? '' : 'pointer-events-none opacity-40'}`}
+        onClickCapture={block}
+        onKeyDownCapture={block}
+      >
         <Button onClick={onRetry} autoFocus>Try again</Button>
         {!failed && <Button variant="secondary" onClick={share}>Share score</Button>}
         <Link to="/" className="self-center px-3 py-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">

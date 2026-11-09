@@ -7,12 +7,13 @@ export type Cell = [number, number]
 export type Shape = Cell[]
 
 const key = (s: Shape) => s.map(([x, y]) => `${x},${y}`).sort().join(';')
-const normalize = (s: Shape): Shape => {
+export const normalize = (s: Shape): Shape => {
   const minX = Math.min(...s.map((c) => c[0])), minY = Math.min(...s.map((c) => c[1]))
   return s.map(([x, y]) => [x - minX, y - minY] as Cell).sort((a, b) => a[0] - b[0] || a[1] - b[1])
 }
 const rotate90 = (s: Shape): Shape => s.map(([x, y]) => [y, -x] as Cell)
-export const mirror = (s: Shape): Shape => s.map(([x, y]) => [-x, y] as Cell)
+/** Mirror image, moved back to start at (0, 0) like every other shape. */
+export const mirror = (s: Shape): Shape => normalize(s.map(([x, y]) => [-x, y] as Cell))
 
 /** All 4 quarter-turn rotations, normalized. */
 const rotations = (s: Shape) => {

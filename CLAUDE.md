@@ -29,7 +29,7 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 4. Verify by actually playing it in the browser preview (desktop + mobile viewport), not just by building.
 
 ## Conventions
-- Never change a test's scoring in a way that makes old saved scores incomparable without bumping the
-  storage key version.
+- Never change a test's scoring in a way that makes old saved scores incomparable without bumping that
+  test's `scoreVersion` in the registry (stores results under a new key, see `storageId` in `types.ts`).
 - Keep components small; shared UI goes in `src/components/` (GetReady, TimerBar, DrainBar, NumberPad, Button)
   and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `spreadInts`, `shuffle` …).

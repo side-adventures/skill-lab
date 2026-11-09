@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CELLS, isChiral, makeShape, makeTrial } from './scoring'
+import { CELLS, isChiral, makeShape, makeTrial, mirror } from './scoring'
 
 describe('mental rotation', () => {
   it('detects symmetric shapes', () => {
@@ -18,6 +18,14 @@ describe('mental rotation', () => {
       const t = makeTrial()
       const d = (t.rightAngle - t.leftAngle + 360) % 360
       expect(d >= 45 && d <= 315).toBe(true)
+    }
+  })
+  it('keeps mirrored shapes in the same box as the original (fits the view)', () => {
+    for (let i = 0; i < 100; i++) {
+      const m = mirror(makeShape())
+      expect(Math.min(...m.map((c) => c[0]))).toBe(0)
+      expect(Math.min(...m.map((c) => c[1]))).toBe(0)
+      expect(Math.max(...m.flat())).toBeLessThanOrEqual(3)
     }
   })
 })

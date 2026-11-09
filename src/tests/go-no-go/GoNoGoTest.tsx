@@ -92,9 +92,8 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
         onKeyDown={(e) => e.preventDefault()}
         className="play-area flex h-[60vh] max-h-[480px] min-h-[300px] w-full flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900"
       >
-        <span
-          className={`size-40 rounded-full transition-opacity duration-75 sm:size-48 ${trials[i] ? 'bg-emerald-500' : 'bg-rose-600'} ${showStim ? 'opacity-100' : 'opacity-0'}`}
-        />
+        {/* No fade: the color must never change while the circle is still (partly) visible. */}
+        <span className={`size-40 rounded-full sm:size-48 ${showStim ? (trials[i] ? 'bg-emerald-500' : 'bg-rose-600') : 'bg-transparent'}`} />
         <span className={`mt-6 h-8 text-2xl font-bold ${feedback ? fb[feedback][1] : ''}`}>{feedback && fb[feedback][0]}</span>
       </button>
     </div>

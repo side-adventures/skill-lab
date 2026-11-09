@@ -6,8 +6,11 @@ import type { TestComponentProps } from '../types'
 import { DURATION_MS, makeTrial, mirror, type Shape } from './scoring'
 
 function ShapeView({ shape, angle }: { shape: Shape; angle: number }) {
-  const cx = (Math.max(...shape.map((c) => c[0])) + 1) / 2
-  const cy = (Math.max(...shape.map((c) => c[1])) + 1) / 2
+  // Rotate around the center of the bounding box (works for any offset), which keeps every
+  // allowed shape (max 4 × 4 cells, half-diagonal 2.83) inside the 6 × 6 view.
+  const xs = shape.map((c) => c[0]), ys = shape.map((c) => c[1])
+  const cx = (Math.min(...xs) + Math.max(...xs) + 1) / 2
+  const cy = (Math.min(...ys) + Math.max(...ys) + 1) / 2
   return (
     <svg viewBox="-3 -3 6 6" className="aspect-square w-full">
       <g transform={`rotate(${angle}) translate(${-cx} ${-cy})`}>
