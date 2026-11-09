@@ -19,7 +19,7 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
   Merge into `main` only when the user says it should go live.
 
 ## Commands
-- `npm run dev` — dev server (also `.claude/launch.json` in the parent folder: config `skill-lab`, port 5173)
+- `npm run dev` — dev server (browser preview: `.claude/launch.json` config `dev`, port 5173; always test on localhost)
 - `npm test` · `npm run lint` · `npm run build` — all three must pass before committing.
 
 ## Adding a test
@@ -33,6 +33,13 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 3. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
    for timing-sensitive input; clear timers / rAF in effect cleanups.
 4. Verify by actually playing it in the browser preview (desktop + mobile viewport), not just by building.
+
+## Subagents (`.claude/agents/`)
+- `scoring-reviewer` — after adding a test or changing scoring / rules / round generation: hunts loopholes,
+  unfair random setups and missing `scoreVersion` bumps; proves findings with unit tests, never edits app code.
+- `play-tester` — after building or changing a test and before merging into `main`: plays it on localhost
+  (desktop + mobile, light + dark) and reports bugs; never edits files.
+- Both report back; the main session decides and applies fixes. They can run in parallel.
 
 ## Conventions
 - Never change a test's scoring in a way that makes old saved scores incomparable without bumping that
