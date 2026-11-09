@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DrainBar } from '../../components/DrainBar'
+import { boardBg } from '../../components/boardFeedback'
 import type { TestResult } from '../types'
 import { COLS, ROWS, placeTiles } from './scoring'
 
@@ -70,8 +71,8 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
       <div className="mb-2 h-1.5">{phase === 'show' && <DrainBar key={round} ms={memorizeMs} />}</div>
       <p className="mb-3 text-center font-medium" role="status">{message}</p>
       <div
-        className={`play-area mx-auto grid w-full max-w-[520px] gap-1.5 rounded-2xl p-2 transition-colors sm:gap-2 ${
-          phase === 'success' ? 'bg-emerald-500/25' : phase === 'fail' ? 'bg-rose-500/25' : 'bg-zinc-200 dark:bg-zinc-800'
+        className={`play-area mx-auto grid w-full max-w-[520px] gap-1.5 rounded-2xl p-2 sm:gap-2 ${
+          boardBg(phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null)
         }`}
         // Fixed rows + columns: tiles keep their size whether they show a number or not.
         style={{

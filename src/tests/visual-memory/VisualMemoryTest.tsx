@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { boardBg } from '../../components/boardFeedback'
 import type { TestComponentProps } from '../types'
 import { LIVES, MISSES_PER_LEVEL, SHOW_MS, gridSize, pickTiles } from './scoring'
 
@@ -77,7 +78,7 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
       </div>
       <p className="mb-3 text-center font-medium" role="status">{message[phase]}</p>
       <div
-        className="play-area mx-auto grid aspect-square w-full max-w-[min(480px,60vh)] gap-1.5 rounded-2xl bg-zinc-200 p-2 sm:gap-2 dark:bg-zinc-800"
+        className={`play-area mx-auto grid aspect-square w-full max-w-[min(480px,60vh)] gap-1.5 rounded-2xl p-2 sm:gap-2 ${boardBg(phase === 'cleared' ? 'success' : phase === 'failed' ? 'fail' : null)}`}
         style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: size * size }, (_, i) => {

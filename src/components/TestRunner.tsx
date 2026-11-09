@@ -1,9 +1,10 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { buildShareText, shareResult, testUrl } from '../lib/share'
+import { buildShareText, testUrl } from '../lib/share'
 import { getBest, saveResult, type ResultEntry } from '../lib/storage'
 import { storageId, type TestDefinition, type TestResult } from '../tests/types'
 import { Button } from './Button'
+import { ShareButton } from './ShareButton'
 
 type Phase =
   | { name: 'intro' }
@@ -105,7 +106,6 @@ function ResultScreen({
   phase: Extract<Phase, { name: 'result' }>
   onRetry: () => void
 }) {
-  const [shareState, setShareState] = useState<string>()
   // Ignore input for a moment so a last tap in the test doesn't hit "Try again" by accident.
   const [armed, setArmed] = useState(false)
   useEffect(() => {
@@ -119,10 +119,6 @@ function ResultScreen({
   }
   const formatted = test.formatScore(phase.result.score)
 
-  const share = async () => {
-    const outcome = await shareResult(buildShareText(test.name, formatted), testUrl(test.id))
-    setShareState(outcome === 'copied' ? 'Copied to clipboard!' : outcome === 'failed' ? 'Could not share' : undefined)
-  }
 
   const failed = phase.result.failed
   return (
@@ -165,12 +161,13 @@ function ResultScreen({
         onKeyDownCapture={block}
       >
         <Button onClick={onRetry} autoFocus>Try again</Button>
-        {!failed && <Button variant="secondary" onClick={share}>Share score</Button>}
+        {!failed && (
+          <ShareButton label="Share score" getShare={() => ({ text: buildShareText(test.name, formatted), url: testUrl(test.id) })} />
+        )}
         <Link to="/" className="self-center px-3 py-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
           All tests
         </Link>
       </div>
-      {shareState && <p className="mt-3 text-center text-sm text-zinc-500" role="status">{shareState}</p>}
     </Card>
   )
 }

@@ -1,23 +1,20 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button } from '../components/Button'
-import { buildAllScoresText, homeUrl, shareResult } from '../lib/share'
+import { ShareButton } from '../components/ShareButton'
+import { buildAllScoresText, homeUrl } from '../lib/share'
 import { getBest } from '../lib/storage'
 import { TESTS } from '../tests/registry'
 import { CATEGORIES, storageId } from '../tests/types'
 
 export function Home() {
-  const [shareState, setShareState] = useState<string>()
   const tests = TESTS.map((t) => ({ test: t, best: getBest(storageId(t), t.higherIsBetter) }))
   const played = tests.filter((t) => t.best)
 
-  const shareAll = async () => {
-    const text = buildAllScoresText(
+  const allScores = () => ({
+    text: buildAllScoresText(
       played.map(({ test, best }) => ({ icon: test.icon, name: test.name, score: test.formatScore(best!.score) })),
-    )
-    const outcome = await shareResult(text, homeUrl())
-    setShareState(outcome === 'copied' ? 'Copied to clipboard!' : outcome === 'failed' ? 'Could not share' : undefined)
-  }
+    ),
+    url: homeUrl(),
+  })
 
   return (
     <>
@@ -66,8 +63,7 @@ export function Home() {
             <p className="text-zinc-600 dark:text-zinc-400">
               You've played {played.length} of {TESTS.length} tests. Send all your best scores at once.
             </p>
-            <Button onClick={shareAll} className="mt-1">Share all my scores</Button>
-            {shareState && <p className="text-sm text-zinc-500" role="status">{shareState}</p>}
+            <ShareButton label="Share all my scores" variant="primary" getShare={allScores} className="mt-1" />
           </>
         ) : (
           <p className="text-zinc-500">Play a test to start collecting scores you can share.</p>

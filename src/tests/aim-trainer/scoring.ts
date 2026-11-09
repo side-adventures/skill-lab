@@ -3,7 +3,7 @@ import type { Rand } from '../../lib/random'
 export const DURATION_MS = 30_000
 export const TARGET_PX = 56
 /** Inner bullseye diameter as a fraction of the target: a hit inside it is worth 2 points. */
-export const CENTER_FRACTION = 0.5
+export const CENTER_FRACTION = 0.42
 /** New target is at least this far (in area fractions) from the previous one. */
 export const MIN_JUMP = 0.3
 

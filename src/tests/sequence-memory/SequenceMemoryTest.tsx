@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { boardBg } from '../../components/boardFeedback'
 import type { TestComponentProps } from '../types'
 import { GRID, STEP_GAP_MS, STEP_ON_MS, extend } from './scoring'
 
@@ -68,7 +69,7 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
       <div className="mb-3 text-sm text-zinc-500">Length {seq.length}</div>
       <p className="mb-3 text-center font-medium" role="status">{message[phase]}</p>
       <div
-        className="play-area mx-auto grid aspect-square w-full max-w-[min(420px,55vh)] gap-2 rounded-2xl bg-zinc-200 p-2 dark:bg-zinc-800"
+        className={`play-area mx-auto grid aspect-square w-full max-w-[min(420px,55vh)] gap-2 rounded-2xl p-2 ${boardBg(phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null)}`}
         style={{ gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: GRID * GRID }, (_, i) => (
@@ -77,13 +78,8 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
             type="button"
             aria-label={`Tile ${i + 1}`}
             onPointerDown={() => tap(i)}
-            // Whole board lights up bright green on a correct sequence; on a mistake the wrong tile
-            // turns red and the right one is shown.
-            className={`rounded-xl transition-colors duration-150 ${
-              wrongTile === i ? 'bg-rose-500'
-              : phase === 'success' ? 'bg-emerald-400'
-              : lit === i ? 'bg-violet-500'
-              : 'bg-white dark:bg-zinc-700'
+            className={`rounded-xl transition-colors duration-100 ${
+              wrongTile === i ? 'bg-rose-500' : lit === i ? 'bg-violet-500' : 'bg-white dark:bg-zinc-700'
             }`}
           />
         ))}

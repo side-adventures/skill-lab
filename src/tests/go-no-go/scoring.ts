@@ -1,27 +1,31 @@
-import { randInt, type Rand } from '../../lib/random'
+import { randInt, shuffle, type Rand } from '../../lib/random'
 
-export const GREENS = 24
-export const REDS = 6
-/** Trials come in blocks with exactly one red each, so greens never run on for long. */
-export const BLOCK = (GREENS + REDS) / REDS
+/** 4 groups of 7 (5 green + 2 red each), plus 1 green and 1 red inserted anywhere: 21 green, 9 red (30). */
+export const GROUPS = 4
+export const GROUP_GREENS = 5
+export const GROUP_REDS = 2
+export const GREENS = GROUPS * GROUP_GREENS + 1
+export const REDS = GROUPS * GROUP_REDS + 1
 export const WINDOW_MS = 800 // how long a stimulus stays up
 export const PENALTY_MS = 100
 export const MIN_WAIT_MS = 700
 export const MAX_WAIT_MS = 1500
 
 /**
- * true = green (tap), false = red (don't). One red per block of 5 at a random spot,
- * never in the first two trials and never two reds in a row.
- * Longest possible green streak: 2 × (BLOCK − 1) = 8.
+ * true = green (tap), false = red (don't). Each group of 7 is shuffled on its own, then one extra
+ * green and one extra red go in at random spots. Redrawn until the first two are green and no two
+ * reds are next to each other.
  */
 export function makeTrials(rand: Rand = Math.random): boolean[] {
-  const out: boolean[] = []
-  for (let b = 0; b < REDS; b++) {
-    const prevRedLast = out.length > 0 && !out[out.length - 1]
-    const red = randInt(b === 0 ? 2 : prevRedLast ? 1 : 0, BLOCK - 1, rand)
-    for (let k = 0; k < BLOCK; k++) out.push(k !== red)
+  for (;;) {
+    const out: boolean[] = []
+    for (let g = 0; g < GROUPS; g++)
+      out.push(...shuffle([...Array(GROUP_GREENS).fill(true), ...Array(GROUP_REDS).fill(false)], rand))
+    out.splice(randInt(0, out.length, rand), 0, true)
+    out.splice(randInt(0, out.length, rand), 0, false)
+    const ok = out[0] && out[1] && !out.some((g, i) => !g && out[i + 1] === false)
+    if (ok) return out
   }
-  return out
 }
 
 /** Longest run of consecutive greens. */

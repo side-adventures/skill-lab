@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MIN_JUMP, TARGET_PX, hitPoints, nextSpot } from './scoring'
+import { CENTER_FRACTION, MIN_JUMP, TARGET_PX, hitPoints, nextSpot } from './scoring'
 
 describe('aim trainer', () => {
   it('moves targets far enough each time', () => {
@@ -16,8 +16,9 @@ describe('aim trainer', () => {
 describe('aim trainer points', () => {
   it('gives 2 for the center and 1 for the ring', () => {
     expect(hitPoints(0, 0)).toBe(2)
-    expect(hitPoints(TARGET_PX / 4 - 0.5, 0)).toBe(2)
-    expect(hitPoints(TARGET_PX / 4 + 0.5, 0)).toBe(1)
+    const r = (TARGET_PX * CENTER_FRACTION) / 2
+    expect(hitPoints(r - 0.5, 0)).toBe(2)
+    expect(hitPoints(r + 0.5, 0)).toBe(1)
     expect(hitPoints(0, TARGET_PX / 2)).toBe(1)
   })
 })

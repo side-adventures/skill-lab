@@ -240,7 +240,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Total time',
     higherIsBetter: false,
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
-    scoreVersion: 2, // was: 50 trials
+    scoreVersion: 3, // v2: 30 trials (24/6) · v3: 21 green / 9 red
     Component: lazy(() => import('./go-no-go/GoNoGoTest')),
   },
   {
@@ -257,7 +257,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Points',
     higherIsBetter: true,
     formatScore: (s) => `${s} pts`,
-    scoreVersion: 2, // was: targets hit in 60 s
+    scoreVersion: 3, // v2: points in 30 s · v3: smaller bullseye
     Component: lazy(() => import('./aim-trainer/AimTrainerTest')),
   },
   {

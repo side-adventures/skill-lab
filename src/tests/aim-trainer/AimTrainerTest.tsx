@@ -53,7 +53,7 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
         {pop && (
           <span
             key={pop.id}
-            className={`float-up pointer-events-none absolute grid place-items-center text-lg font-black ${pop.pts === 2 ? 'text-rose-500' : 'text-zinc-500'}`}
+            className={`float-up pointer-events-none absolute grid place-items-center text-lg font-black ${pop.pts === 2 ? 'text-red-600' : 'text-zinc-500'}`}
             style={{ ...place(pop.spot), width: TARGET_PX, height: TARGET_PX }}
           >
             +{pop.pts}
@@ -75,12 +75,12 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
             popTimer.current = window.setTimeout(() => setPop(null), 500)
             setSpot((s) => nextSpot(s))
           }}
-          // Solid outer ring (1 pt) with a clear border, solid bullseye (2 pts).
-          className="absolute grid place-items-center rounded-full border-[3px] border-rose-500 bg-rose-200"
+          // Classic red/white target: white ring with a red border (1 pt), red bullseye (2 pts).
+          className="absolute grid place-items-center rounded-full border-4 border-red-600 bg-white shadow-sm"
           style={{ width: TARGET_PX, height: TARGET_PX, ...place(spot) }}
         >
           <span
-            className="rounded-full bg-rose-500"
+            className="rounded-full bg-red-600"
             style={{ width: TARGET_PX * CENTER_FRACTION, height: TARGET_PX * CENTER_FRACTION }}
           />
         </button>
