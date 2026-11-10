@@ -62,6 +62,7 @@ Uses the Web Share API when available, otherwise copies to clipboard. The home p
 all best scores in one message.
 
 ## Shared behaviour
+- Every test has an SVG icon (`src/icons/<id>.svg`, one color + transparency) on the home page and in the test header. Shared text keeps the emoji.
 - Theme: dark only for now (`class="dark"` on `<html>` in `index.html`). Dark styles use Tailwind's `dark:` variant bound to that class, so a light theme can be added back later.
 - Grid games (Visual Memory, Sequence Memory, Number/Flash Order) share one board feedback: the frame turns green on success, red on a mistake (`components/boardFeedback.ts`).
 - Sharing (`components/ShareButton.tsx`): touch devices open the share sheet; desktop always copies to the clipboard. Without the async Clipboard API (plain http on a LAN address) it falls back to a hidden-textarea copy. The outcome is shown inside the button for 2.5 s (no layout jump).

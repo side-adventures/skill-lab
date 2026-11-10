@@ -8,4 +8,6 @@ They must stay readable at 18 px.
 
 Mask ids must be unique across files (`<test-id>-…`), because the icons may be inlined on one page.
 
-Not wired into the UI yet. All 20 tests have a first version; tap-speed is a placeholder, the 15 newest (everything except aim-trainer, tap-speed, visual-memory, number-order, flash-order) still need review.
+Shown via `components/TestIcon.tsx` (home page cards, test header); it falls back to the registry emoji if a file is missing. The emoji in the registry is still used in shared text messages. `src/tests/icons.test.ts` checks that every test has an icon, that only `currentColor` is used (black/white only inside masks), and that mask ids are unique.
+
+Tap Speed's icon is a placeholder for now.

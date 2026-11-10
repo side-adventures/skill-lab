@@ -5,6 +5,7 @@ import { getBest, saveResult, type ResultEntry } from '../lib/storage'
 import { storageId, type TestDefinition, type TestResult } from '../tests/types'
 import { Button } from './Button'
 import { ShareButton } from './ShareButton'
+import { TestIcon } from './TestIcon'
 
 type Phase =
   | { name: 'intro' }
@@ -177,7 +178,7 @@ function TestBar({ test, children }: { test: TestDefinition; children?: React.Re
   return (
     <div className="mb-4 flex items-center justify-between gap-3">
       <h1 className="flex items-center gap-2 text-xl font-bold">
-        <span aria-hidden>{test.icon}</span>
+        <TestIcon id={test.id} emoji={test.icon} className="size-7" />
         {test.name}
       </h1>
       {children}
