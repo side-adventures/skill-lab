@@ -8,4 +8,4 @@ They must stay readable at 18 px.
 
 Mask ids must be unique across files (`<test-id>-…`), because the icons may be inlined on one page.
 
-Not wired into the UI yet. Done: aim-trainer, tap-speed (placeholder), visual-memory, number-order, flash-order.
+Not wired into the UI yet. All 20 tests have a first version; tap-speed is a placeholder, the 15 newest (everything except aim-trainer, tap-speed, visual-memory, number-order, flash-order) still need review.
