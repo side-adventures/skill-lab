@@ -7,8 +7,8 @@ player can share and compare with friends.
 ## Constraints
 
 - **Frontend only.** No backend, no API calls. Must deploy as static files to GitHub Pages.
-- Works with **mouse and touch** (keyboard is optional, never required).
-- Works on phone and desktop widths.
+- **For now: desktop and dark theme only.** Mouse is the main input (keyboard optional, never required).
+  Phone / touch support and a light theme are postponed, not dropped.
 - Scores are stored **locally** (`localStorage`) — personal best + history per test.
 - Comparison with others is **manual**: the result screen offers a share text/link.
   (Future, not now: reference percentiles, real leaderboards via a hosted DB.)
@@ -62,7 +62,7 @@ Uses the Web Share API when available, otherwise copies to clipboard. The home p
 all best scores in one message.
 
 ## Shared behaviour
-- Theme: header button cycles Auto (device setting) → Light → Dark. Saved per browser (`skill-lab:theme`); `index.html` applies it before the page draws. Dark styles use Tailwind's `dark:` variant, bound to the `dark` class on `<html>`.
+- Theme: dark only for now (`class="dark"` on `<html>` in `index.html`). Dark styles use Tailwind's `dark:` variant bound to that class, so a light theme can be added back later.
 - Grid games (Visual Memory, Sequence Memory, Number/Flash Order) share one board feedback: the frame turns green on success, red on a mistake (`components/boardFeedback.ts`).
 - Sharing (`components/ShareButton.tsx`): touch devices open the share sheet; desktop always copies to the clipboard. Without the async Clipboard API (plain http on a LAN address) it falls back to a hidden-textarea copy. The outcome is shown inside the button for 2.5 s (no layout jump).
 - The result screen ignores taps/clicks for 0.8 s so a last tap in the test can't hit "Try again" by accident.

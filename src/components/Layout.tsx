@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ThemeToggle } from './ThemeToggle'
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -10,7 +9,6 @@ export function Layout({ children }: { children: ReactNode }) {
           <span className="grid size-8 place-items-center rounded-lg bg-violet-600 text-white">⚡</span>
           Skill Lab
         </Link>
-        <ThemeToggle />
       </header>
       <main className="flex-1 pb-10">{children}</main>
       <footer className="py-6 text-center text-xs text-zinc-500">

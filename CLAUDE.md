@@ -4,8 +4,11 @@ Static skill-test website (reaction, memory, focus…). Product spec: `docs/SPEC
 
 ## Hard rules
 - **Frontend only.** No backend, no network/API calls. Deployed to GitHub Pages from `dist/`.
-- Every test must work with **mouse and touch**; keyboard is a bonus, never required.
-- Must work at phone width (375px) and in light + dark mode (theme = `dark` class on `<html>`, see `src/lib/theme.ts`; always style with `dark:` variants).
+- **Current focus: desktop + dark theme only.** The site is always dark (`class="dark"` on `<html>` in
+  `index.html`, no toggle). Desktop with mouse is the target; keyboard is a bonus, never required.
+  Mobile / touch and a light theme may come back later, so don't break them needlessly: keep using
+  `dark:` variants for dark colors, `onPointerDown` for input, and avoid fixed desktop-only widths, but
+  don't spend effort testing or polishing them.
 - Scores are local only (`src/lib/storage.ts`, localStorage, always wrapped in try/catch).
 
 ## Stack
@@ -35,13 +38,13 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
    and a `category` (home page groups by `CATEGORIES` in `types.ts`). Entries without `Component` show as "Soon".
 3. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
    for timing-sensitive input; clear timers / rAF in effect cleanups.
-4. Verify by actually playing it in the browser preview (desktop + mobile viewport), not just by building.
+4. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
 
 ## Subagents (`.claude/agents/`)
 - `scoring-reviewer` — after adding a test or changing scoring / rules / round generation: hunts loopholes,
   unfair random setups and missing `scoreVersion` bumps; proves findings with unit tests, never edits app code.
 - `play-tester` — after building or changing a test and before merging into `main`: plays it on localhost
-  (desktop + mobile, light + dark) and reports bugs; never edits files.
+  (desktop, dark theme) and reports bugs; never edits files.
 - Both report back; the main session decides and applies fixes. They can run in parallel.
 
 ## Conventions
