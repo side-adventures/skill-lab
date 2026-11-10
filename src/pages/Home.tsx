@@ -146,7 +146,7 @@ function TestCard({ test, best }: { test: TestDefinition; best?: ResultEntry }) 
       <TestIcon
         id={test.id}
         emoji=""
-        className="pointer-events-none absolute -right-6 -bottom-7 size-32 opacity-[0.11] transition-opacity group-hover:opacity-[0.16]"
+        className="pointer-events-none absolute -right-6 -bottom-7 size-32 opacity-[0.16] transition-opacity group-hover:opacity-[0.22]"
         style={{ color }}
       />
       <div className="relative flex flex-1 flex-col">

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { allScoresShare } from '../lib/allScores'
 import { ComingSoonButton } from './ComingSoon'
+import { Logo } from './Logo'
 import { SettingsIcon, ShareIcon, StatsIcon } from './HeaderIcons'
 import { ShareButton } from './ShareButton'
 
@@ -13,7 +14,7 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6">
       <header className="flex items-center justify-between gap-4 py-5">
         <Link to="/" className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-          <span className="grid size-8 place-items-center rounded-lg bg-violet-600 text-white">⚡</span>
+          <Logo />
           Skill Lab
         </Link>
         <div className="flex items-center gap-2">
