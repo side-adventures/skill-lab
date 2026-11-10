@@ -34,11 +34,12 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
      Only the play phase: intro, result, best score, sharing are handled by `components/TestRunner.tsx`.
      A run that can't produce a score calls `onFinish({ score: 0, failed: 'why' })` — shown, never saved.
    - `scoring.ts` — pure logic (scoring, generation of rounds) + `scoring.test.ts`.
-2. Add an entry in `src/tests/registry.ts` with `Component: lazy(() => import('./<id>/<Name>Test'))`
+2. Add an icon `src/icons/<id>.svg` (style rules in `src/icons/README.md`; `icons.test.ts` fails without one).
+3. Add an entry in `src/tests/registry.ts` with `Component: lazy(() => import('./<id>/<Name>Test'))`
    and a `category` (home page groups by `CATEGORIES` in `types.ts`). Entries without `Component` show as "Soon".
-3. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
+4. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
    for timing-sensitive input; clear timers / rAF in effect cleanups.
-4. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
+5. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
 
 ## Subagents (`.claude/agents/`)
 - `scoring-reviewer` — after adding a test or changing scoring / rules / round generation: hunts loopholes,

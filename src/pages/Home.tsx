@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ShareButton } from '../components/ShareButton'
+import { TestIcon } from '../components/TestIcon'
 import { buildAllScoresText, homeUrl } from '../lib/share'
 import { getBest } from '../lib/storage'
 import { TESTS } from '../tests/registry'
@@ -36,7 +37,7 @@ export function Home() {
                     to={`/test/${t.id}`}
                     className={`flex h-full gap-4 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-violet-400 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-violet-500 ${available ? '' : 'opacity-60'}`}
                   >
-                    <span className="text-3xl" aria-hidden>{t.icon}</span>
+                    <TestIcon id={t.id} emoji={t.icon} className="size-9 text-zinc-200" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="font-semibold">{t.name}</h3>

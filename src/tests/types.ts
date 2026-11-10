@@ -26,6 +26,7 @@ export interface TestComponentProps {
 export interface TestDefinition {
   id: string
   name: string
+  /** Emoji: used in shared text messages. The site shows src/icons/<id>.svg instead. */
   icon: string
   category: Category
   tagline: string
