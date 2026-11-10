@@ -5,6 +5,16 @@ export type Category = 'Speed' | 'Memory' | 'Focus' | 'Thinking' | 'Estimation' 
 /** Display order of categories on the home page. */
 export const CATEGORIES: Category[] = ['Speed', 'Memory', 'Focus', 'Thinking', 'Estimation', 'Motor']
 
+/** Color of each category (6-digit hex, so alpha can be appended: `${color}26`). Used for icons, dots, chips. */
+export const CATEGORY_COLORS: Record<Category, string> = {
+  Speed: '#fbbf24', // amber-400
+  Memory: '#a78bfa', // violet-400
+  Focus: '#38bdf8', // sky-400
+  Thinking: '#34d399', // emerald-400
+  Estimation: '#fb7185', // rose-400
+  Motor: '#fb923c', // orange-400
+}
+
 /** What a test reports when the player finishes. */
 export interface TestResult {
   score: number
@@ -26,6 +36,7 @@ export interface TestComponentProps {
 export interface TestDefinition {
   id: string
   name: string
+  /** Emoji: used in shared text messages. The site shows src/icons/<id>.svg instead. */
   icon: string
   category: Category
   tagline: string

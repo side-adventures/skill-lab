@@ -7,8 +7,8 @@ player can share and compare with friends.
 ## Constraints
 
 - **Frontend only.** No backend, no API calls. Must deploy as static files to GitHub Pages.
-- Works with **mouse and touch** (keyboard is optional, never required).
-- Works on phone and desktop widths.
+- **For now: desktop and dark theme only.** Mouse is the main input (keyboard optional, never required).
+  Phone / touch support and a light theme are postponed, not dropped.
 - Scores are stored **locally** (`localStorage`) — personal best + history per test.
 - Comparison with others is **manual**: the result screen offers a share text/link.
   (Future, not now: reference percentiles, real leaderboards via a hosted DB.)
@@ -21,7 +21,18 @@ player can share and compare with friends.
 
 ## Tests
 
-The home page groups tests by category (Speed, Memory, Focus, Thinking, Estimation, Motor).
+Home page (`src/pages/Home.tsx`):
+- Header (on every page): logo, "Share scores" (all best scores; "Play a test first" if none), and Stats /
+  Settings icon buttons that only show a "coming soon" note for now.
+- Title, subtitle and "x of 20 played" with a progress bar.
+- Filters: category chips (All + 6 categories; the selected chip takes its category color) and an
+  All / Not played switch. Stored in the URL (`?category=Memory&show=unplayed`), so they survive going
+  into a test and back. An empty result shows "You've played every … test."
+- One grid of cards in alphabetical order (a custom order may come later), all the same height:
+  icon (category color), best score (number + unit) or a "Not played" label, title, 2-line description,
+  and category · duration pinned to the bottom. A large faded icon in the corner is the card texture.
+- Page background: violet glows in the accent color over a fine dot grid.
+- Category colors: `CATEGORY_COLORS` in `src/tests/types.ts`.
 A run can also end **without a score** (e.g. Line Tracing when you leave the path): the result
 screen then shows why, and nothing is saved.
 
@@ -58,10 +69,12 @@ screen then shows why, and nothing is saved.
 ## Share format
 
 `I scored 243 ms on Reaction Time at Skill Lab — can you beat it? <url>#/test/reaction`
-Uses the Web Share API when available, otherwise copies to clipboard. The home page can also share
+Uses the Web Share API when available, otherwise copies to clipboard. The header's "Share scores" button shares
 all best scores in one message.
 
 ## Shared behaviour
+- Every test has an SVG icon (`src/icons/<id>.svg`, one color + transparency) on the home page and in the test header. Shared text keeps the emoji.
+- Theme: dark only for now (`class="dark"` on `<html>` in `index.html`). Dark styles use Tailwind's `dark:` variant bound to that class, so a light theme can be added back later.
 - Grid games (Visual Memory, Sequence Memory, Number/Flash Order) share one board feedback: the frame turns green on success, red on a mistake (`components/boardFeedback.ts`).
 - Sharing (`components/ShareButton.tsx`): touch devices open the share sheet; desktop always copies to the clipboard. Without the async Clipboard API (plain http on a LAN address) it falls back to a hidden-textarea copy. The outcome is shown inside the button for 2.5 s (no layout jump).
 - The result screen ignores taps/clicks for 0.8 s so a last tap in the test can't hit "Try again" by accident.

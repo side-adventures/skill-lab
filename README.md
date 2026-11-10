@@ -11,7 +11,9 @@ npm run build   # static build into dist/
 ```
 
 Live at https://side-adventures.github.io/skill-lab/. Every push to `main` deploys via
-`.github/workflows/deploy.yml`, so changes are made on feature branches and merged into `main`
-only when they should go live.
+`.github/workflows/deploy.yml`.
+
+Branches: work happens on feature branches off `develop` and is merged back into `develop`.
+`develop` is merged into `main` from time to time to publish.
 
 See [docs/SPEC.md](docs/SPEC.md) for the product spec.
