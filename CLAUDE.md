@@ -5,7 +5,7 @@ Static skill-test website (reaction, memory, focus…). Product spec: `docs/SPEC
 ## Hard rules
 - **Frontend only.** No backend, no network/API calls. Deployed to GitHub Pages from `dist/`.
 - Every test must work with **mouse and touch**; keyboard is a bonus, never required.
-- Must work at phone width (375px) and in light + dark mode.
+- Must work at phone width (375px) and in light + dark mode (theme = `dark` class on `<html>`, see `src/lib/theme.ts`; always style with `dark:` variants).
 - Scores are local only (`src/lib/storage.ts`, localStorage, always wrapped in try/catch).
 
 ## Stack
