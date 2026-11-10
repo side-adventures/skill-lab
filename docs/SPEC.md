@@ -21,7 +21,18 @@ player can share and compare with friends.
 
 ## Tests
 
-The home page groups tests by category (Speed, Memory, Focus, Thinking, Estimation, Motor).
+Home page (`src/pages/Home.tsx`):
+- Header (on every page): logo, "Share scores" (all best scores; "Play a test first" if none), and Stats /
+  Settings icon buttons that only show a "coming soon" note for now.
+- Title, subtitle and "x of 20 played" with a progress bar.
+- Filters: category chips (All + 6 categories; the selected chip takes its category color) and an
+  All / Not played switch. Stored in the URL (`?category=Memory&show=unplayed`), so they survive going
+  into a test and back. An empty result shows "You've played every … test."
+- One grid of cards in alphabetical order (a custom order may come later), all the same height:
+  icon (category color), best score (number + unit) or a "Not played" label, title, 2-line description,
+  and category · duration pinned to the bottom. A large faded icon in the corner is the card texture.
+- Page background: violet glows in the accent color over a fine dot grid.
+- Category colors: `CATEGORY_COLORS` in `src/tests/types.ts`.
 A run can also end **without a score** (e.g. Line Tracing when you leave the path): the result
 screen then shows why, and nothing is saved.
 
@@ -58,7 +69,7 @@ screen then shows why, and nothing is saved.
 ## Share format
 
 `I scored 243 ms on Reaction Time at Skill Lab — can you beat it? <url>#/test/reaction`
-Uses the Web Share API when available, otherwise copies to clipboard. The home page can also share
+Uses the Web Share API when available, otherwise copies to clipboard. The header's "Share scores" button shares
 all best scores in one message.
 
 ## Shared behaviour
