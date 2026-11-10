@@ -19,6 +19,7 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 - `main` is the live site: every push to `main` deploys to GitHub Pages
   (https://side-adventures.github.io/skill-lab/). Only `develop` is merged into `main`, and only when
   the user says to publish. Never commit directly on `main`.
+- After a branch is merged, delete it locally and on GitHub.
 
 ## Commands
 - `npm run dev` — dev server (browser preview: `.claude/launch.json` config `dev`, port 5173; always test on localhost)
