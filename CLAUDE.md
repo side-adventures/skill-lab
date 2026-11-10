@@ -36,7 +36,7 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
    - `scoring.ts` — pure logic (scoring, generation of rounds) + `scoring.test.ts`.
 2. Add an icon `src/icons/<id>.svg` (style rules in `src/icons/README.md`; `icons.test.ts` fails without one).
 3. Add an entry in `src/tests/registry.ts` with `Component: lazy(() => import('./<id>/<Name>Test'))`
-   and a `category` (home page groups by `CATEGORIES` in `types.ts`). Entries without `Component` show as "Soon".
+   and a `category` (one of `CATEGORIES`; its color comes from `CATEGORY_COLORS` in `types.ts`).
 4. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
    for timing-sensitive input; clear timers / rAF in effect cleanups.
 5. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
@@ -51,5 +51,5 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 ## Conventions
 - Never change a test's scoring in a way that makes old saved scores incomparable without bumping that
   test's `scoreVersion` in the registry (stores results under a new key, see `storageId` in `types.ts`).
-- Keep components small; shared UI goes in `src/components/` (GetReady, TimerBar, DrainBar, NumberPad, Button, ShareButton, `boardBg` for grid boards)
+- Keep components small; shared UI goes in `src/components/` (GetReady, TimerBar, DrainBar, NumberPad, Button, ShareButton, TestIcon, ComingSoonButton, `boardBg` for grid boards)
   and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `spreadInts`, `shuffle` …).
