@@ -36,7 +36,10 @@ export function Home() {
       <section className="flex flex-wrap items-end justify-between gap-4 pt-6 pb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Test your skills in minutes.</h1>
-          <p className="mt-2 text-zinc-400">Pick a test, get a score, beat your friends.</p>
+          <p className="mt-2 max-w-xl text-zinc-400">
+            Quick, playful challenges for reaction, memory, focus and more. Every test gives you one score to
+            beat: chase your personal best, then share it with your friends.
+          </p>
         </div>
         <Progress played={playedCount} total={tests.length} />
       </section>
