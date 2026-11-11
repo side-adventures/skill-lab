@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { GetReady } from '../../components/GetReady'
 import { NumberPad } from '../../components/NumberPad'
+import { BelowStage } from '../../components/Stage'
 import { TimerBar } from '../../components/TimerBar'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
@@ -45,11 +46,11 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
 
   const color = flash === 'ok' ? 'text-emerald-500' : flash === 'bad' ? 'text-rose-500' : ''
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <TimerBar remaining={remaining} total={DURATION_MS}>
         ✓ {correct} · ✗ {wrong}
       </TimerBar>
-      <div className="mb-4 rounded-2xl bg-white py-8 text-center dark:bg-zinc-900">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl bg-white text-center dark:bg-zinc-900">
         <p className={`text-5xl font-bold tabular-nums transition-colors sm:text-6xl ${color}`}>
           {problem.a} {problem.op} {problem.b}
         </p>
@@ -57,7 +58,9 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
           {input || <span className="text-zinc-300 dark:text-zinc-700">?</span>}
         </p>
       </div>
-      <NumberPad value={input} onChange={setInput} onSubmit={submit} maxLength={3} disabled={remaining <= 0} />
+      <BelowStage>
+        <NumberPad value={input} onChange={setInput} onSubmit={submit} maxLength={3} disabled={remaining <= 0} layout="row" />
+      </BelowStage>
     </div>
   )
 }

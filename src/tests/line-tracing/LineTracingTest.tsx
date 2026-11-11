@@ -89,16 +89,16 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
   const dTraced = traced.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span className="tabular-nums">{(elapsed / 1000).toFixed(2)} s</span>
         <span>{Math.floor((progress / total) * 100)} %</span>
       </div>
-      <div className="play-area rounded-2xl bg-white p-2 dark:bg-zinc-900" style={{ touchAction: 'none' }}>
+      <div className="play-area min-h-0 flex-1 rounded-2xl bg-white p-2 dark:bg-zinc-900" style={{ touchAction: 'none' }}>
         <svg
           ref={svg}
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className="w-full cursor-crosshair"
+          className="block size-full cursor-crosshair"
           onPointerMove={onMove}
           onPointerDown={(e) => handle(toSvg(e.clientX, e.clientY))}
           onPointerUp={(e) => phase === 'tracing' && e.pointerType !== 'mouse' && fail(toSvg(e.clientX, e.clientY))}

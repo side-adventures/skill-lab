@@ -56,7 +56,7 @@ export default function StopTheBarTest({ onFinish }: TestComponentProps) {
 
   const last = errors.at(-1)
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span>Round {roundIndex + 1} / {ROUNDS}</span>
         {errors.length > 0 && <span>Avg so far: {scoreRounds(errors)} ms</span>}
@@ -65,7 +65,7 @@ export default function StopTheBarTest({ onFinish }: TestComponentProps) {
         type="button"
         onPointerDown={(e) => e.button === 0 && press()}
         onKeyDown={(e) => e.preventDefault()}
-        className="play-area flex h-[50vh] max-h-[420px] min-h-[260px] w-full cursor-pointer flex-col justify-center gap-8 rounded-2xl bg-white px-6 dark:bg-zinc-900"
+        className="play-area flex min-h-0 flex-1 w-full cursor-pointer flex-col justify-center gap-8 rounded-2xl bg-white px-6 dark:bg-zinc-900"
       >
         <div className="relative h-16 w-full rounded-xl bg-zinc-200 dark:bg-zinc-800">
           <div className="absolute inset-y-[-8px] w-1 -translate-x-1/2 rounded bg-emerald-500" style={{ left: `${round.target * 100}%` }} />

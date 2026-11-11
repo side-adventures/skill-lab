@@ -18,7 +18,7 @@ export function GetReady({ onDone, from = 3 }: { onDone: () => void; from?: numb
     return () => window.clearTimeout(t)
   }, [n, onDoneRef])
   return (
-    <div className="grid h-[50vh] max-h-[420px] min-h-[260px] place-items-center rounded-2xl bg-white dark:bg-zinc-900">
+    <div className="grid h-full place-items-center">
       <div className="text-center">
         <p className="text-sm tracking-wide text-zinc-500 uppercase">Get ready</p>
         <p key={n} className="mt-2 text-7xl font-bold tabular-nums">{n || 'Go!'}</p>

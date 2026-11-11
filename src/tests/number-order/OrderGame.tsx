@@ -63,15 +63,16 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
     : 'Wrong tile'
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-2 flex justify-between text-sm text-zinc-500">
         <span>{roundLabel(round)}</span>
         <span>{cells.length} tiles · {(memorizeMs / 1000).toFixed(memorizeMs < 1000 ? 2 : 1)} s</span>
       </div>
       <div className="mb-2 h-1.5">{phase === 'show' && <DrainBar key={round} ms={memorizeMs} />}</div>
       <p className="mb-3 text-center font-medium" role="status">{message}</p>
+      <div className="relative min-h-0 flex-1">
       <div
-        className={`play-area mx-auto grid w-full max-w-[520px] gap-1.5 rounded-2xl p-2 sm:gap-2 ${
+        className={`play-area absolute inset-y-0 left-1/2 grid h-full -translate-x-1/2 gap-1.5 rounded-2xl p-2 sm:gap-2 ${
           boardBg(phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null)
         }`}
         // Fixed rows + columns: tiles keep their size whether they show a number or not.
@@ -103,6 +104,7 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
             </button>
           )
         })}
+      </div>
       </div>
     </div>
   )

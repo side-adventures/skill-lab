@@ -65,7 +65,7 @@ screen then shows why, and nothing is saved.
 | `tap-speed` | Tap Speed | Speed | Tap one big button for 10 s (timer starts at first tap). | Taps per second | Higher |
 | `stop-the-bar` | Stop the Bar | Speed | 5 rounds, each at a different speed (0.35–1 track widths/s, shuffled); green line at 45–90 % of the track, but always at least 0.8 s of travel away (so fast rounds get a far line). Tap to start, tap to stop. | Average absolute timing error (ms) | Lower |
 | `mental-rotation` | Mental Rotation | Thinking | Two 2D 7-square shapes (chiral, so mirrors are never identical); the right one is rotated 45°–315° and mirrored half the time. Answer SAME / MIRRORED. 60 s. | Correct − wrong | Higher |
-| `line-tracing` | Line Tracing | Motor | Random smooth path (7 alternating turns) on a 1000×600 board, corridor 60 units wide. Start on GO, finish on the flag. Leaving the corridor (or lifting the finger) ends the run with no score. | Time | Lower |
+| `line-tracing` | Line Tracing | Motor | Random smooth path (7 alternating turns) on a 1000×667 (3:2) board, corridor 60 units wide. Start on GO, finish on the flag. Leaving the corridor (or lifting the finger) ends the run with no score. | Time | Lower |
 | `geometry` | Eye for Geometry | Estimation | 10 rounds, one of each task in random order: middle of a line, center of a circle, make an angle, name the marked angle (typed), halve the marked angle (the arm can't leave the angle), make a line parallel to another (rotate around a fixed end; either direction counts), complete a square, copy a length, point equally far from 3 dots, slide a fixed-angle cut to halve an irregular shape. Each round gives 0–100 points, falling linearly with error (tolerances: 8 % of length, 25 % of radius, 25°, 25°, 15°, 10°, 25 % of side, 25 % of length, 30 % of radius, 10 % of area). Result lists every round. | Average points (%) | Higher |
 
 ## Share format
@@ -86,7 +86,14 @@ all best scores in one message.
 - **"?" while playing:** a centered overlay (`components/RulesOverlay.tsx`) with the same rules, Restart (new
   run) and Back to start (rules screen). The game keeps running underneath; closes with ✕, a click outside or
   Escape.
-- Game and result screens are still the earlier versions (redesign planned).
+- **Playing:** every test plays inside the same stage (`components/Stage.tsx`, 768 × 512), so the area never
+  changes size or position. Tests with an on-screen keypad (Mental Math, Number Memory, Quick Count) show it as
+  a single row *below* the stage (`<BelowStage>`); the keyboard works too. Layouts inside the stage: large
+  click areas fill it; square grids (Visual / Sequence Memory) and the 6×5 grid (Number / Flash Order) use the
+  full height, centered; N-Back has the grid left and MATCH right; Quick Count has the dots left and your guess
+  right; Eye for Geometry has the board left and the task, controls (incl. its keypad) and result right.
+- Game info (time, progress, score) still sits inside each test's area for now; the info row above the stage
+  and the hint line below it come with the game screen redesign. The result screen is still the old version.
 
 ## Stats page (`#/stats`, `src/pages/Stats.tsx`)
 - Same category chips as the home page (stored in the URL). `?open=<id>` unfolds that test's row and scrolls to it.

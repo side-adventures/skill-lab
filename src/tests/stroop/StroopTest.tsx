@@ -68,18 +68,18 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
 
   const ring = flash === 'ok' ? 'ring-emerald-500' : flash === 'bad' ? 'ring-rose-500' : 'ring-transparent'
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <TimerBar remaining={remaining} total={DURATION_MS}>
         ✓ {correct} · ✗ {wrong}
       </TimerBar>
       {/* Always-dark panel so all four ink colors stay readable in light mode too */}
-      <div className={`grid h-48 place-items-center rounded-2xl bg-zinc-900 ring-4 transition-shadow sm:h-56 ${ring}`}>
+      <div className={`grid min-h-0 flex-1 place-items-center rounded-2xl bg-zinc-900 ring-4 transition-shadow ${ring}`}>
         <span className="text-5xl font-black tracking-wider sm:text-6xl" style={{ color: COLORS[trial.ink].hex }}>
           {COLORS[trial.word].label}
         </span>
       </div>
       <p className="my-3 text-center text-sm text-zinc-500">Tap the color of the ink</p>
-      <div className="play-area grid grid-cols-2 gap-3">
+      <div className="play-area mx-auto grid w-full max-w-md grid-cols-2 gap-3">
         {COLORS.map((c, i) => (
           <button
             key={c.name}

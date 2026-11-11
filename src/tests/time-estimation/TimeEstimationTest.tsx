@@ -37,7 +37,7 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
 
   const bg = phase === 'timing' ? 'bg-violet-600' : 'bg-sky-600'
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span>Round {roundIndex + 1} / {ROUNDS}</span>
         {rounds.length > 0 && <span>Avg error so far: {scoreRounds(rounds).toFixed(1)} %</span>}
@@ -46,7 +46,7 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
         type="button"
         onPointerDown={(e) => e.button === 0 && press()}
         onKeyDown={(e) => e.preventDefault()}
-        className={`play-area flex h-[60vh] max-h-[480px] min-h-[300px] w-full cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center text-white transition-colors ${bg}`}
+        className={`play-area flex min-h-0 flex-1 w-full cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center text-white transition-colors ${bg}`}
       >
         {phase === 'ready' && (
           <>

@@ -8,10 +8,12 @@ interface Props {
   onSubmit: (value: string) => void
   maxLength?: number
   disabled?: boolean
+  /** 'row': one line (1–9, 0, ⌫, OK) for below the stage; 'grid': classic 3 × 4 keypad. */
+  layout?: 'row' | 'grid'
 }
 
 /** On-screen digit keypad (touch friendly) that also accepts the physical keyboard. */
-export function NumberPad({ value, onChange, onSubmit, maxLength = 4, disabled }: Props) {
+export function NumberPad({ value, onChange, onSubmit, maxLength = 4, disabled, layout = 'grid' }: Props) {
   // Tracks the latest value synchronously, so several keys between renders all count.
   const current = useRef(value)
   useEffect(() => {
@@ -48,9 +50,12 @@ export function NumberPad({ value, onChange, onSubmit, maxLength = 4, disabled }
     return () => window.removeEventListener('keydown', onKey)
   }, [pressRef])
 
-  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', 'OK']
+  const row = layout === 'row'
+  const keys = row
+    ? ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '⌫', 'OK']
+    : ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', 'OK']
   return (
-    <div className="play-area mx-auto grid max-w-xs grid-cols-3 gap-2">
+    <div className={`play-area mx-auto grid gap-2 ${row ? 'w-full grid-cols-[repeat(10,minmax(0,1fr))_minmax(0,1fr)_minmax(0,1.6fr)]' : 'max-w-xs grid-cols-3'}`}>
       {keys.map((k) => (
         <button
           key={k}
@@ -61,7 +66,7 @@ export function NumberPad({ value, onChange, onSubmit, maxLength = 4, disabled }
             e.preventDefault()
             press(k)
           }}
-          className={`h-14 rounded-xl text-xl font-semibold transition-colors disabled:opacity-40 ${
+          className={`${row ? 'h-12' : 'h-14'} rounded-xl text-xl font-semibold transition-colors disabled:opacity-40 ${
             k === 'OK'
               ? 'bg-violet-600 text-white active:bg-violet-700'
               : 'bg-zinc-200 active:bg-zinc-300 dark:bg-zinc-800 dark:active:bg-zinc-700'

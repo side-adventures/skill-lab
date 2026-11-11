@@ -7,6 +7,7 @@ import { CATEGORY_COLORS, storageId, type TestDefinition, type TestResult } from
 import { Button } from './Button'
 import { RulesContent } from './RulesContent'
 import { RulesOverlay } from './RulesOverlay'
+import { Stage } from './Stage'
 import { ShareButton } from './ShareButton'
 import { TestIcon } from './TestIcon'
 
@@ -72,9 +73,11 @@ export function TestRunner({ test }: { test: TestDefinition }) {
     )
     body = (
       <>
-        <Suspense fallback={<p className="py-20 text-center text-zinc-500">Loading…</p>}>
-          <Component key={attempt} onFinish={finish} />
-        </Suspense>
+        <Stage>
+          <Suspense fallback={<p className="grid h-full place-items-center text-zinc-500">Loading…</p>}>
+            <Component key={attempt} onFinish={finish} />
+          </Suspense>
+        </Stage>
         {rulesOpen && (
           <RulesOverlay
             test={test}

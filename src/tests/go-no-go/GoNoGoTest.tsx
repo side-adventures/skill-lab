@@ -81,7 +81,7 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
   }
   const showStim = stage === 'stim' || (stage === 'feedback' && feedback === 'false')
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span>{i + 1} / {trials.length}</span>
         <span>Mistakes: {stats.current.misses + stats.current.falseTaps}</span>
@@ -90,7 +90,7 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
         type="button"
         onPointerDown={(e) => e.button === 0 && tap()}
         onKeyDown={(e) => e.preventDefault()}
-        className="play-area flex h-[60vh] max-h-[480px] min-h-[300px] w-full flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900"
+        className="play-area flex min-h-0 flex-1 w-full flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900"
       >
         {/* No fade: the color must never change while the circle is still (partly) visible. */}
         <span className={`size-40 rounded-full sm:size-48 ${showStim ? (trials[i] ? 'bg-emerald-500' : 'bg-rose-600') : 'bg-transparent'}`} />

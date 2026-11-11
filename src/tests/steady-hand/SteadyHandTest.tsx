@@ -77,7 +77,7 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
   }
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <TimerBar remaining={hud.remaining} total={DURATION_MS}>
         {playing ? `Inside: ${hud.pct.toFixed(1)} %` : 'Not started'}
       </TimerBar>
@@ -87,7 +87,7 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
         onPointerDown={track}
         onPointerLeave={() => (pointer.current = null)}
         onPointerUp={(e) => e.pointerType === 'touch' && (pointer.current = null)}
-        className="play-area relative h-[60vh] max-h-[480px] min-h-[300px] w-full cursor-crosshair overflow-hidden rounded-2xl bg-white dark:bg-zinc-900"
+        className="play-area relative min-h-0 flex-1 w-full cursor-crosshair overflow-hidden rounded-2xl bg-white dark:bg-zinc-900"
         style={{ touchAction: 'none' }}
       >
         <div

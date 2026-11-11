@@ -65,11 +65,12 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
   }
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 text-sm text-zinc-500">Length {seq.length}</div>
       <p className="mb-3 text-center font-medium" role="status">{message[phase]}</p>
+      <div className="relative min-h-0 flex-1">
       <div
-        className={`play-area mx-auto grid aspect-square w-full max-w-[min(420px,55vh)] gap-2 rounded-2xl p-2 ${boardBg(phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null)}`}
+        className={`play-area absolute inset-y-0 left-1/2 grid aspect-square h-full -translate-x-1/2 gap-2 rounded-2xl p-2 ${boardBg(phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null)}`}
         style={{ gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: GRID * GRID }, (_, i) => (
@@ -83,6 +84,7 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
             }`}
           />
         ))}
+      </div>
       </div>
     </div>
   )
