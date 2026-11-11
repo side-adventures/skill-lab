@@ -1,5 +1,8 @@
 import { useRef, useState } from 'react'
 import { Button } from '../../components/Button'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { SquarePanelLayout } from '../../components/game/layouts'
+import { RoundResult } from '../../components/game/RoundResult'
 import { NumberPad } from '../../components/NumberPad'
 import type { TestComponentProps } from '../types'
 import { add, angleTo, clampToRange, dirOf, makeTasks, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
@@ -119,16 +122,17 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
 
   const handle = handleAt(task, answer)
   const ready = task.input === 'number' ? typed !== '' : touched
+  const soFar = Math.round(results.reduce((sum, r) => sum + r.ev.points, 0))
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="mb-3 flex justify-between text-sm text-zinc-500">
-        <span>Round {index + 1} / {tasks.length}</span>
-        <span>{results.length ? `${Math.round(results.reduce((s, r) => s + r.ev.points, 0))} pts so far` : ''}</span>
-      </div>
-      {/* Square board on the left at full height; the task, its controls and the result on the right. */}
-      <div className="flex min-h-0 flex-1 gap-6">
-        <div className="play-area aspect-square h-full overflow-hidden rounded-2xl bg-white dark:bg-zinc-900" style={{ touchAction: 'none' }}>
+    <>
+      <GameInfo
+        left={<InfoValue value={`Round ${index + 1}`} of={tasks.length} />}
+        middle={evaluation ? '' : task.input === 'number' ? 'Type the angle, then Enter' : touched ? 'Adjust, then Done' : 'Click or drag on the board'}
+        right={<InfoValue label="Score" value={soFar} unit="pts" />}
+      />
+      <SquarePanelLayout
+        board={
           <svg
             ref={svg}
             viewBox="0 0 100 100"
@@ -147,34 +151,26 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
             {handle && !evaluation && <circle cx={handle.x} cy={handle.y} r={2.6} className="fill-violet-500/30 stroke-violet-500" strokeWidth={0.5} />}
             {evaluation?.solution.map((s, i) => <Draw key={`s${i}`} shape={s} tone="solution" />)}
           </svg>
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <p className="text-xl font-bold">{task.title}</p>
-          <p className="mt-1 text-sm text-zinc-400">{task.prompt}</p>
-          <div className="mt-auto">
-            {evaluation ? (
-              <div>
-                <p className="text-4xl font-bold tabular-nums">{evaluation.points} pts</p>
-                <p className="mb-4 text-zinc-400">{evaluation.label}</p>
-                <Button onClick={next} autoFocus className="w-full">
-                  {index + 1 >= tasks.length ? 'See result' : 'Next'}
-                </Button>
-              </div>
-            ) : task.input === 'number' ? (
-              <>
-                <p className="mb-3 h-10 text-3xl font-bold tabular-nums">{typed ? `${typed}°` : <span className="text-zinc-600">–</span>}</p>
-                <NumberPad value={typed} onChange={setTyped} onSubmit={submit} maxLength={3} />
-              </>
-            ) : (
-              <div>
-                <p className="mb-3 text-sm text-zinc-500">{touched ? 'Adjust as much as you like, then confirm.' : 'Click or drag on the board.'}</p>
+        }
+        panel={
+          <>
+            <p className="text-2xl font-bold">{task.title}</p>
+            <p className="mt-1 text-zinc-400">{task.prompt}</p>
+            <div className="mt-auto">
+              {evaluation ? (
+                <RoundResult value={evaluation.points} unit="pts" line={evaluation.label} onContinue={next} />
+              ) : task.input === 'number' ? (
+                <>
+                  <p className="mb-3 h-12 text-4xl font-bold tabular-nums">{typed ? `${typed}°` : <span className="text-zinc-700">–</span>}</p>
+                  <NumberPad value={typed} onChange={setTyped} onSubmit={submit} maxLength={3} />
+                </>
+              ) : (
                 <Button onClick={() => submit()} disabled={!ready} className="w-full">Done</Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+              )}
+            </div>
+          </>
+        }
+      />
+    </>
   )
-
 }

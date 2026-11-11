@@ -33,15 +33,17 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 ## Adding a test
 1. Create `src/tests/<id>/` with:
    - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`).
-     It renders inside the fixed stage (768 × 512): root element `flex h-full flex-col`, the play area takes
-     the remaining height (`min-h-0 flex-1`), never a viewport-based height. An on-screen keypad goes in
-     `<BelowStage>` (`NumberPad layout="row"`).
-     Only the play phase: intro, result, best score, sharing are handled by `components/TestRunner.tsx`.
+     Only the play phase: intro, countdown, result, best score, sharing are handled by `TestRunner` / `GameFrame`.
      A run that can't produce a score calls `onFinish({ score: 0, failed: 'why' })` — shown, never saved.
+     Build it from the shared pieces in `components/game/`: pick one layout (`FullLayout`, `PromptLayout`,
+     `SquareLayout`, `SquarePanelLayout`), render exactly one `<GameInfo left middle right timer>` for the info
+     row, and use `AnswerButtons`, `TileGrid`, `RoundResult`, `Lives`, `useAnswerFlash`, `useLater`,
+     `END_MOMENT_MS` instead of hand-made versions. Never size anything by the viewport.
    - `scoring.ts` — pure logic (scoring, generation of rounds) + `scoring.test.ts`.
 2. Add an icon `src/icons/<id>.svg` (style rules in `src/icons/README.md`; `icons.test.ts` fails without one).
 3. Add an entry in `src/tests/registry.ts` with `Component: lazy(() => import('./<id>/<Name>Test'))`,
-   a `category` (one of `CATEGORIES`; its color comes from `CATEGORY_COLORS` in `types.ts`), and the rules:
+   a `category` (one of `CATEGORIES`; its color comes from `CATEGORY_COLORS` in `types.ts`), a `start` mode
+   (`countdown` | `quick` | `none`, see `StartMode` in `types.ts`), and the rules:
    `tagline` (one sentence, also on the home card), `skill` ("Tests …"), `howTo` and `scoring` (short lines,
    as many as needed; say "click", keep it accurate to the code). Check the rules fit the 3:2 stage (768 × 512).
 4. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
@@ -59,5 +61,5 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 - **While in development: don't bump `scoreVersion`** when reworking a test; old scores don't matter yet.
   Later (once there are real users), a change that makes old scores incomparable bumps that test's
   `scoreVersion` in the registry (stores results under a new key, see `storageId` in `types.ts`).
-- Keep components small; shared UI goes in `src/components/` (Stage/BelowStage, GetReady, TimerBar, DrainBar, NumberPad, Button, ShareButton, TestIcon, CategoryChips, AttemptGraph, ComingSoonButton, `boardBg` for grid boards)
-  and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `spreadInts`, `shuffle` …).
+- Keep components small; shared UI goes in `src/components/` (game frame + layouts + AnswerButtons / TileGrid / RoundResult / GameInfo in `components/game/`, NumberPad, Button, ShareButton, TestIcon, CategoryChips, AttemptGraph, ComingSoonButton)
+  and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `useLater`, `useAnswerFlash`, `correctMinusWrong`, `spreadInts`, `shuffle` …).
