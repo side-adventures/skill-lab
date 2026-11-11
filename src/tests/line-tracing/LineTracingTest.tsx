@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { TestComponentProps } from '../types'
 import { END_RADIUS, HALF_WIDTH, HEIGHT, WIDTH, cumulative, makeControlPoints, nearest, samplePath, type Pt } from './scoring'
 
-type Phase = 'waiting' | 'tracing' | 'done'
+// waiting: not on GO yet · armed: on GO, nothing counts yet · tracing: left GO along the path, timer runs
+type Phase = 'waiting' | 'armed' | 'tracing' | 'done'
 
 export default function LineTracingTest({ onFinish }: TestComponentProps) {
   const path = useMemo(() => samplePath(makeControlPoints()), [])
@@ -11,7 +12,13 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
   const start = path[0], end = path[path.length - 1]
 
   const svg = useRef<SVGSVGElement>(null)
-  const [phase, setPhase] = useState<Phase>('waiting')
+  const [phase, setPhaseState] = useState<Phase>('waiting')
+  // Pointer events come in bursts; the ref lets every point in a burst see the latest phase.
+  const phaseRef = useRef<Phase>('waiting')
+  const setPhase = (p: Phase) => {
+    phaseRef.current = p
+    setPhaseState(p)
+  }
   const [progress, setProgress] = useState(0) // arc length reached
   const [elapsed, setElapsed] = useState(0)
   const [failAt, setFailAt] = useState<Pt | null>(null)
@@ -47,17 +54,26 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     endTimer.current = window.setTimeout(() => onFinish({ score: ms }), 600)
   }
 
+  const inStart = (q: Pt) => Math.hypot(q.x - start.x, q.y - start.y) <= END_RADIUS
+
   const handle = (p: Pt) => {
-    if (phase === 'waiting') {
-      if (Math.hypot(p.x - start.x, p.y - start.y) <= END_RADIUS) {
-        startedAt.current = performance.now()
-        last.current = p
-        reached.current = 0
-        setPhase('tracing')
-      }
+    if (phaseRef.current === 'waiting') {
+      if (inStart(p)) setPhase('armed')
       return
     }
-    if (phase !== 'tracing') return
+    if (phaseRef.current === 'armed') {
+      if (inStart(p)) return
+      // Left GO: the run (and the timer) starts only if you left it along the path.
+      const { dist, along } = nearest(p, path, acc)
+      if (dist > HALF_WIDTH) return setPhase('waiting')
+      startedAt.current = performance.now()
+      last.current = p
+      reached.current = Math.min(along, 80)
+      setProgress(reached.current)
+      setPhase('tracing')
+      return
+    }
+    if (phaseRef.current !== 'tracing') return
     // check intermediate points too, so a fast move can't skip across a bend
     const from = last.current ?? p
     const steps = Math.max(1, Math.ceil(Math.hypot(p.x - from.x, p.y - from.y) / 6))
@@ -65,7 +81,7 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
       const q = { x: from.x + ((p.x - from.x) * s) / steps, y: from.y + ((p.y - from.y) * s) / steps }
       const inEnd = Math.hypot(q.x - end.x, q.y - end.y) <= END_RADIUS
       const { dist, along } = nearest(q, path, acc)
-      if (dist > HALF_WIDTH && !inEnd) return fail(q)
+      if (dist > HALF_WIDTH && !inEnd && !inStart(q)) return fail(q)
       // progress only advances continuously (no jumping ahead along the path)
       if (along > reached.current && along - reached.current < 80) reached.current = along
       if (inEnd && reached.current > total * 0.9) {
@@ -107,7 +123,7 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
           <path d={d} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={HALF_WIDTH * 2} className="stroke-zinc-200 dark:stroke-zinc-800" />
           <path d={d} fill="none" strokeWidth={3} strokeDasharray="10 12" className="stroke-zinc-400 dark:stroke-zinc-600" />
           {traced.length > 1 && <path d={dTraced} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={10} className="stroke-violet-500" />}
-          <circle cx={start.x} cy={start.y} r={END_RADIUS} className={phase === 'waiting' ? 'animate-pulse fill-emerald-500' : 'fill-emerald-500/60'} />
+          <circle cx={start.x} cy={start.y} r={END_RADIUS} className={phase === 'waiting' ? 'animate-pulse fill-emerald-500' : phase === 'armed' ? 'fill-emerald-400' : 'fill-emerald-500/60'} />
           <text x={start.x} y={start.y + 8} textAnchor="middle" className="pointer-events-none fill-white text-[22px] font-bold">GO</text>
           <circle cx={end.x} cy={end.y} r={END_RADIUS} className="fill-zinc-900 dark:fill-zinc-100" />
           <text x={end.x} y={end.y + 9} textAnchor="middle" className="pointer-events-none fill-white text-[26px] dark:fill-zinc-900">🏁</text>
@@ -116,8 +132,10 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
       </div>
       <p className="mt-3 text-center text-sm text-zinc-500">
         {phase === 'waiting'
-          ? 'Put your pointer (or finger) on GO, then follow the path to the flag without leaving it.'
-          : phase === 'tracing' ? 'Go go go!' : failAt ? 'Off the line!' : `Finished in ${(elapsed / 1000).toFixed(2)} s`}
+          ? 'Move your pointer onto GO.'
+          : phase === 'armed'
+            ? 'Ready. The timer starts when you leave GO along the path.'
+            : phase === 'tracing' ? 'Go go go!' : failAt ? 'Off the line!' : `Finished in ${(elapsed / 1000).toFixed(2)} s`}
       </p>
     </div>
   )
