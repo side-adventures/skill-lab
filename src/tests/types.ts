@@ -59,3 +59,6 @@ export interface TestDefinition {
 /** localStorage id for a test's results; changes when its scoring version is bumped. */
 export const storageId = (t: Pick<TestDefinition, 'id' | 'scoreVersion'>) =>
   t.scoreVersion && t.scoreVersion > 1 ? `${t.id}@v${t.scoreVersion}` : t.id
+
+/** Reads a `category` URL parameter (null = all categories). */
+export const categoryFromParam = (v: string | null): Category | null => CATEGORIES.find((c) => c === v) ?? null

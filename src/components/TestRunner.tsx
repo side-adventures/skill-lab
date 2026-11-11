@@ -27,7 +27,7 @@ export function TestRunner({ test }: { test: TestDefinition }) {
     if (result.failed) {
       return setPhase({ name: 'result', result, isBest: false, previousBest: getBest(storageId(test), test.higherIsBetter) })
     }
-    const { isBest, previousBest } = saveResult(storageId(test), result.score, test.higherIsBetter)
+    const { isBest, previousBest } = saveResult(storageId(test), result.score, test.higherIsBetter, result.details)
     setPhase({ name: 'result', result, isBest, previousBest })
   }
 

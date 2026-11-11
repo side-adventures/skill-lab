@@ -9,7 +9,9 @@ player can share and compare with friends.
 - **Frontend only.** No backend, no API calls. Must deploy as static files to GitHub Pages.
 - **For now: desktop and dark theme only.** Mouse is the main input (keyboard optional, never required).
   Phone / touch support and a light theme are postponed, not dropped.
-- Scores are stored **locally** (`localStorage`) — personal best + history per test.
+- Scores are stored **locally** (`localStorage`), one record per test (`skill-lab:v2:test:<id>`): the personal
+  best (kept forever), the total number of attempts, and the last 100 results (score, date, and the result
+  screen's details). The old format (`skill-lab:v1:results:<id>`, last 50 scores) is converted on first read.
 - Comparison with others is **manual**: the result screen offers a share text/link.
   (Future, not now: reference percentiles, real leaderboards via a hosted DB.)
 
@@ -22,8 +24,8 @@ player can share and compare with friends.
 ## Tests
 
 Home page (`src/pages/Home.tsx`):
-- Header (on every page): logo, "Share scores" (all best scores; "Play a test first" if none), and Stats /
-  Settings icon buttons that only show a "coming soon" note for now.
+- Header (on every page): logo, "Share scores" (all best scores; "Play a test first" if none), a Stats
+  button (opens the stats page) and a Settings button that only shows a "coming soon" note for now.
 - Title, subtitle and "x of 20 played" with a progress bar.
 - Filters: category chips (All + 6 categories; the selected chip takes its category color) and an
   All / Not played switch. Stored in the URL (`?category=Memory&show=unplayed`), so they survive going
@@ -71,6 +73,18 @@ screen then shows why, and nothing is saved.
 `I scored 243 ms on Reaction Time at Skill Lab — can you beat it? <url>#/test/reaction`
 Uses the Web Share API when available, otherwise copies to clipboard. The header's "Share scores" button shares
 all best scores in one message.
+
+## Stats page (`#/stats`, `src/pages/Stats.tsx`)
+- Same category chips as the home page (stored in the URL).
+- Table: Test · Best (bold, with date) · Today (best of today, plain) · Last played (Today, Yesterday,
+  N days ago, or a date), with Share best and Play buttons. Played tests first, then unplayed; both alphabetical.
+- Unplayed tests: title and Play stay bright, stats show "—", no Share, can't be expanded.
+- Clicking a played row unfolds it (several can be open): a graph of the attempts in the history
+  (x = attempt number, better is always up), and Average / Median for all attempts (or "Last 100") and the
+  last 5, plus Best and Attempts.
+- Graph (`components/AttemptGraph.tsx`): faded score line in the category color; dots while there are
+  ≤ 50 attempts, shrinking as they grow; the average of the last 5 as the main line from the 5th attempt;
+  the all-time best as a white dot (if still in the history); hover shows score, attempt number and date.
 
 ## Shared behaviour
 - Every test has an SVG icon (`src/icons/<id>.svg`, one color + transparency) on the home page and in the test header. Shared text keeps the emoji.

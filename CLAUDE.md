@@ -9,7 +9,9 @@ Static skill-test website (reaction, memory, focus…). Product spec: `docs/SPEC
   Mobile / touch and a light theme may come back later, so don't break them needlessly: keep using
   `dark:` variants for dark colors, `onPointerDown` for input, and avoid fixed desktop-only widths, but
   don't spend effort testing or polishing them.
-- Scores are local only (`src/lib/storage.ts`, localStorage, always wrapped in try/catch).
+- Scores are local only (`src/lib/storage.ts`, localStorage, always wrapped in try/catch). One record per test:
+  `best` (kept forever), `attempts` (total count), `history` (last 100 results with score, date, optional
+  details). Old v1 lists are migrated on first read; never drop or reset the best when changing storage.
 
 ## Stack
 Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `HashRouter`
@@ -51,5 +53,5 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 ## Conventions
 - Never change a test's scoring in a way that makes old saved scores incomparable without bumping that
   test's `scoreVersion` in the registry (stores results under a new key, see `storageId` in `types.ts`).
-- Keep components small; shared UI goes in `src/components/` (GetReady, TimerBar, DrainBar, NumberPad, Button, ShareButton, TestIcon, ComingSoonButton, `boardBg` for grid boards)
+- Keep components small; shared UI goes in `src/components/` (GetReady, TimerBar, DrainBar, NumberPad, Button, ShareButton, TestIcon, CategoryChips, AttemptGraph, ComingSoonButton, `boardBg` for grid boards)
   and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `spreadInts`, `shuffle` …).
