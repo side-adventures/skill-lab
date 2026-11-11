@@ -119,7 +119,7 @@ export function TestRunner({ test }: { test: TestDefinition }) {
 function RulesScreen({ test, record, onStart }: { test: TestDefinition; record: TestRecord; onStart: () => void }) {
   const best = record.best && scoreParts(test.formatScore(record.best.score))
   return (
-    <div className="mx-auto flex aspect-[3/2] w-full max-w-[720px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/85">
+    <div className="flex aspect-[3/2] w-full flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/85">
       <div className="min-h-0 flex-1 overflow-y-auto px-7 pt-6 pb-4">
         <RulesContent test={test} />
       </div>

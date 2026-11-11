@@ -78,7 +78,7 @@ all best scores in one message.
 - **Top bar** (fixed height): test icon in its category color + name. Right side: "All tests" on the rules
   and result screens; while playing: your best (if any) and a "?" button.
 - **Info row** (fixed height, so nothing below moves): category · duration on the rules screen.
-- **Rules screen:** a 3:2 stage (720 × 480) with the rules (`components/RulesContent.tsx`): the test's
+- **Rules screen:** a 3:2 stage at the full content width (768 × 512, same width as the top bar; the game screen will use the same stage) with the rules (`components/RulesContent.tsx`): the test's
   tagline as summary, "Tests <skill>", a "How to play" list and a "Score" list (any number of lines, from
   `skill`, `howTo` and `scoring` in the registry). Footer: a wide Start button on the left; on the right
   "Your best · N attempts", the value and "Stats ›" (opens `#/stats?open=<id>`, that row unfolded). Empty
