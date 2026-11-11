@@ -78,6 +78,3 @@ export const flashRing = (flash: Flash) =>
   `ring-2 transition-shadow duration-150 ${
     flash === 'ok' ? 'ring-emerald-400/35' : flash === 'bad' ? 'ring-rose-400/40' : 'ring-transparent'
   }`
-
-/** Score for tests where guessing must not pay off. */
-export const correctMinusWrong = (correct: number, wrong: number) => correct - wrong

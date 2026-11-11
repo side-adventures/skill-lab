@@ -1,3 +1,4 @@
+import { correctMinusWrong } from '../../lib/scoring'
 import type { Rand } from '../../lib/random'
 
 export const DURATION_MS = 45_000
@@ -26,7 +27,8 @@ export function nextTrial(prev: Trial | undefined, rand: Rand = Math.random): Tr
   }
 }
 
-export const stroopScore = (correct: number, wrong: number) => correct - wrong
+/** Stroop scores correct − wrong (shared rule). */
+export const stroopScore = correctMinusWrong
 
 export interface Answer {
   ms: number
