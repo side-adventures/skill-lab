@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { allScoresShare } from '../lib/allScores'
 import { ComingSoonButton } from './ComingSoon'
 import { Logo } from './Logo'
@@ -9,7 +9,8 @@ import { ShareButton } from './ShareButton'
 export function Layout({ children }: { children: ReactNode }) {
   // The home page uses the full width for its card grid; test pages stay narrower so play areas
   // (and therefore scores) don't change with the window size.
-  const wide = useLocation().pathname === '/'
+  const path = useLocation().pathname
+  const wide = path === '/' || path === '/stats'
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6">
       <header className="flex items-center justify-between gap-4 py-5">
@@ -19,11 +20,18 @@ export function Layout({ children }: { children: ReactNode }) {
         </Link>
         <div className="flex items-center gap-2">
           <ShareButton label="Share scores" icon={<ShareIcon />} variant="primary" size="sm" getShare={allScoresShare} />
-          <ComingSoonButton
-            label="Stats"
-            icon={<StatsIcon />}
-            text="Coming soon: your best scores, progress and trends in one place."
-          />
+          <NavLink
+            to="/stats"
+            aria-label="Stats"
+            title="Stats"
+            className={({ isActive }) =>
+              `grid size-9 place-items-center rounded-lg border transition-colors ${
+                isActive ? 'border-zinc-600 bg-zinc-800 text-zinc-100' : 'border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100'
+              }`
+            }
+          >
+            <StatsIcon />
+          </NavLink>
           <ComingSoonButton
             label="Settings"
             icon={<SettingsIcon />}
