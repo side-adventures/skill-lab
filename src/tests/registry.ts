@@ -21,6 +21,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Average reaction time',
     higherIsBetter: false,
     formatScore: (s) => `${Math.round(s)} ms`,
+    start: 'quick',
     Component: lazy(() => import('./reaction/ReactionTest')),
   },
   {
@@ -43,6 +44,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Levels cleared',
     higherIsBetter: true,
     formatScore: (s) => `Level ${s}`,
+    start: 'quick',
     Component: lazy(() => import('./visual-memory/VisualMemoryTest')),
   },
   {
@@ -65,6 +67,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Points (correct − wrong)',
     higherIsBetter: true,
     formatScore: (s) => `${s} pts`,
+    start: 'countdown',
     Component: lazy(() => import('./stroop/StroopTest')),
   },
   {
@@ -86,6 +89,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Average error',
     higherIsBetter: false,
     formatScore: (s) => `${s.toFixed(1)} % off`,
+    start: 'quick',
     Component: lazy(() => import('./time-estimation/TimeEstimationTest')),
   },
   {
@@ -107,6 +111,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Average accuracy',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
+    start: 'countdown',
     Component: lazy(() => import('./quick-count/QuickCountTest')),
   },
   {
@@ -129,6 +134,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Correct answers',
     higherIsBetter: true,
     formatScore: (s) => `${s} correct`,
+    start: 'countdown',
     Component: lazy(() => import('./mental-math/MentalMathTest')),
   },
   {
@@ -150,6 +156,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Time inside',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
+    start: 'none',
     Component: lazy(() => import('./steady-hand/SteadyHandTest')),
   },
 
@@ -174,6 +181,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Longest number',
     higherIsBetter: true,
     formatScore: (s) => `${s} digits`,
+    start: 'quick',
     Component: lazy(() => import('./number-memory/NumberMemoryTest')),
   },
   {
@@ -196,6 +204,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Longest sequence',
     higherIsBetter: true,
     formatScore: (s) => `${s} steps`,
+    start: 'quick',
     Component: lazy(() => import('./sequence-memory/SequenceMemoryTest')),
   },
   {
@@ -219,6 +228,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Most tiles',
     higherIsBetter: true,
     formatScore: (s) => `${s} tiles`,
+    start: 'quick',
     Component: lazy(() => import('./number-order/NumberOrderTest')),
   },
   {
@@ -241,6 +251,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Shortest flash',
     higherIsBetter: false,
     formatScore: (s) => `${Math.round(s)} ms`,
+    start: 'quick',
     Component: lazy(() => import('./flash-order/FlashOrderTest')),
   },
   {
@@ -263,6 +274,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Correct answers',
     higherIsBetter: true,
     formatScore: (s) => `${s} words`,
+    start: 'countdown',
     Component: lazy(() => import('./word-memory/WordMemoryTest')),
   },
   {
@@ -285,6 +297,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Highest level',
     higherIsBetter: true,
     formatScore: (s) => (s ? `${s}-back` : 'Not passed'),
+    start: 'countdown',
     Component: lazy(() => import('./n-back/NBackTest')),
   },
   {
@@ -307,6 +320,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Total time',
     higherIsBetter: false,
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
+    start: 'countdown',
     scoreVersion: 3, // v2: 30 trials (24/6) · v3: 21 green / 9 red
     Component: lazy(() => import('./go-no-go/GoNoGoTest')),
   },
@@ -330,6 +344,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Points',
     higherIsBetter: true,
     formatScore: (s) => `${s} pts`,
+    start: 'countdown',
     scoreVersion: 3, // v2: points in 30 s · v3: smaller bullseye
     Component: lazy(() => import('./aim-trainer/AimTrainerTest')),
   },
@@ -351,6 +366,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Taps per second',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} /s`,
+    start: 'none',
     Component: lazy(() => import('./tap-speed/TapSpeedTest')),
   },
   {
@@ -372,6 +388,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Average timing error',
     higherIsBetter: false,
     formatScore: (s) => `${Math.round(s)} ms off`,
+    start: 'quick',
     Component: lazy(() => import('./stop-the-bar/StopTheBarTest')),
   },
   {
@@ -393,6 +410,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Points (correct − wrong)',
     higherIsBetter: true,
     formatScore: (s) => `${s} pts`,
+    start: 'countdown',
     Component: lazy(() => import('./mental-rotation/MentalRotationTest')),
   },
   {
@@ -415,6 +433,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Time',
     higherIsBetter: false,
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
+    start: 'none',
     Component: lazy(() => import('./line-tracing/LineTracingTest')),
   },
   {
@@ -437,6 +456,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Accuracy',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
+    start: 'quick',
     scoreVersion: 2, // "Make it level" replaced by "Make it parallel"
     Component: lazy(() => import('./geometry/GeometryTest')),
   },

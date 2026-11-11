@@ -7,7 +7,7 @@ import { CATEGORY_COLORS, storageId, type TestDefinition, type TestResult } from
 import { Button } from './Button'
 import { RulesContent } from './RulesContent'
 import { RulesOverlay } from './RulesOverlay'
-import { Stage } from './Stage'
+import { GameFrame } from './game/GameFrame'
 import { ShareButton } from './ShareButton'
 import { TestIcon } from './TestIcon'
 
@@ -73,11 +73,11 @@ export function TestRunner({ test }: { test: TestDefinition }) {
     )
     body = (
       <>
-        <Stage>
+        <GameFrame key={attempt} start={test.start}>
           <Suspense fallback={<p className="grid h-full place-items-center text-zinc-500">Loading…</p>}>
-            <Component key={attempt} onFinish={finish} />
+            <Component onFinish={finish} />
           </Suspense>
-        </Stage>
+        </GameFrame>
         {rulesOpen && (
           <RulesOverlay
             test={test}
@@ -100,8 +100,8 @@ export function TestRunner({ test }: { test: TestDefinition }) {
   return (
     <>
       <TestBar test={test}>{actions}</TestBar>
-      {/* Info row: fixed height on every screen, so the content below never jumps. */}
-      <div className="mb-3 flex h-6 items-end gap-2 text-sm text-zinc-400">
+      {/* Info row on the rules and result screens; while playing, GameFrame draws its own at the same height. */}
+      {phase.name !== 'playing' && <div className="mb-2 flex h-10 items-end gap-2 text-sm text-zinc-400">
         {phase.name === 'intro' && (
           <>
             <span className="flex items-center gap-1.5">
@@ -112,7 +112,7 @@ export function TestRunner({ test }: { test: TestDefinition }) {
             <span>{test.durationHint}</span>
           </>
         )}
-      </div>
+      </div>}
       {body}
     </>
   )

@@ -27,6 +27,12 @@ export interface TestResult {
   details?: Record<string, string>
 }
 
+/**
+ * How a run starts: 'countdown' = 3-2-1 (you must be ready the moment it starts), 'quick' = a short
+ * "Ready", 'none' = your own first action starts it (Tap Speed, Line Tracing, Steady Hand).
+ */
+export type StartMode = 'countdown' | 'quick' | 'none'
+
 /** Props every test's play component receives. */
 export interface TestComponentProps {
   onFinish: (result: TestResult) => void
@@ -51,6 +57,8 @@ export interface TestDefinition {
   scoreLabel: string
   higherIsBetter: boolean
   formatScore: (score: number) => string
+  /** How a run starts (see StartMode). */
+  start: StartMode
   /**
    * Bump when scoring changes so old saved scores aren't compared with new ones
    * (results are stored under a separate key per version).

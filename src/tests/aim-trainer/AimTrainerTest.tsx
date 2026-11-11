@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { GetReady } from '../../components/GetReady'
-import { TimerBar } from '../../components/TimerBar'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { FullLayout } from '../../components/game/layouts'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { CENTER_FRACTION, DURATION_MS, TARGET_PX, hitPoints, nextSpot, type Spot } from './scoring'
@@ -8,7 +8,6 @@ import { CENTER_FRACTION, DURATION_MS, TARGET_PX, hitPoints, nextSpot, type Spot
 interface Pop { id: number; pts: number; spot: Spot }
 
 export default function AimTrainerTest({ onFinish }: TestComponentProps) {
-  const [started, setStarted] = useState(false)
   const [spot, setSpot] = useState(() => nextSpot(undefined))
   const [points, setPoints] = useState(0)
   const [centers, setCenters] = useState(0)
@@ -19,7 +18,7 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
   const popTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(popTimer.current), [])
 
-  const remaining = useCountdown(DURATION_MS, started, () => {
+  const remaining = useCountdown(DURATION_MS, true, () => {
     const hits = centers + edges
     onFinish({
       score: points,
@@ -33,7 +32,6 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
     })
   })
 
-  if (!started) return <GetReady onDone={() => setStarted(true)} />
 
   const live = remaining > 0
   const place = (s: Spot) => ({
@@ -41,12 +39,15 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
     top: `calc(${s.y} * (100% - ${TARGET_PX}px))`,
   })
   return (
-    <div className="flex h-full flex-col">
-      <TimerBar remaining={remaining} total={DURATION_MS}>
-        🎯 {points} pts · missed {misses}
-      </TimerBar>
-      <div
-        className="play-area relative min-h-0 flex-1 w-full cursor-crosshair overflow-hidden rounded-2xl bg-white dark:bg-zinc-900"
+    <>
+      <GameInfo
+        left={<InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" />}
+        middle={misses ? `${misses} missed` : ''}
+        right={<InfoValue label="Score" value={points} unit="pts" />}
+        timer={remaining / DURATION_MS}
+      />
+      <FullLayout
+        className="cursor-crosshair bg-zinc-900"
         style={{ touchAction: 'none' }}
         onPointerDown={() => live && setMisses((m) => m + 1)}
       >
@@ -84,7 +85,7 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
             style={{ width: TARGET_PX * CENTER_FRACTION, height: TARGET_PX * CENTER_FRACTION }}
           />
         </button>
-      </div>
-    </div>
+      </FullLayout>
+    </>
   )
 }

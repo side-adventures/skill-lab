@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { FullLayout } from '../../components/game/layouts'
+import { END_MOMENT_MS, useLater } from '../../lib/game'
 import type { TestComponentProps } from '../types'
 import { END_RADIUS, HALF_WIDTH, HEIGHT, WIDTH, cumulative, makeControlPoints, nearest, samplePath, type Pt } from './scoring'
 
@@ -25,8 +28,7 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
   const startedAt = useRef(0)
   const last = useRef<Pt | null>(null)
   const reached = useRef(0)
-  const endTimer = useRef<number | undefined>(undefined)
-  useEffect(() => () => window.clearTimeout(endTimer.current), [])
+  const { later } = useLater()
 
   useEffect(() => {
     if (phase !== 'tracing') return
@@ -44,14 +46,14 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     setFailAt(at)
     setPhase('done')
     const pct = Math.floor((reached.current / total) * 100)
-    endTimer.current = window.setTimeout(() => onFinish({ score: 0, failed: `Off the line at ${pct} %` }), 1200)
+    later(END_MOMENT_MS, () => onFinish({ score: 0, failed: `Off the line at ${pct} %` }))
   }
 
   const succeed = () => {
     setPhase('done')
     const ms = Math.round(performance.now() - startedAt.current)
     setElapsed(ms)
-    endTimer.current = window.setTimeout(() => onFinish({ score: ms }), 600)
+    later(END_MOMENT_MS, () => onFinish({ score: ms }))
   }
 
   const inStart = (q: Pt) => Math.hypot(q.x - start.x, q.y - start.y) <= END_RADIUS
@@ -104,13 +106,19 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
   const traced = path.slice(0, doneIdx === -1 ? path.length : doneIdx + 1)
   const dTraced = traced.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
 
+  const status =
+    phase === 'waiting' ? 'Move your pointer onto GO'
+    : phase === 'armed' ? 'Leave GO along the path to start'
+    : phase === 'tracing' ? 'Follow the path to the flag'
+    : failAt ? 'Off the line' : 'Finished'
   return (
-    <div className="flex h-full flex-col">
-      <div className="mb-3 flex justify-between text-sm text-zinc-500">
-        <span className="tabular-nums">{(elapsed / 1000).toFixed(2)} s</span>
-        <span>{Math.floor((progress / total) * 100)} %</span>
-      </div>
-      <div className="play-area min-h-0 flex-1 rounded-2xl bg-white p-2 dark:bg-zinc-900" style={{ touchAction: 'none' }}>
+    <>
+      <GameInfo
+        left={<InfoValue value={(elapsed / 1000).toFixed(2)} unit="s" />}
+        middle={<span className={failAt ? 'text-rose-300' : ''}>{status}</span>}
+        right={<InfoValue value={Math.floor((progress / total) * 100)} unit="%" />}
+      />
+      <FullLayout className="bg-zinc-900" style={{ touchAction: 'none' }}>
         <svg
           ref={svg}
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -129,14 +137,7 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
           <text x={end.x} y={end.y + 9} textAnchor="middle" className="pointer-events-none fill-white text-[26px] dark:fill-zinc-900">🏁</text>
           {failAt && <circle cx={failAt.x} cy={failAt.y} r={14} className="fill-rose-500" />}
         </svg>
-      </div>
-      <p className="mt-3 text-center text-sm text-zinc-500">
-        {phase === 'waiting'
-          ? 'Move your pointer onto GO.'
-          : phase === 'armed'
-            ? 'Ready. The timer starts when you leave GO along the path.'
-            : phase === 'tracing' ? 'Go go go!' : failAt ? 'Off the line!' : `Finished in ${(elapsed / 1000).toFixed(2)} s`}
-      </p>
-    </div>
+      </FullLayout>
+    </>
   )
 }

@@ -86,14 +86,29 @@ all best scores in one message.
 - **"?" while playing:** a centered overlay (`components/RulesOverlay.tsx`) with the same rules, Restart (new
   run) and Back to start (rules screen). The game keeps running underneath; closes with ✕, a click outside or
   Escape.
-- **Playing:** every test plays inside the same stage (`components/Stage.tsx`, 768 × 512), so the area never
-  changes size or position. Tests with an on-screen keypad (Mental Math, Number Memory, Quick Count) show it as
-  a single row *below* the stage (`<BelowStage>`); the keyboard works too. Layouts inside the stage: large
-  click areas fill it; square grids (Visual / Sequence Memory) and the 6×5 grid (Number / Flash Order) use the
-  full height, centered; N-Back has the grid left and MATCH right; Quick Count has the dots left and your guess
-  right; Eye for Geometry has the board left and the task, controls (incl. its keypad) and result right.
-- Game info (time, progress, score) still sits inside each test's area for now; the info row above the stage
-  and the hint line below it come with the game screen redesign. The result screen is still the old version.
+- **Playing** (`components/game/`): `GameFrame` draws the info row and the fixed 3:2 stage (768 × 512, invisible
+  itself) at the same place as the rules screen, so nothing moves when you press Start.
+  - **Start:** per test `start` in the registry: `countdown` (3-2-1, 0.6 s steps: Stroop, Mental Rotation, Word
+    Memory, Mental Math, Aim Trainer, Go / No-Go, N-Back, Quick Count), `quick` (a short "Ready"), or `none`
+    (your first action starts it: Tap Speed, Line Tracing, Steady Hand).
+  - **Info row** (`<GameInfo>`): left = where you are (time left, round, level, lives), middle = what to do now
+    (phase, short feedback like "Not a match"), right = how you're doing (score, average, accuracy). A thin
+    timer line below it for timed tests and memorize times. With a single board it is as wide as the board.
+  - **Layouts** (`layouts.tsx`):
+    - *Full* (area = the whole stage, no padding): Reaction, Go / No-Go, Tap Speed, Time Estimation, Stop the Bar,
+      Steady Hand, Aim Trainer, Line Tracing.
+    - *Prompt + answers* (box; large display on top, answer strip at the bottom: `AnswerButtons` with keys, or the
+      keypad row): Stroop, Word Memory, Mental Rotation, Mental Math, Number Memory.
+    - *Single square* (no box, board at full height; the info row matches its width): Visual Memory, Sequence
+      Memory, Number Order and Flash Order (6:5 grid). Tiles via `TileGrid`.
+    - *Square + panel* (box; board left, panel right with its own keypad): N-Back, Quick Count, Eye for Geometry.
+  - **Answer flash:** a faint green / red ring on the display or board for ~0.2 s (`useAnswerFlash`).
+  - **Round result** (`RoundResult`): one big value, one line of context, chips with the rounds so far (5-round
+    tests: Reaction, Time Estimation, Stop the Bar), "Click anywhere to continue" (any click, Enter or Space).
+    In panel layouts it sits in the panel and the board keeps showing the answer.
+  - **End moment:** when a run ends by a mistake, the game freezes for 1.5 s (`END_MOMENT_MS`) showing what went
+    wrong, then the result screen appears automatically.
+- The result screen is still the old version (redesign planned).
 
 ## Stats page (`#/stats`, `src/pages/Stats.tsx`)
 - Same category chips as the home page (stored in the URL). `?open=<id>` unfolds that test's row and scrolls to it.
