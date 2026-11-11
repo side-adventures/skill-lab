@@ -33,6 +33,9 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 ## Adding a test
 1. Create `src/tests/<id>/` with:
    - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`).
+     It renders inside the fixed stage (768 × 512): root element `flex h-full flex-col`, the play area takes
+     the remaining height (`min-h-0 flex-1`), never a viewport-based height. An on-screen keypad goes in
+     `<BelowStage>` (`NumberPad layout="row"`).
      Only the play phase: intro, result, best score, sharing are handled by `components/TestRunner.tsx`.
      A run that can't produce a score calls `onFinish({ score: 0, failed: 'why' })` — shown, never saved.
    - `scoring.ts` — pure logic (scoring, generation of rounds) + `scoring.test.ts`.
@@ -53,7 +56,8 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 - Both report back; the main session decides and applies fixes. They can run in parallel.
 
 ## Conventions
-- Never change a test's scoring in a way that makes old saved scores incomparable without bumping that
-  test's `scoreVersion` in the registry (stores results under a new key, see `storageId` in `types.ts`).
-- Keep components small; shared UI goes in `src/components/` (GetReady, TimerBar, DrainBar, NumberPad, Button, ShareButton, TestIcon, CategoryChips, AttemptGraph, ComingSoonButton, `boardBg` for grid boards)
+- **While in development: don't bump `scoreVersion`** when reworking a test; old scores don't matter yet.
+  Later (once there are real users), a change that makes old scores incomparable bumps that test's
+  `scoreVersion` in the registry (stores results under a new key, see `storageId` in `types.ts`).
+- Keep components small; shared UI goes in `src/components/` (Stage/BelowStage, GetReady, TimerBar, DrainBar, NumberPad, Button, ShareButton, TestIcon, CategoryChips, AttemptGraph, ComingSoonButton, `boardBg` for grid boards)
   and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `spreadInts`, `shuffle` …).

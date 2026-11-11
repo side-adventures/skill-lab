@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
 import { NumberPad } from '../../components/NumberPad'
+import { BelowStage } from '../../components/Stage'
 import type { TestComponentProps } from '../types'
 import { DOT_RADIUS, FLASH_MS, ROUNDS, accuracy, makeCounts, placeDots, scoreRounds, type Dot } from './scoring'
 
@@ -58,12 +59,13 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
   const showDots = phase === 'flash' || phase === 'feedback'
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span>Round {roundNo} / {ROUNDS}</span>
         {rounds.length > 0 && <span>Accuracy so far: {scoreRounds(rounds).toFixed(1)} %</span>}
       </div>
-      <div className="relative mx-auto aspect-square w-full max-w-[min(420px,48vh)] rounded-2xl bg-white dark:bg-zinc-900">
+      <div className="flex min-h-0 flex-1 gap-6">
+      <div className="relative aspect-square h-full rounded-2xl bg-white dark:bg-zinc-900">
         {showDots && (
           <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
             {dots.map((d, i) => (
@@ -85,20 +87,22 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
         )}
       </div>
 
-      <div className="mt-4">
-        {phase === 'feedback' ? (
-          <div className="text-center">
-            <Button onClick={next} className="w-full max-w-xs">
-              {rounds.length >= ROUNDS ? 'See result' : 'Next round'}
-            </Button>
-          </div>
-        ) : (
-          <>
-            <p className="mb-2 h-10 text-center text-3xl font-bold tabular-nums">{guess || <span className="text-zinc-400">–</span>}</p>
-            <NumberPad value={guess} onChange={setGuess} onSubmit={submit} maxLength={2} disabled={phase !== 'answer'} />
-          </>
+      {/* Right of the dots: your guess, then the button to go on. */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+        <div>
+          <p className="text-sm text-zinc-500">Your guess</p>
+          <p className="h-14 text-5xl font-bold tabular-nums">{guess || <span className="text-zinc-600">–</span>}</p>
+        </div>
+        {phase === 'feedback' && (
+          <Button onClick={next} className="w-full max-w-56" autoFocus>
+            {rounds.length >= ROUNDS ? 'See result' : 'Next round'}
+          </Button>
         )}
       </div>
+      </div>
+      <BelowStage>
+        <NumberPad value={guess} onChange={setGuess} onSubmit={submit} maxLength={2} disabled={phase !== 'answer'} layout="row" />
+      </BelowStage>
     </div>
   )
 }

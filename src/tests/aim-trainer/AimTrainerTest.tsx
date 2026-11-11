@@ -41,12 +41,12 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
     top: `calc(${s.y} * (100% - ${TARGET_PX}px))`,
   })
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <TimerBar remaining={remaining} total={DURATION_MS}>
         🎯 {points} pts · missed {misses}
       </TimerBar>
       <div
-        className="play-area relative h-[60vh] max-h-[520px] min-h-[320px] w-full cursor-crosshair overflow-hidden rounded-2xl bg-white dark:bg-zinc-900"
+        className="play-area relative min-h-0 flex-1 w-full cursor-crosshair overflow-hidden rounded-2xl bg-white dark:bg-zinc-900"
         style={{ touchAction: 'none' }}
         onPointerDown={() => live && setMisses((m) => m + 1)}
       >

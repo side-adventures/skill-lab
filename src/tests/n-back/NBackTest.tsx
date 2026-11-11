@@ -85,29 +85,33 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
     miss: { text: 'Missed a match', cls: 'text-amber-500' },
   }
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span>{n}-back</span>
         <span>{Math.max(0, index + 1)} / {seq.length}</span>
       </div>
-      <div
-        className="mx-auto grid aspect-square w-full max-w-[min(360px,45vh)] gap-2 rounded-2xl bg-zinc-200 p-2 dark:bg-zinc-800"
-        style={{ gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))` }}
-      >
-        {Array.from({ length: GRID * GRID }, (_, i) => (
-          <div key={i} className={`rounded-xl transition-colors duration-75 ${lit && seq[index] === i ? 'bg-violet-500' : 'bg-white dark:bg-zinc-700'}`} />
-        ))}
-      </div>
-      <p className={`my-3 h-6 text-center font-semibold ${feedback ? fb[feedback].cls : ''}`}>{feedback && fb[feedback].text}</p>
-      <div className="play-area text-center">
-        <button
-          type="button"
-          onPointerDown={tapMatch}
-          className="h-16 w-full max-w-xs rounded-xl bg-violet-600 text-lg font-bold tracking-wider text-white active:bg-violet-700"
+      {/* Grid on the left at full height, MATCH on the right. */}
+      <div className="flex min-h-0 flex-1 items-center justify-center gap-10">
+        <div
+          className="grid aspect-square h-full gap-2 rounded-2xl bg-zinc-200 p-2 dark:bg-zinc-800"
+          style={{ gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))` }}
         >
-          MATCH
-        </button>
+          {Array.from({ length: GRID * GRID }, (_, i) => (
+            <div key={i} className={`rounded-xl transition-colors duration-75 ${lit && seq[index] === i ? 'bg-violet-500' : 'bg-white dark:bg-zinc-700'}`} />
+          ))}
+        </div>
+        <div className="play-area flex w-56 flex-col items-center gap-3">
+          <button
+            type="button"
+            onPointerDown={tapMatch}
+            className="h-28 w-full rounded-2xl bg-violet-600 text-xl font-bold tracking-wider text-white active:bg-violet-700"
+          >
+            MATCH
+          </button>
+          <p className={`h-6 text-center font-semibold ${feedback ? fb[feedback].cls : ''}`}>{feedback && fb[feedback].text}</p>
+        </div>
       </div>
     </div>
   )
+
 }

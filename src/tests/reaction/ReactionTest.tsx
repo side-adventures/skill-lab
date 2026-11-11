@@ -65,7 +65,7 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
   const view = VIEWS[state.name]
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span>Round {round} / {ROUNDS}</span>
         {times.length > 0 && <span>Avg so far: {summarize(times).score} ms</span>}
@@ -78,7 +78,7 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
         }}
         onClick={(e) => e.preventDefault()}
         onKeyDown={(e) => e.preventDefault()} // handled by window listener
-        className={`play-area flex h-[60vh] max-h-[480px] min-h-[300px] w-full cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center text-white ${view.bg}`}
+        className={`play-area flex min-h-0 flex-1 w-full cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center text-white ${view.bg}`}
       >
         <span className="text-4xl font-bold sm:text-5xl">
           {state.name === 'shown' ? `${Math.round(state.ms)} ms` : view.title}

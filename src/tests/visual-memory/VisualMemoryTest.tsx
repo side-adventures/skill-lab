@@ -68,7 +68,7 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
   }
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span>Level {level}</span>
         <span aria-label={`${lives} lives left`}>
@@ -77,8 +77,9 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
         </span>
       </div>
       <p className="mb-3 text-center font-medium" role="status">{message[phase]}</p>
+      <div className="relative min-h-0 flex-1">
       <div
-        className={`play-area mx-auto grid aspect-square w-full max-w-[min(480px,60vh)] gap-1.5 rounded-2xl p-2 sm:gap-2 ${boardBg(phase === 'cleared' ? 'success' : phase === 'failed' ? 'fail' : null)}`}
+        className={`play-area absolute inset-y-0 left-1/2 grid aspect-square h-full -translate-x-1/2 gap-1.5 rounded-2xl p-2 sm:gap-2 ${boardBg(phase === 'cleared' ? 'success' : phase === 'failed' ? 'fail' : null)}`}
         style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: size * size }, (_, i) => {
@@ -98,6 +99,7 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
             />
           )
         })}
+      </div>
       </div>
     </div>
   )

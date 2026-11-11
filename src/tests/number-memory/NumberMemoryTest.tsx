@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
 import { DrainBar } from '../../components/DrainBar'
 import { NumberPad } from '../../components/NumberPad'
+import { BelowStage } from '../../components/Stage'
 import type { TestComponentProps } from '../types'
 import { START_DIGITS, makeNumber, showMs } from './scoring'
 
@@ -39,9 +40,9 @@ export default function NumberMemoryTest({ onFinish }: TestComponentProps) {
     })
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 text-sm text-zinc-500">{digits} digits</div>
-      <div className="mb-4 grid min-h-48 place-items-center rounded-2xl bg-white p-6 text-center dark:bg-zinc-900">
+      <div className="grid min-h-0 flex-1 place-items-center rounded-2xl bg-white p-6 text-center dark:bg-zinc-900">
         {phase === 'show' && (
           <div className="w-full">
             <p className="mb-6 font-mono text-4xl font-bold tracking-[0.2em] break-all sm:text-5xl">{number}</p>
@@ -69,11 +70,12 @@ export default function NumberMemoryTest({ onFinish }: TestComponentProps) {
           </div>
         )}
       </div>
-      {phase === 'wrong' ? (
-        <div className="text-center"><Button onClick={finish} autoFocus>See result</Button></div>
-      ) : (
-        <NumberPad value={input} onChange={setInput} onSubmit={submit} maxLength={digits} disabled={phase !== 'input'} />
+      {phase === 'wrong' && (
+        <div className="mt-4 text-center"><Button onClick={finish} autoFocus>See result</Button></div>
       )}
+      <BelowStage>
+        <NumberPad value={input} onChange={setInput} onSubmit={submit} maxLength={digits} disabled={phase !== 'input'} layout="row" />
+      </BelowStage>
     </div>
   )
 }

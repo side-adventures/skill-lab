@@ -12,7 +12,7 @@ function ShapeView({ shape, angle }: { shape: Shape; angle: number }) {
   const cx = (Math.min(...xs) + Math.max(...xs) + 1) / 2
   const cy = (Math.min(...ys) + Math.max(...ys) + 1) / 2
   return (
-    <svg viewBox="-3 -3 6 6" className="aspect-square w-full">
+    <svg viewBox="-3 -3 6 6" className="mx-auto aspect-square h-full max-w-full">
       <g transform={`rotate(${angle}) translate(${-cx} ${-cy})`}>
         {shape.map(([x, y]) => (
           <rect key={`${x},${y}`} x={x} y={y} width={1} height={1} className="fill-violet-500 stroke-white dark:stroke-zinc-900" strokeWidth={0.08} />
@@ -68,9 +68,9 @@ export default function MentalRotationTest({ onFinish }: TestComponentProps) {
 
   const ring = flash === 'ok' ? 'ring-emerald-500' : flash === 'bad' ? 'ring-rose-500' : 'ring-transparent'
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <TimerBar remaining={remaining} total={DURATION_MS}>✓ {correct} · ✗ {wrong}</TimerBar>
-      <div className={`grid grid-cols-2 gap-2 rounded-2xl bg-white p-3 ring-4 transition-shadow sm:gap-6 sm:p-6 dark:bg-zinc-900 ${ring}`}>
+      <div className={`grid min-h-0 flex-1 grid-cols-2 gap-6 rounded-2xl bg-white p-4 ring-4 transition-shadow dark:bg-zinc-900 ${ring}`}>
         <ShapeView shape={trial.shape} angle={trial.leftAngle} />
         <ShapeView shape={trial.mirrored ? mirror(trial.shape) : trial.shape} angle={trial.rightAngle} />
       </div>

@@ -52,7 +52,7 @@ export default function WordMemoryTest({ onFinish }: TestComponentProps) {
 
   const ring = flash === 'ok' ? 'ring-emerald-500' : flash === 'bad' ? 'ring-rose-500' : 'ring-transparent'
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-3 flex justify-between text-sm text-zinc-500">
         <span>Score {score}</span>
         <span aria-label={`${lives} lives left`}>
@@ -60,7 +60,7 @@ export default function WordMemoryTest({ onFinish }: TestComponentProps) {
           <span className="opacity-30">{'♥'.repeat(LIVES - Math.max(0, lives))}</span>
         </span>
       </div>
-      <div className={`grid h-48 place-items-center rounded-2xl bg-white ring-4 transition-shadow sm:h-56 dark:bg-zinc-900 ${ring}`}>
+      <div className={`grid min-h-0 flex-1 place-items-center rounded-2xl bg-white ring-4 transition-shadow dark:bg-zinc-900 ${ring}`}>
         <span className="text-4xl font-bold tracking-wide sm:text-5xl">{current.word}</span>
       </div>
       <p className="my-3 text-center text-sm text-zinc-500">Have you seen this word before in this test?</p>
