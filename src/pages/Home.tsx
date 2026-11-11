@@ -1,18 +1,17 @@
 import { Link, useSearchParams } from 'react-router-dom'
+import { CategoryChips } from '../components/CategoryChips'
 import { TestIcon } from '../components/TestIcon'
 import { testsWithBest } from '../lib/allScores'
 import { scoreParts } from '../lib/scoreParts'
 import type { ResultEntry } from '../lib/storage'
-import { CATEGORIES, CATEGORY_COLORS, type Category, type TestDefinition } from '../tests/types'
-
-const ALL_COLOR = '#a78bfa' // violet-400, for the "All" chip
+import { CATEGORY_COLORS, categoryFromParam, type Category, type TestDefinition } from '../tests/types'
 
 type Show = 'all' | 'unplayed'
 
 export function Home() {
   // Filters live in the URL, so they survive going into a test and back.
   const [params, setParams] = useSearchParams()
-  const category = CATEGORIES.find((c) => c === params.get('category')) ?? null
+  const category = categoryFromParam(params.get('category'))
   const show: Show = params.get('show') === 'unplayed' ? 'unplayed' : 'all'
   const update = (key: string, value: string | null) =>
     setParams(
@@ -45,19 +44,7 @@ export function Home() {
       </section>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
-          <Chip label="All" color={ALL_COLOR} active={!category} onClick={() => update('category', null)} />
-          {CATEGORIES.map((c) => (
-            <Chip
-              key={c}
-              label={c}
-              color={CATEGORY_COLORS[c]}
-              dot
-              active={category === c}
-              onClick={() => update('category', c)}
-            />
-          ))}
-        </div>
+        <CategoryChips value={category} onChange={(c) => update('category', c)} />
         <Switch value={show} onChange={(v) => update('show', v === 'all' ? null : v)} />
       </div>
 
@@ -89,29 +76,6 @@ function Progress({ played, total }: { played: number; total: number }) {
         <div className="h-full rounded-full bg-violet-500" style={{ width: `${(played / total) * 100}%` }} />
       </div>
     </div>
-  )
-}
-
-function Chip({ label, color, dot, active, onClick }: {
-  label: string
-  color: string
-  dot?: boolean
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
-        active ? '' : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-      }`}
-      style={active ? { color, background: `${color}26`, borderColor: `${color}66` } : undefined}
-    >
-      {dot && <span className="size-1.5 rounded-full" style={{ background: color }} />}
-      {label}
-    </button>
   )
 }
 
