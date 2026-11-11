@@ -16,7 +16,12 @@ const COLS = 'grid-cols-[1.25rem_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_min
 export function Stats() {
   const [params, setParams] = useSearchParams()
   const category = categoryFromParam(params.get('category'))
-  const [open, setOpen] = useState<Set<string>>(() => new Set())
+  // `?open=<test id>` (from a test's rules screen) unfolds that row and scrolls to it.
+  const openParam = params.get('open')
+  const [open, setOpen] = useState<Set<string>>(() => new Set(openParam ? [openParam] : []))
+  useEffect(() => {
+    if (openParam) document.getElementById(`stats-${openParam}`)?.scrollIntoView({ block: 'center' })
+  }, [openParam])
   const toggle = (id: string) =>
     setOpen((s) => {
       const next = new Set(s)
@@ -112,7 +117,7 @@ function StatsRow({ test, record, open, onToggle }: {
   const tint = { backgroundImage: `linear-gradient(90deg, ${color}17, transparent 35%)` }
 
   return (
-    <li className={`border-b border-zinc-800/70 last:border-b-0 ${open ? 'bg-zinc-800/30' : ''}`}>
+    <li id={`stats-${test.id}`} className={`scroll-mt-24 border-b border-zinc-800/70 last:border-b-0 ${open ? 'bg-zinc-800/30' : ''}`}>
       {played ? (
         <div
           role="button"

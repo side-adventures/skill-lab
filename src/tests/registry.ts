@@ -8,10 +8,14 @@ export const TESTS: TestDefinition[] = [
     icon: '⚡',
     category: 'Speed',
     tagline: 'How fast can you react to a color change?',
-    instructions: [
-      'Wait for the box to turn green, then tap as fast as you can.',
-      'Tapping before it turns green restarts the round.',
-      '5 rounds — your score is the average.',
+    skill: 'reaction speed',
+    howTo: [
+      'Click to start a round. The box turns red: wait.',
+      'After a random delay it turns green. Click as fast as you can.',
+      'Clicking while it is still red is too early and restarts the round.',
+    ],
+    scoring: [
+      'Your average reaction time over 5 rounds.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Average reaction time',
@@ -25,10 +29,15 @@ export const TESTS: TestDefinition[] = [
     icon: '🧩',
     category: 'Memory',
     tagline: 'Remember which tiles lit up.',
-    instructions: [
-      'Some tiles light up for a second — then tap all of them.',
-      'Each level adds a tile and the grid grows.',
-      '3 wrong taps fail a level. You have 3 lives.',
+    skill: 'short-term visual memory',
+    howTo: [
+      'A few tiles light up for a second, then go dark.',
+      'Click all the tiles that lit up, in any order.',
+      'Each level adds one more tile, and the grid grows from 3×3 up to 7×7.',
+    ],
+    scoring: [
+      'The number of levels you clear.',
+      '3 wrong clicks fail a level and you retry it with a new pattern. After 3 failed levels the test ends.',
     ],
     durationHint: '~2 min',
     scoreLabel: 'Levels cleared',
@@ -42,10 +51,15 @@ export const TESTS: TestDefinition[] = [
     icon: '🎨',
     category: 'Focus',
     tagline: 'Pick the ink color, not the word.',
-    instructions: [
-      'A color word appears in a colored ink — e.g. RED written in blue.',
-      'Tap the button for the INK color, ignore the word.',
-      '45 seconds. Correct +1, wrong −1. You also see how much the mismatch slows you down.',
+    skill: 'selective attention',
+    howTo: [
+      'A color word appears, written in an ink color that is often different, like RED written in blue.',
+      'Click the button for the ink color, not for the word.',
+      'You have 45 seconds: answer as many as you can.',
+    ],
+    scoring: [
+      'Correct answers minus wrong answers, so guessing does not pay off.',
+      'Your result also shows how much a mismatch between word and ink slows you down.',
     ],
     durationHint: '45 s',
     scoreLabel: 'Points (correct − wrong)',
@@ -59,10 +73,14 @@ export const TESTS: TestDefinition[] = [
     icon: '⏱️',
     category: 'Estimation',
     tagline: 'Feel the seconds without a clock.',
-    instructions: [
-      'You get a target between 3 and 10 seconds.',
-      'Tap to start a hidden timer, tap again when you think the time is up.',
-      '5 rounds — score is your average error.',
+    skill: 'your sense of time',
+    howTo: [
+      'You get a target time between 3 and 10 seconds.',
+      'Click to start a hidden timer, then click again when you think the time is up.',
+      '5 rounds, with a short, a medium and a long target among them.',
+    ],
+    scoring: [
+      'Your average error, in percent of the target time.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Average error',
@@ -76,10 +94,14 @@ export const TESTS: TestDefinition[] = [
     icon: '🔵',
     category: 'Estimation',
     tagline: 'How many dots did you just see?',
-    instructions: [
-      'Between 5 and 60 dots flash for 0.6 seconds (the first round always has 20–40).',
-      'Enter how many you think you saw — no time to count, just estimate.',
-      '10 rounds — score is your average accuracy.',
+    skill: 'estimating amounts at a glance',
+    howTo: [
+      'Between 5 and 60 dots flash for just over half a second.',
+      'There is no time to count: type how many you think you saw.',
+      '10 rounds.',
+    ],
+    scoring: [
+      'Your average accuracy: how close your guesses were, in percent.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Average accuracy',
@@ -93,10 +115,15 @@ export const TESTS: TestDefinition[] = [
     icon: '➗',
     category: 'Thinking',
     tagline: 'Solve as many sums as you can.',
-    instructions: [
-      'Solve + − × ÷ problems with the keypad (or your keyboard).',
-      'Problems get a bit harder as you go.',
-      '60 seconds — score is the number of correct answers.',
+    skill: 'mental arithmetic',
+    howTo: [
+      'Solve simple + − × ÷ problems. Every answer is a whole number.',
+      'Type your answer with the keypad or your keyboard and confirm it.',
+      'The numbers get a little bigger every 5 correct answers.',
+    ],
+    scoring: [
+      'The number of correct answers in 60 seconds.',
+      'A wrong answer just moves you to the next problem.',
     ],
     durationHint: '60 s',
     scoreLabel: 'Correct answers',
@@ -110,10 +137,14 @@ export const TESTS: TestDefinition[] = [
     icon: '🎯',
     category: 'Motor',
     tagline: 'Stay inside the drifting circle.',
-    instructions: [
-      'Move your pointer (or finger) into the circle to start.',
-      'Stay inside as it drifts around, speeds up and shrinks.',
-      '30 seconds — score is the share of time you stayed inside.',
+    skill: 'fine motor control',
+    howTo: [
+      'Move your pointer into the circle to start.',
+      'The circle drifts around, speeds up and shrinks. Keep your pointer inside it.',
+      'The test lasts 30 seconds.',
+    ],
+    scoring: [
+      'The share of the time your pointer stayed inside the circle.',
     ],
     durationHint: '30 s',
     scoreLabel: 'Time inside',
@@ -129,9 +160,14 @@ export const TESTS: TestDefinition[] = [
     icon: '🔢',
     category: 'Memory',
     tagline: 'Remember an ever-longer number.',
-    instructions: [
-      'A number appears for a moment — type it back.',
-      'It starts with 3 digits and gets one digit longer each round.',
+    skill: 'short-term memory for numbers',
+    howTo: [
+      'A number appears for a moment, then disappears.',
+      'Type it back from memory.',
+      'It starts with 3 digits and gets one digit longer every round.',
+    ],
+    scoring: [
+      'The longest number you typed back correctly.',
       'One mistake ends the test.',
     ],
     durationHint: '~2 min',
@@ -146,9 +182,14 @@ export const TESTS: TestDefinition[] = [
     icon: '🔁',
     category: 'Memory',
     tagline: 'Repeat the pattern of flashing tiles.',
-    instructions: [
-      'Tiles light up one after another — tap them in the same order.',
-      'Each round adds one more step.',
+    skill: 'memory for order',
+    howTo: [
+      'Tiles on a 3×3 grid light up one after another.',
+      'Click them in the same order.',
+      'Every round, the sequence gets one step longer.',
+    ],
+    scoring: [
+      'The longest sequence you repeated correctly.',
       'One mistake ends the test.',
     ],
     durationHint: '~2 min',
@@ -163,10 +204,16 @@ export const TESTS: TestDefinition[] = [
     icon: '🧮',
     category: 'Memory',
     tagline: 'Remember where every number was.',
-    instructions: [
-      'Numbers appear on a grid for 15 seconds, then hide.',
-      'Tap the hidden tiles in order: 1, 2, 3 … (tap 1 early to hide them sooner).',
-      'Starts with 5 tiles, one more each round. One mistake ends the test.',
+    skill: 'spatial memory',
+    howTo: [
+      'Numbers appear on a grid for 15 seconds, then they are hidden.',
+      'Click the hidden tiles in order: 1, 2, 3 …',
+      'Ready early? Clicking 1 hides the numbers right away.',
+      'It starts with 5 numbers and adds one every round.',
+    ],
+    scoring: [
+      'The most numbers you got right in one round.',
+      'One wrong tile ends the test.',
     ],
     durationHint: '~3 min',
     scoreLabel: 'Most tiles',
@@ -180,10 +227,15 @@ export const TESTS: TestDefinition[] = [
     icon: '📸',
     category: 'Memory',
     tagline: '5 numbers, less time every round.',
-    instructions: [
-      '5 numbers flash on a grid — first for 1 second.',
-      'Tap the hidden tiles in order: 1, 2, 3, 4, 5.',
-      'Each round the flash gets 10 % shorter. One mistake ends the test.',
+    skill: 'memory under time pressure',
+    howTo: [
+      '5 numbers flash on a grid, at first for 1 second.',
+      'Click the hidden tiles in order, from 1 to 5.',
+      'Every round you clear, the flash gets 10 % shorter.',
+    ],
+    scoring: [
+      'The shortest flash you still cleared.',
+      'One wrong tile ends the test.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Shortest flash',
@@ -197,10 +249,15 @@ export const TESTS: TestDefinition[] = [
     icon: '📖',
     category: 'Memory',
     tagline: 'Seen it before, or new?',
-    instructions: [
+    skill: 'recognition memory',
+    howTo: [
       'Words appear one at a time.',
-      'Tap SEEN if it already appeared in this test, NEW if not.',
-      '3 lives — score is your number of correct answers.',
+      'Click SEEN if the word already appeared in this test, NEW if it did not.',
+      'After the first few words, many of them are repeats.',
+    ],
+    scoring: [
+      'The number of correct answers.',
+      'You have 3 lives: every wrong answer costs one.',
     ],
     durationHint: '~2 min',
     scoreLabel: 'Correct answers',
@@ -214,10 +271,15 @@ export const TESTS: TestDefinition[] = [
     icon: '🧠',
     category: 'Focus',
     tagline: 'Keep track of what happened N steps ago.',
-    instructions: [
-      'A square lights up on a grid, one position every 2.5 seconds.',
-      'Tap MATCH when it is in the same spot as 2 steps before (2-back).',
-      'Reach 80 % accuracy to move up to 3-back, 4-back …',
+    skill: 'working memory',
+    howTo: [
+      'A square lights up on a 3×3 grid, in a new spot every 2.5 seconds.',
+      'Click MATCH when it is in the same spot as 2 steps before.',
+      'Leave it alone when it is not.',
+    ],
+    scoring: [
+      'Each block needs 80 % accuracy, counting both the matches you caught and the non-matches you left alone.',
+      'Pass a block to move up to 3 steps back, then 4, and so on. Your score is the highest level you passed.',
     ],
     durationHint: '~3 min',
     scoreLabel: 'Highest level',
@@ -231,10 +293,15 @@ export const TESTS: TestDefinition[] = [
     icon: '🚦',
     category: 'Focus',
     tagline: 'Tap on green. Hold back on red.',
-    instructions: [
-      '30 circles appear: tap as fast as you can when one is green.',
-      'Do NOT tap when it is red (or before anything appears).',
-      'Score is your total green reaction time; every mistake adds 100 ms.',
+    skill: 'impulse control',
+    howTo: [
+      '30 circles appear one after another.',
+      'Click as fast as you can when a circle is green.',
+      'Do not click when it is red, or before a circle appears.',
+    ],
+    scoring: [
+      'Your total reaction time for the green circles.',
+      'A missed green counts as 0.8 s, and every mistake adds 0.1 s.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Total time',
@@ -249,9 +316,15 @@ export const TESTS: TestDefinition[] = [
     icon: '🏹',
     category: 'Speed',
     tagline: 'Hit as many targets as you can.',
-    instructions: [
-      'A target appears — hit it, the next one appears somewhere else.',
-      'Center hit: 2 points. Outer ring: 1 point. 30 seconds.',
+    skill: 'aim and speed',
+    howTo: [
+      'A target appears somewhere on the board: click it.',
+      'As soon as you hit it, the next one appears somewhere else.',
+      'You have 30 seconds.',
+    ],
+    scoring: [
+      'A hit in the red center gives 2 points, a hit on the white ring 1 point.',
+      'Missed clicks do not cost points.',
     ],
     durationHint: '30 s',
     scoreLabel: 'Points',
@@ -266,7 +339,14 @@ export const TESTS: TestDefinition[] = [
     icon: '👆',
     category: 'Speed',
     tagline: 'How fast can you tap?',
-    instructions: ['Tap the button as fast as you can for 10 seconds.', 'The timer starts with your first tap.'],
+    skill: 'clicking speed',
+    howTo: [
+      'Click the button as fast as you can.',
+      'The 10-second timer starts with your first click.',
+    ],
+    scoring: [
+      'Your clicks per second.',
+    ],
     durationHint: '10 s',
     scoreLabel: 'Taps per second',
     higherIsBetter: true,
@@ -279,10 +359,14 @@ export const TESTS: TestDefinition[] = [
     icon: '🛑',
     category: 'Speed',
     tagline: 'Stop the moving bar right on the line.',
-    instructions: [
-      'A bar slides across — tap to stop it exactly on the green line.',
-      '5 rounds at different speeds.',
-      'Score is your average timing error in milliseconds.',
+    skill: 'timing',
+    howTo: [
+      'Click to start: a marker slides along a track.',
+      'Click again to stop it exactly on the green line.',
+      '5 rounds, each at a different speed.',
+    ],
+    scoring: [
+      'Your average timing error: how many milliseconds too early or too late you stopped.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Average timing error',
@@ -296,9 +380,14 @@ export const TESTS: TestDefinition[] = [
     icon: '🔄',
     category: 'Thinking',
     tagline: 'Rotated — or mirrored?',
-    instructions: [
-      'Two shapes: is the right one just the left one rotated (SAME), or a mirror image?',
-      '60 seconds. Correct +1, wrong −1.',
+    skill: 'spatial reasoning',
+    howTo: [
+      'You see two shapes. The right one is turned.',
+      'Decide if it is the same shape, just rotated, or its mirror image.',
+      'You have 60 seconds.',
+    ],
+    scoring: [
+      'Correct answers minus wrong answers, so guessing does not pay off.',
     ],
     durationHint: '60 s',
     scoreLabel: 'Points (correct − wrong)',
@@ -312,10 +401,15 @@ export const TESTS: TestDefinition[] = [
     icon: '✏️',
     category: 'Motor',
     tagline: 'Race along the path without leaving it.',
-    instructions: [
-      'Put your pointer or finger on GO, then follow the path to the flag.',
+    skill: 'fast, precise movement',
+    howTo: [
+      'Move your pointer onto GO to start.',
+      'Follow the path to the flag as fast as you can.',
+      'Stay inside the path the whole way.',
+    ],
+    scoring: [
+      'Your time from GO to the flag.',
       'Leaving the path ends the run without a score.',
-      'Score is your time — as fast as you can.',
     ],
     durationHint: '~30 s',
     scoreLabel: 'Time',
@@ -329,10 +423,15 @@ export const TESTS: TestDefinition[] = [
     icon: '📐',
     category: 'Estimation',
     tagline: 'Middles, angles, centers — by eye.',
-    instructions: [
-      '10 short tasks: find the middle, set an angle, complete a square, split a shape …',
-      'Drag or tap on the board, then confirm. Each task gives up to 100 points.',
-      'Score is your average accuracy over all 10.',
+    skill: 'judging shapes and angles by eye',
+    howTo: [
+      '10 short tasks, such as finding the middle of a line, setting an angle or completing a square.',
+      'Drag or click on the board, then confirm with Done.',
+      'After each task you see the exact solution.',
+    ],
+    scoring: [
+      'Each task gives up to 100 points, depending on how close you got.',
+      'Your score is the average over all 10 tasks.',
     ],
     durationHint: '~3 min',
     scoreLabel: 'Accuracy',

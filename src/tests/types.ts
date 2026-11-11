@@ -40,8 +40,12 @@ export interface TestDefinition {
   icon: string
   category: Category
   tagline: string
-  /** Short bullet points shown on the intro screen. */
-  instructions: string[]
+  /** The skill it tests, shown as "Tests …" on the rules screen (lowercase start, e.g. "reaction speed"). */
+  skill: string
+  /** How to play: one short line per step, as many as the test needs. */
+  howTo: string[]
+  /** How the score works: usually 1–2 short lines (what counts, penalties, lives, what ends it). */
+  scoring: string[]
   durationHint: string
   /** e.g. "Average reaction time" */
   scoreLabel: string
