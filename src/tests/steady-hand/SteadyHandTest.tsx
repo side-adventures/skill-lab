@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { TimerBar } from '../../components/TimerBar'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { FullLayout } from '../../components/game/layouts'
 import { useLatest } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { DURATION_MS, RAMP_IN_MS, pathAt, radiusAt, randomPhases, scoreInside, speedAt } from './scoring'
@@ -77,29 +78,27 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <TimerBar remaining={hud.remaining} total={DURATION_MS}>
-        {playing ? `Inside: ${hud.pct.toFixed(1)} %` : 'Not started'}
-      </TimerBar>
-      <div
+    <>
+      <GameInfo
+        left={<InfoValue value={(hud.remaining / 1000).toFixed(1)} unit="s left" />}
+        middle={playing ? 'Stay inside the circle' : 'Move your pointer into the circle to start'}
+        right={playing && <InfoValue label="Inside" value={hud.pct.toFixed(1)} unit="%" />}
+        timer={hud.remaining / DURATION_MS}
+      />
+      <FullLayout
         ref={area}
         onPointerMove={track}
         onPointerDown={track}
         onPointerLeave={() => (pointer.current = null)}
         onPointerUp={(e) => e.pointerType === 'touch' && (pointer.current = null)}
-        className="play-area relative min-h-0 flex-1 w-full cursor-crosshair overflow-hidden rounded-2xl bg-white dark:bg-zinc-900"
+        className="cursor-crosshair bg-zinc-900"
         style={{ touchAction: 'none' }}
       >
         <div
           ref={circle}
           className="pointer-events-none absolute top-0 left-0 rounded-full border-4 border-rose-500 bg-rose-500/15 data-[inside=true]:border-emerald-500 data-[inside=true]:bg-emerald-500/20"
         />
-        {!playing && (
-          <p className="pointer-events-none absolute inset-x-0 bottom-6 text-center text-zinc-500">
-            Move your pointer (or finger) into the circle to start
-          </p>
-        )}
-      </div>
-    </div>
+      </FullLayout>
+    </>
   )
 }

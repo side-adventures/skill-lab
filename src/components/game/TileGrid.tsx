@@ -1,0 +1,54 @@
+import type { ReactNode } from 'react'
+import { boardBg, type BoardState } from '../boardFeedback'
+
+export type TileTone = 'idle' | 'lit' | 'found' | 'wrong' | 'hint' | 'revealed' | 'hidden' | 'done' | 'empty'
+
+const TONE: Record<TileTone, string> = {
+  idle: 'bg-zinc-700',
+  lit: 'bg-violet-500',
+  found: 'bg-violet-500',
+  wrong: 'bg-rose-500',
+  hint: 'bg-violet-500/35 ring-2 ring-inset ring-violet-400',
+  revealed: 'bg-zinc-100 text-zinc-900',
+  hidden: 'bg-violet-500',
+  done: 'bg-violet-500/25 text-violet-200',
+  empty: 'bg-transparent',
+}
+
+/**
+ * A grid of tiles that fills its parent (Visual / Sequence Memory, N-Back, Number / Flash Order).
+ * `tile(i)` gives each tile's tone and optional content; `frame` tints the board green / red.
+ */
+export function TileGrid({ cols, rows = cols, tile, onTap, frame = null, gap = 'gap-2' }: {
+  cols: number
+  rows?: number
+  tile: (i: number) => { tone: TileTone; content?: ReactNode; label?: string }
+  onTap?: (i: number) => void
+  frame?: BoardState
+  gap?: string
+}) {
+  return (
+    <div
+      className={`play-area grid size-full rounded-2xl p-2 ${gap} ${boardBg(frame)}`}
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}
+    >
+      {Array.from({ length: cols * rows }, (_, i) => {
+        const t = tile(i)
+        return (
+          <button
+            key={i}
+            type="button"
+            aria-label={t.label ?? `Tile ${i + 1}`}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return
+              onTap?.(i)
+            }}
+            className={`grid min-h-0 place-items-center overflow-hidden rounded-lg text-2xl leading-none font-bold transition-colors duration-150 ${TONE[t.tone]} ${onTap ? 'cursor-pointer' : 'cursor-default'}`}
+          >
+            {t.content}
+          </button>
+        )
+      })}
+    </div>
+  )
+}

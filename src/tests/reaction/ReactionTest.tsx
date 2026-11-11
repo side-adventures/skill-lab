@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { FullLayout } from '../../components/game/layouts'
+import { RoundResult } from '../../components/game/RoundResult'
+import { useLater } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { ROUNDS, randomDelay, summarize } from './scoring'
@@ -7,96 +11,82 @@ type State =
   | { name: 'ready' }   // waiting for the player to start the round
   | { name: 'waiting' } // red, timer running
   | { name: 'go' }      // green, measuring
-  | { name: 'early' }   // tapped too soon
+  | { name: 'early' }   // clicked too soon
   | { name: 'shown'; ms: number }
+
+const VIEW: Record<Exclude<State['name'], 'shown'>, { bg: string; title: string; phase: string }> = {
+  ready: { bg: 'bg-zinc-800', title: 'Click to start', phase: 'Click to start' },
+  waiting: { bg: 'bg-rose-600', title: 'Wait for green…', phase: 'Wait for green' },
+  go: { bg: 'bg-emerald-500', title: 'Click!', phase: 'Click!' },
+  early: { bg: 'bg-amber-600', title: 'Too soon!', phase: 'Too soon · click to retry' },
+}
 
 export default function ReactionTest({ onFinish }: TestComponentProps) {
   const [state, setState] = useState<State>({ name: 'ready' })
   const [times, setTimes] = useState<number[]>([])
   const goAt = useRef(0)
+  const { later, cancel } = useLater()
   const timer = useRef<number | undefined>(undefined)
-
-  useEffect(() => () => window.clearTimeout(timer.current), [])
 
   const startRound = () => {
     setState({ name: 'waiting' })
-    timer.current = window.setTimeout(() => {
+    timer.current = later(randomDelay(), () => {
       goAt.current = performance.now()
       setState({ name: 'go' })
-    }, randomDelay())
+    })
   }
 
-  const handlePress = () => {
-    switch (state.name) {
-      case 'ready':
-      case 'early':
-        return startRound()
-      case 'waiting':
-        window.clearTimeout(timer.current)
-        return setState({ name: 'early' })
-      case 'go': {
-        const ms = performance.now() - goAt.current
-        const next = [...times, ms]
-        setTimes(next)
-        setState({ name: 'shown', ms })
-        return
-      }
-      case 'shown': {
-        if (times.length >= ROUNDS) {
-          const { score, best, worst } = summarize(times)
-          return onFinish({
-            score,
-            details: {
-              Fastest: `${best} ms`,
-              Slowest: `${worst} ms`,
-              Rounds: times.map((t) => Math.round(t)).join(' · '),
-            },
-          })
-        }
-        return startRound()
-      }
+  const press = () => {
+    if (state.name === 'ready' || state.name === 'early') return startRound()
+    if (state.name === 'waiting') {
+      cancel(timer.current)
+      return setState({ name: 'early' })
     }
+    if (state.name === 'go') {
+      const ms = performance.now() - goAt.current
+      setTimes([...times, ms])
+      setState({ name: 'shown', ms })
+    }
+    // 'shown': the round result handles "click anywhere"
   }
+  useActionKey(press)
 
-  // Space / Enter also work, for keyboard players.
-  useActionKey(handlePress)
+  const next = () => {
+    if (times.length < ROUNDS) return startRound()
+    const { score, best, worst } = summarize(times)
+    onFinish({
+      score,
+      details: { Fastest: `${best} ms`, Slowest: `${worst} ms`, Rounds: times.map((t) => Math.round(t)).join(' · ') },
+    })
+  }
 
   const round = Math.min(times.length + (state.name === 'shown' ? 0 : 1), ROUNDS)
-  const view = VIEWS[state.name]
-
   return (
-    <div className="flex h-full flex-col">
-      <div className="mb-3 flex justify-between text-sm text-zinc-500">
-        <span>Round {round} / {ROUNDS}</span>
-        {times.length > 0 && <span>Avg so far: {summarize(times).score} ms</span>}
-      </div>
-      <button
-        type="button"
-        // pointerdown fires earlier than click => more accurate timing
-        onPointerDown={(e) => {
-          if (e.button === 0) handlePress()
-        }}
-        onClick={(e) => e.preventDefault()}
-        onKeyDown={(e) => e.preventDefault()} // handled by window listener
-        className={`play-area flex min-h-0 flex-1 w-full cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center text-white ${view.bg}`}
+    <>
+      <GameInfo
+        left={<InfoValue value={`Round ${round}`} of={ROUNDS} />}
+        middle={state.name === 'shown' ? '' : VIEW[state.name].phase}
+        right={times.length > 0 && <InfoValue label="Average" value={summarize(times).score} unit="ms" />}
+      />
+      <FullLayout
+        // pointerdown fires earlier than click → more accurate timing
+        onPointerDown={(e) => e.button === 0 && press()}
+        className={`grid cursor-pointer place-items-center text-center transition-colors duration-75 ${
+          state.name === 'shown' ? 'bg-zinc-900' : `${VIEW[state.name].bg} text-white`
+        }`}
       >
-        <span className="text-4xl font-bold sm:text-5xl">
-          {state.name === 'shown' ? `${Math.round(state.ms)} ms` : view.title}
-        </span>
-        <span className="mt-3 text-lg opacity-90">
-          {state.name === 'shown'
-            ? times.length >= ROUNDS ? 'Tap to see your result' : 'Tap for the next round'
-            : view.subtitle}
-        </span>
-      </button>
-    </div>
+        {state.name === 'shown' ? (
+          <RoundResult
+            value={Math.round(state.ms)}
+            unit="ms"
+            line={`Round ${times.length} of ${ROUNDS}`}
+            chips={{ done: times.map((t) => `${Math.round(t)} ms`), total: ROUNDS }}
+            onContinue={next}
+          />
+        ) : (
+          <span className="text-5xl font-bold">{VIEW[state.name].title}</span>
+        )}
+      </FullLayout>
+    </>
   )
-}
-
-const VIEWS: Record<State['name'], { bg: string; title: string; subtitle: string }> = {
-  ready: { bg: 'bg-sky-600', title: 'Tap to start', subtitle: 'Then wait for green' },
-  waiting: { bg: 'bg-rose-600', title: 'Wait for green…', subtitle: '' },
-  go: { bg: 'bg-emerald-500', title: 'TAP!', subtitle: '' },
-  early: { bg: 'bg-amber-500', title: 'Too soon!', subtitle: 'Tap to retry this round' },
-  shown: { bg: 'bg-sky-600', title: '', subtitle: '' },
 }
