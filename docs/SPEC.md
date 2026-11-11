@@ -74,8 +74,22 @@ screen then shows why, and nothing is saved.
 Uses the Web Share API when available, otherwise copies to clipboard. The header's "Share scores" button shares
 all best scores in one message.
 
+## Test screens (`components/TestRunner.tsx`)
+- **Top bar** (fixed height): test icon in its category color + name. Right side: "All tests" on the rules
+  and result screens; while playing: your best (if any) and a "?" button.
+- **Info row** (fixed height, so nothing below moves): category · duration on the rules screen.
+- **Rules screen:** a 3:2 stage (720 × 480) with the rules (`components/RulesContent.tsx`): the test's
+  tagline as summary, "Tests <skill>", a "How to play" list and a "Score" list (any number of lines, from
+  `skill`, `howTo` and `scoring` in the registry). Footer: a wide Start button on the left; on the right
+  "Your best · N attempts", the value and "Stats ›" (opens `#/stats?open=<id>`, that row unfolded). Empty
+  right side if the test was never played.
+- **"?" while playing:** a centered overlay (`components/RulesOverlay.tsx`) with the same rules, Restart (new
+  run) and Back to start (rules screen). The game keeps running underneath; closes with ✕, a click outside or
+  Escape.
+- Game and result screens are still the earlier versions (redesign planned).
+
 ## Stats page (`#/stats`, `src/pages/Stats.tsx`)
-- Same category chips as the home page (stored in the URL).
+- Same category chips as the home page (stored in the URL). `?open=<id>` unfolds that test's row and scrolls to it.
 - Table: Test · Best (bold, with date) · Today (best of today, plain) · Last played (Today, Yesterday,
   N days ago, or a date), with Share best and Play buttons. Played tests first, then unplayed; both alphabetical.
 - Unplayed tests: title and Play stay bright, stats show "—", no Share, can't be expanded.
