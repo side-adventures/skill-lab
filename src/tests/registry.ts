@@ -403,7 +403,7 @@ export const TESTS: TestDefinition[] = [
     tagline: 'Race along the path without leaving it.',
     skill: 'fast, precise movement',
     howTo: [
-      'Move your pointer onto GO to start.',
+      'Move your pointer onto GO. The timer starts when you leave GO along the path.',
       'Follow the path to the flag as fast as you can.',
       'Stay inside the path the whole way.',
     ],
