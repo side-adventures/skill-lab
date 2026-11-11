@@ -9,9 +9,8 @@ export function median(xs: number[]) {
   return s.length % 2 ? s[Math.floor(m)] : (s[m - 1] + s[m]) / 2
 }
 
-/** Average of the last `size` scores at each attempt (from attempt `size` on; undefined before). */
-export const rollingMean = (xs: number[], size = 5) =>
-  xs.map((_, i) => (i + 1 < size ? undefined : mean(xs.slice(i + 1 - size, i + 1))))
+/** Average of the last `size` scores at each attempt; at the start, of the attempts so far. */
+export const rollingMean = (xs: number[], size = 5) => xs.map((_, i) => mean(xs.slice(Math.max(0, i + 1 - size), i + 1)))
 
 const startOfDay = (t: number) => {
   const d = new Date(t)

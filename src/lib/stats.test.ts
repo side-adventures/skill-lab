@@ -10,9 +10,9 @@ describe('stats helpers', () => {
     expect(median([5, 1, 3])).toBe(3)
     expect(Number.isNaN(mean([]))).toBe(true)
   })
-  it('rolling mean starts at the 5th attempt', () => {
+  it('rolling mean starts at the first attempt and then averages the last 5', () => {
     const r = rollingMean([1, 2, 3, 4, 5, 6])
-    expect(r.slice(0, 4)).toEqual([undefined, undefined, undefined, undefined])
+    expect(r.slice(0, 4)).toEqual([1, 1.5, 2, 2.5])
     expect(r[4]).toBe(3)
     expect(r[5]).toBe(4)
   })

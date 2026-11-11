@@ -83,7 +83,8 @@ all best scores in one message.
   (x = attempt number, better is always up), and Average / Median for all attempts (or "Last 100") and the
   last 5, plus Best and Attempts.
 - Graph (`components/AttemptGraph.tsx`): faded score line in the category color; dots while there are
-  ≤ 50 attempts, shrinking as they grow; the average of the last 5 as the main line from the 5th attempt;
+  ≤ 50 attempts, shrinking as they grow; the average of the last 5 as the main line once there are 5
+  attempts, drawn from attempt 1 (averaging the attempts so far at the start);
   the all-time best as a white dot (if still in the history); hover shows score, attempt number and date.
 
 ## Shared behaviour
