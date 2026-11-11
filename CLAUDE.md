@@ -40,7 +40,7 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 3. Add an entry in `src/tests/registry.ts` with `Component: lazy(() => import('./<id>/<Name>Test'))`,
    a `category` (one of `CATEGORIES`; its color comes from `CATEGORY_COLORS` in `types.ts`), and the rules:
    `tagline` (one sentence, also on the home card), `skill` ("Tests …"), `howTo` and `scoring` (short lines,
-   as many as needed; say "click", keep it accurate to the code). Check the rules fit the 3:2 stage.
+   as many as needed; say "click", keep it accurate to the code). Check the rules fit the 3:2 stage (768 × 512).
 4. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
    for timing-sensitive input; clear timers / rAF in effect cleanups.
 5. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
