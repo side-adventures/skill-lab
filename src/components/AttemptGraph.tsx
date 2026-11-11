@@ -41,10 +41,10 @@ export function AttemptGraph({ history, best, firstNumber, color, higherIsBetter
     const t = hi === lo ? 0.5 : (v - lo) / (hi - lo) // 0 = lowest score
     return TOP + (higherIsBetter ? 1 - t : t) * (H - TOP - BOTTOM)
   }
-  const path = (vals: (number | undefined)[]) =>
-    vals.reduce<string>((d, v, i) => (v === undefined ? d : `${d}${d ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`), '')
+  const path = (vals: number[]) => vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join('')
 
-  const trend = rollingMean(scores)
+  // Trend line (average of the last 5) only once there are 5 attempts, then drawn from attempt 1.
+  const trend = n >= 5 ? rollingMean(scores) : []
   const dotR = n > DOTS_UP_TO ? 0 : Math.max(2.2, Math.min(5, 5.6 - n / 12))
   const worstScore = higherIsBetter ? lo : hi
   const step = n <= 10 ? 1 : n <= 25 ? 5 : n <= 50 ? 10 : 25
@@ -67,7 +67,7 @@ export function AttemptGraph({ history, best, firstNumber, color, higherIsBetter
         {n > 1 && <path d={path(scores)} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" opacity={0.35} />}
         {dotR > 0 &&
           scores.map((v, i) => i !== bestIndex && <circle key={i} cx={x(i)} cy={y(v)} r={dotR} fill={color} opacity={0.55} />)}
-        <path d={path(trend)} fill="none" stroke={color} strokeWidth={2.6} strokeLinejoin="round" strokeLinecap="round" />
+        {trend.length > 0 && <path d={path(trend)} fill="none" stroke={color} strokeWidth={2.6} strokeLinejoin="round" strokeLinecap="round" />}
         {bestIndex >= 0 && <circle cx={x(bestIndex)} cy={y(scores[bestIndex])} r={5.5} fill="#fafafa" stroke="#18181b" strokeWidth={2.5} />}
 
         {ticks.map((i) => (
