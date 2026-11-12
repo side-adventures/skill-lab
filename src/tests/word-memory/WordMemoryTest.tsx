@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { AnswerButtons } from '../../components/game/AnswerButtons'
 import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
-import { END_MOMENT_MS, flashRing, useAnswerFlash, useLater } from '../../lib/game'
+import { END_MOMENT_MS, feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import type { TestComponentProps } from '../types'
 import { LIVES, nextWord } from './scoring'
 import { WORDS } from './words'
@@ -39,7 +39,7 @@ export default function WordMemoryTest({ onFinish }: TestComponentProps) {
         right={<InfoValue label="Score" value={score} />}
       />
       <PromptLayout
-        displayClassName={flashRing(flash)}
+        displayClassName={feedbackRing(flash)}
         display={<span className="text-6xl font-bold tracking-wide">{current.word}</span>}
         answers={
           <AnswerButtons

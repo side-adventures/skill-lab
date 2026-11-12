@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { AnswerButtons } from '../../components/game/AnswerButtons'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
-import { flashRing, useAnswerFlash } from '../../lib/game'
+import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import { correctMinusWrong } from '../../lib/scoring'
 import type { TestComponentProps } from '../types'
@@ -60,7 +60,7 @@ export default function MentalRotationTest({ onFinish }: TestComponentProps) {
         timer={remaining / DURATION_MS}
       />
       <PromptLayout
-        displayClassName={flashRing(flash)}
+        displayClassName={feedbackRing(flash)}
         display={
           <div className="grid size-full grid-cols-2 place-items-center gap-6 p-6">
             <ShapeView shape={trial.shape} angle={trial.leftAngle} />

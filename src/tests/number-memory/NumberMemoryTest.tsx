@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
 import { NumberPad } from '../../components/NumberPad'
-import { END_MOMENT_MS, flashRing, useAnswerFlash, useLater } from '../../lib/game'
+import { END_MOMENT_MS, feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { START_DIGITS, makeNumber, showMs } from './scoring'
@@ -63,7 +63,7 @@ export default function NumberMemoryTest({ onFinish }: TestComponentProps) {
         timer={phase === 'show' ? showLeft / showMs(digits) : undefined}
       />
       <PromptLayout
-        displayClassName={flashRing(flash)}
+        displayClassName={feedbackRing(flash)}
         display={
           <div className="w-full px-8 text-center">
             {phase === 'show' && <p className={big}>{number}</p>}

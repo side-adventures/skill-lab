@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { SquareLayout } from '../../components/game/layouts'
-import { TileGrid, type FrameStyle } from '../../components/game/TileGrid'
+import { TileGrid } from '../../components/game/TileGrid'
 import { END_MOMENT_MS } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestResult } from '../types'
@@ -10,8 +10,6 @@ import { COLS, ROWS, placeTiles } from './scoring'
 type Phase = 'show' | 'hidden' | 'success' | 'fail'
 
 interface Props {
-  /** How success / fail shows on the board (see FrameStyle in TileGrid). */
-  frameStyle?: FrameStyle
   tilesFor: (round: number) => number
   memorizeMsFor: (round: number) => number
   /** Builds the result from the number of cleared rounds when a wrong tile is tapped. */
@@ -24,7 +22,7 @@ interface Props {
  * Shared game for Number Order and Flash Order: numbers 1..N appear on a grid,
  * hide after a timer (or when you tap "1"), then you tap them in order. One mistake ends it.
  */
-export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, frameStyle, onFinish }: Props) {
+export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinish }: Props) {
   const [round, setRound] = useState(0)
   const [cells, setCells] = useState(() => placeTiles(tilesFor(0)))
   const [phase, setPhase] = useState<Phase>('show')
@@ -83,7 +81,6 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, frameSt
           cols={COLS}
           rows={ROWS}
           gap="gap-1.5"
-          frameStyle={frameStyle}
           frame={phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null}
           onTap={phase === 'show' || phase === 'hidden' ? tap : undefined}
           tile={(cell) => {
