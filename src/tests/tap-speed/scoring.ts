@@ -6,9 +6,15 @@ export const tapsPerSecond = (taps: number) => round1(taps / (DURATION_MS / 1000
 
 export const FRAME_MS = 2000
 
-/** Clicks per 2-second frame (5 frames), from click times in ms since the first click. */
-export const clicksPerFrame = (times: number[]) =>
-  Array.from({ length: DURATION_MS / FRAME_MS }, (_, i) => times.filter((t) => t >= i * FRAME_MS && t < (i + 1) * FRAME_MS).length)
+/**
+ * Clicks per 2-second frame (5 frames), from click times in ms since the first click. The timer ends a
+ * few ms after first click + 10 s, so a click in that gap still counts: it goes into the last frame.
+ */
+export function clicksPerFrame(times: number[]) {
+  const frames = Array<number>(DURATION_MS / FRAME_MS).fill(0)
+  times.forEach((t) => frames[Math.min(frames.length - 1, Math.floor(t / FRAME_MS))]++)
+  return frames
+}
 
 /** Result screen stats: total, fastest and last frame (do you slow down?), clicks per frame. */
 export function resultDetails(times: number[]): ResultDetails {

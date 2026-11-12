@@ -65,9 +65,6 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
 
   const tap = (tile: number) => {
     if (phase !== 'input') return
-    const now = performance.now()
-    clickMs.current.push(now - lastAt.current)
-    lastAt.current = now
     setLit(tile)
     window.clearTimeout(tapTimer.current)
     tapTimer.current = window.setTimeout(() => setLit(null), 150)
@@ -75,6 +72,10 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
       setWrongTile(tile)
       return setPhase('fail') // the board then shows which tile it should have been
     }
+    // Click times for the result stats (correct clicks only: the wrong last click isn't a "time per click").
+    const now = performance.now()
+    clickMs.current.push(now - lastAt.current)
+    lastAt.current = now
     if (pos + 1 === seq.length) setPhase('success')
     else setPos(pos + 1)
   }

@@ -61,6 +61,7 @@ export function blockAccuracy(seq: number[], tapped: boolean[], n: number) {
 export function blockCounts(seq: number[], tapped: boolean[], n: number) {
   let matches = 0, hits = 0, wrong = 0
   seq.forEach((_, i) => {
+    if (i < n) return // the first n items can't be matches and aren't scored (same as blockAccuracy)
     const m = isMatch(seq, i, n)
     if (m) matches++
     if (m && tapped[i]) hits++

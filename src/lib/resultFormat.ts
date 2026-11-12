@@ -3,7 +3,7 @@ import type { ResultStat } from '../tests/types'
 /** Small formatters for result-screen stats, so units look the same everywhere. */
 
 /** "612 ms" below one second, "1.4 s" from one second on. */
-export const fmtMs = (ms: number) => (Math.abs(ms) < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`)
+export const fmtMs = (ms: number) => (Math.round(Math.abs(ms)) < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`)
 
 /** "92 %" (whole percent). */
 export const fmtPct = (fraction: number) => `${Math.round(fraction * 100)} %`
