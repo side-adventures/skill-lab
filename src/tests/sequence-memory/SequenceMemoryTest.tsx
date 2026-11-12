@@ -76,6 +76,7 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
       <SquareLayout>
         <TileGrid
           cols={GRID}
+          frameStyle="ring"
           frame={phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null}
           onTap={phase === 'input' ? tap : undefined}
           tile={(i) => {

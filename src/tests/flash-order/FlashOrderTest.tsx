@@ -5,6 +5,7 @@ import { START_TILES, flashOrderMs } from '../number-order/scoring'
 export default function FlashOrderTest({ onFinish }: TestComponentProps) {
   return (
     <OrderGame
+      frameStyle="tint"
       tilesFor={() => START_TILES}
       memorizeMsFor={flashOrderMs}
       roundLabel={(r) => `Round ${r + 1}`}
