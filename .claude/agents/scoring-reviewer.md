@@ -1,6 +1,6 @@
 ---
 name: scoring-reviewer
-description: Reviews a Skill Lab test's scoring and round generation for loopholes, unfair random setups and missing scoreVersion bumps, and proves every finding with a unit test. Use after adding a test or changing scoring, rules or round generation (e.g. "have the scoring-reviewer check Go / No-Go").
+description: Reviews a Skill Lab test's scoring and round generation for loopholes, unfair random setups and score-changing edits, and proves every finding with a unit test. Use after adding a test or changing scoring, rules or round generation (e.g. "have the scoring-reviewer check Go / No-Go").
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 ---
@@ -40,7 +40,7 @@ Work through each point and note the result, even when it's fine.
    - `higherIsBetter` matches the score's meaning.
    - The `details` add up to the score.
    - The instructions in `registry.ts` and the row in `SPEC.md` describe what the code actually does: counts, timings, penalties.
-5. **Comparability.** If the change alters what a score means (timing, counts, point values, difficulty), the test's `scoreVersion` in `registry.ts` must be bumped. Compare with `main` (`git diff main -- src/tests/<id> src/tests/registry.ts`) to decide.
+5. **Comparability.** If the change alters what a score means (timing, counts, point values, difficulty), note it. **While the site is in development, `scoreVersion` is not bumped** (see Conventions in `CLAUDE.md`): don't report a missing bump as a problem, just list the score-changing changes in one line so they can be bumped later if needed. Compare with `main` (`git diff main -- src/tests/<id> src/tests/registry.ts`).
 6. **Timing logic** (read the component).
    - Timing-critical input uses `onPointerDown` and `performance.now()`.
    - Countdowns use absolute end times.
