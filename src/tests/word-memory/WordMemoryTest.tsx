@@ -45,8 +45,8 @@ export default function WordMemoryTest({ onFinish }: TestComponentProps) {
           <AnswerButtons
             disabled={lives <= 0}
             options={[
-              { label: 'SEEN', key: 's', onPress: () => answer(true), primary: true },
-              { label: 'NEW', key: 'n', onPress: () => answer(false) },
+              { label: 'SEEN', key: 'ArrowLeft', onPress: () => answer(true) },
+              { label: 'NEW', key: 'ArrowRight', onPress: () => answer(false) },
             ]}
           />
         }

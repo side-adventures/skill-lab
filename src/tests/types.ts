@@ -33,6 +33,15 @@ export interface TestResult {
  */
 export type StartMode = 'countdown' | 'quick' | 'none'
 
+/**
+ * Which layout the test uses (components/game/layouts.tsx). The game frame draws this shape, empty,
+ * during the start transition, so the countdown already shows the play area.
+ */
+export type StageLayout = 'full' | 'prompt' | 'square' | 'panel'
+
+/** A test's lazily loaded play component; `preload()` fetches its code ahead of time. */
+export type TestComponent = LazyExoticComponent<ComponentType<TestComponentProps>> & { preload: () => void }
+
 /** Props every test's play component receives. */
 export interface TestComponentProps {
   onFinish: (result: TestResult) => void
@@ -59,13 +68,16 @@ export interface TestDefinition {
   formatScore: (score: number) => string
   /** How a run starts (see StartMode). */
   start: StartMode
+  /** The layout it is built with (see StageLayout); `boardAspect` for a non-square board in 'square'. */
+  layout: StageLayout
+  boardAspect?: number
   /**
    * Bump when scoring changes so old saved scores aren't compared with new ones
    * (results are stored under a separate key per version).
    */
   scoreVersion?: number
   /** Missing => shown as "coming soon". */
-  Component?: LazyExoticComponent<ComponentType<TestComponentProps>>
+  Component?: TestComponent
 }
 
 /** localStorage id for a test's results; changes when its scoring version is bumped. */

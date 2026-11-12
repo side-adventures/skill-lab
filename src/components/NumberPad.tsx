@@ -66,7 +66,7 @@ export function NumberPad({ value, onChange, onSubmit, maxLength = 4, disabled, 
             e.preventDefault()
             press(k)
           }}
-          className={`${row ? 'h-12' : 'h-14'} rounded-xl text-xl font-semibold transition-colors disabled:opacity-40 ${
+          className={`h-14 rounded-xl text-xl font-semibold transition-colors disabled:opacity-40 ${
             k === 'OK'
               ? 'bg-violet-600 text-white active:bg-violet-700'
               : 'bg-zinc-200 active:bg-zinc-300 dark:bg-zinc-800 dark:active:bg-zinc-700'

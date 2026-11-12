@@ -158,7 +158,7 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
             <p className="mt-1 text-zinc-400">{task.prompt}</p>
             <div className="mt-auto">
               {evaluation ? (
-                <RoundResult value={evaluation.points} unit="pts" line={evaluation.label} onContinue={next} />
+                <RoundResult value={evaluation.points} unit="pts" line={evaluation.label} button={index + 1 >= tasks.length ? 'See result' : 'Next'} onContinue={next} />
               ) : task.input === 'number' ? (
                 <>
                   <p className="mb-3 h-12 text-4xl font-bold tabular-nums">{typed ? `${typed}°` : <span className="text-zinc-700">–</span>}</p>

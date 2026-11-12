@@ -3,11 +3,14 @@ import { useLatest } from '../../lib/hooks'
 
 export interface AnswerOption {
   label: string
-  /** Keyboard key that also triggers it (shown in the button), e.g. '1', 's'. */
+  /** Keyboard key (KeyboardEvent.key) that also triggers it, shown in the button: '1', 'ArrowLeft', ' ' … */
   key: string
   onPress: () => void
   primary?: boolean
 }
+
+const KEY_LABEL: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', ' ': 'Space' }
+const keyLabel = (key: string) => KEY_LABEL[key] ?? key.toUpperCase()
 
 /** Large answer buttons with their key shown inside; reacts on pointerdown and on the key. */
 export function AnswerButtons({ options, columns, disabled }: { options: AnswerOption[]; columns?: number; disabled?: boolean }) {
@@ -42,7 +45,7 @@ export function AnswerButtons({ options, columns, disabled }: { options: AnswerO
         >
           <span>{o.label}</span>
           <kbd className={`rounded-md border px-1.5 text-xs font-medium ${o.primary ? 'border-white/30 text-white/80' : 'border-zinc-700 text-zinc-500'}`}>
-            {o.key.toUpperCase()}
+            {keyLabel(o.key)}
           </kbd>
         </button>
       ))}

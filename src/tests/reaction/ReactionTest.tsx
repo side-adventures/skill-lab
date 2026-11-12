@@ -15,10 +15,10 @@ type State =
   | { name: 'shown'; ms: number }
 
 const VIEW: Record<Exclude<State['name'], 'shown'>, { bg: string; title: string; phase: string }> = {
-  ready: { bg: 'bg-zinc-800', title: 'Click to start', phase: 'Click to start' },
-  waiting: { bg: 'bg-rose-600', title: 'Wait for green…', phase: 'Wait for green' },
-  go: { bg: 'bg-emerald-500', title: 'Click!', phase: 'Click!' },
-  early: { bg: 'bg-amber-600', title: 'Too soon!', phase: 'Too soon · click to retry' },
+  ready: { bg: 'bg-zinc-900', title: 'Click to start', phase: 'Click to start' },
+  waiting: { bg: 'bg-rose-900', title: 'Wait for green…', phase: 'Wait for green' },
+  go: { bg: 'bg-emerald-700', title: 'Click!', phase: 'Click!' },
+  early: { bg: 'bg-amber-800', title: 'Too soon!', phase: 'Too soon · click to retry' },
 }
 
 export default function ReactionTest({ onFinish }: TestComponentProps) {
