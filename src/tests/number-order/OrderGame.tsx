@@ -1,16 +1,27 @@
-import { useEffect, useState } from 'react'
-import { DrainBar } from '../../components/DrainBar'
-import { boardBg } from '../../components/boardFeedback'
+import { useEffect, useRef, useState } from 'react'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { SquareLayout } from '../../components/game/layouts'
+import { TileGrid } from '../../components/game/TileGrid'
+import { END_MOMENT_MS } from '../../lib/game'
+import { useCountdown } from '../../lib/hooks'
 import type { TestResult } from '../types'
 import { COLS, ROWS, placeTiles } from './scoring'
 
 type Phase = 'show' | 'hidden' | 'success' | 'fail'
 
+/** What the run measured, for the result stats. */
+export interface OrderRunStats {
+  /** Per round: how long the numbers stayed visible (clicking 1 early ends it). */
+  memorizeUsed: { round: number; ms: number }[]
+  /** Time between consecutive correct clicks (from 2 on), over all rounds. */
+  tileMs: number[]
+}
+
 interface Props {
   tilesFor: (round: number) => number
   memorizeMsFor: (round: number) => number
   /** Builds the result from the number of cleared rounds when a wrong tile is tapped. */
-  result: (clearedRounds: number) => TestResult
+  result: (clearedRounds: number, stats: OrderRunStats) => TestResult
   roundLabel: (round: number) => string
   onFinish: (r: TestResult) => void
 }
@@ -26,10 +37,14 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
   const [next, setNext] = useState(0) // index of the number to tap next
   const [wrongCell, setWrongCell] = useState<number | null>(null)
   const memorizeMs = memorizeMsFor(round)
+  const showAt = useRef(0)
+  const lastTapAt = useRef(0)
+  const stats = useRef<OrderRunStats>({ memorizeUsed: [], tileMs: [] })
+  const endMemorize = () => stats.current.memorizeUsed.push({ round, ms: performance.now() - showAt.current })
 
   useEffect(() => {
     let t: number | undefined
-    if (phase === 'show') t = window.setTimeout(() => setPhase('hidden'), memorizeMs)
+    if (phase === 'show') showAt.current = performance.now()
     if (phase === 'success')
       t = window.setTimeout(() => {
         setRound(round + 1)
@@ -37,10 +52,16 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
         setNext(0)
         setPhase('show')
       }, 700)
-    if (phase === 'fail') t = window.setTimeout(() => onFinish(result(round)), 1800)
+    if (phase === 'fail') t = window.setTimeout(() => onFinish(result(round, stats.current)), END_MOMENT_MS)
     return () => window.clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
+
+  // Memorize time, shown as the timer line; clicking 1 early ends it.
+  const showLeft = useCountdown(memorizeMs, phase === 'show', () => {
+    endMemorize()
+    setPhase('hidden')
+  })
 
   const tap = (cell: number) => {
     if (phase !== 'show' && phase !== 'hidden') return
@@ -51,59 +72,50 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
       setWrongCell(cell)
       return setPhase('fail')
     }
-    if (phase === 'show') setPhase('hidden')
+    const now = performance.now()
+    if (index > 0) stats.current.tileMs.push(now - lastTapAt.current)
+    lastTapAt.current = now
+    if (phase === 'show') {
+      endMemorize()
+      setPhase('hidden')
+    }
     if (next + 1 === cells.length) setPhase('success')
     setNext(next + 1)
   }
 
-  const message =
-    phase === 'show' ? 'Memorize — tap 1 when you are ready'
-    : phase === 'hidden' ? `Tap the numbers in order (${next} / ${cells.length})`
-    : phase === 'success' ? 'Correct!'
+  const middle =
+    phase === 'show' ? 'Memorize · click 1 when ready'
+    : phase === 'hidden' ? `Click ${next + 1} next`
+    : phase === 'success' ? 'Correct'
     : 'Wrong tile'
 
   return (
-    <div>
-      <div className="mb-2 flex justify-between text-sm text-zinc-500">
-        <span>{roundLabel(round)}</span>
-        <span>{cells.length} tiles · {(memorizeMs / 1000).toFixed(memorizeMs < 1000 ? 2 : 1)} s</span>
-      </div>
-      <div className="mb-2 h-1.5">{phase === 'show' && <DrainBar key={round} ms={memorizeMs} />}</div>
-      <p className="mb-3 text-center font-medium" role="status">{message}</p>
-      <div
-        className={`play-area mx-auto grid w-full max-w-[520px] gap-1.5 rounded-2xl p-2 sm:gap-2 ${
-          boardBg(phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null)
-        }`}
-        // Fixed rows + columns: tiles keep their size whether they show a number or not.
-        style={{
-          gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
-          aspectRatio: `${COLS} / ${ROWS}`,
-        }}
-      >
-        {Array.from({ length: COLS * ROWS }, (_, cell) => {
-          const index = cells.indexOf(cell)
-          if (index === -1) return <div key={cell} onPointerDown={() => tap(cell)} />
-          const done = index < next
-          const reveal = phase === 'show' || phase === 'fail'
-          return (
-            <button
-              key={cell}
-              type="button"
-              aria-label={reveal ? String(index + 1) : 'Hidden tile'}
-              onPointerDown={() => tap(cell)}
-              className={`grid min-h-0 place-items-center overflow-hidden rounded-lg text-xl leading-none font-bold sm:text-2xl ${
-                wrongCell === cell ? 'bg-rose-500 text-white'
-                : done ? 'bg-violet-500/30 text-violet-700 dark:text-violet-300'
-                : reveal ? 'bg-white text-zinc-900 dark:bg-zinc-100'
-                : 'bg-violet-500'
-              }`}
-            >
-              {(reveal || done) && index + 1}
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <>
+      <GameInfo
+        left={<InfoValue value={roundLabel(round)} unit={`${cells.length} tiles`} />}
+        middle={<span className={phase === 'fail' ? 'text-rose-300' : ''}>{middle}</span>}
+        right={<InfoValue label="Time" value={(memorizeMs / 1000).toFixed(memorizeMs < 1000 ? 2 : 1)} unit="s" />}
+        timer={phase === 'show' ? showLeft / memorizeMs : undefined}
+      />
+      <SquareLayout aspect={COLS / ROWS}>
+        <TileGrid
+          key={round}
+          cols={COLS}
+          rows={ROWS}
+          gap="gap-1.5"
+          frame={phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null}
+          onTap={phase === 'show' || phase === 'hidden' ? tap : undefined}
+          tile={(cell) => {
+            const index = cells.indexOf(cell)
+            if (index === -1) return { tone: 'empty' }
+            const reveal = phase === 'show' || phase === 'fail'
+            if (cell === wrongCell) return { tone: 'wrong', content: index + 1 }
+            if (index < next) return { tone: 'done', content: index + 1 }
+            if (reveal) return { tone: 'revealed', content: index + 1, label: String(index + 1) }
+            return { tone: 'hidden', label: 'Hidden tile' }
+          }}
+        />
+      </SquareLayout>
+    </>
   )
 }

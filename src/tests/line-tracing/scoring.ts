@@ -1,7 +1,7 @@
 import type { Rand } from '../../lib/random'
 
 export const WIDTH = 1000
-export const HEIGHT = 600
+export const HEIGHT = 667 // 3:2, like the stage
 export const HALF_WIDTH = 30 // corridor half width (viewBox units)
 export const END_RADIUS = 38
 export const CONTROL_POINTS = 7

@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { boardBg } from '../../components/boardFeedback'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { SquareLayout } from '../../components/game/layouts'
+import { TileGrid } from '../../components/game/TileGrid'
+import { END_MOMENT_MS } from '../../lib/game'
+import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import { GRID, STEP_GAP_MS, STEP_ON_MS, extend } from './scoring'
 
@@ -12,6 +16,9 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
   const [pos, setPos] = useState(0)
   const [wrongTile, setWrongTile] = useState<number | null>(null)
   const tapTimer = useRef<number | undefined>(undefined)
+  // For the result stats: time of the last click (or the start of your turn) and every click's time.
+  const lastAt = useRef(0)
+  const clickMs = useRef<number[]>([])
   useEffect(() => () => window.clearTimeout(tapTimer.current), [])
 
   // Drive the phases: short pause, play back the sequence, then wait for input.
@@ -25,6 +32,7 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
         at(i * (STEP_ON_MS + STEP_GAP_MS) + STEP_ON_MS, () => setLit(null))
       })
       at(seq.length * (STEP_ON_MS + STEP_GAP_MS), () => {
+        lastAt.current = performance.now()
         setPos(0)
         setPhase('input')
       })
@@ -35,8 +43,21 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
         setPhase('pause')
       })
     if (phase === 'fail')
-      at(1500, () =>
-        onFinish({ score: seq.length - 1, details: { 'Failed at length': String(seq.length) } }),
+      at(END_MOMENT_MS, () =>
+        onFinish({
+          score: seq.length - 1,
+          details: {
+            stats: [
+              { label: 'Failed at length', value: String(seq.length) },
+              ...(clickMs.current.length
+                ? [
+                    { label: 'Avg time per click', value: fmtMs(clickMs.current.reduce((a, b) => a + b, 0) / clickMs.current.length) },
+                    { label: 'Slowest click', value: fmtMs(Math.max(...clickMs.current)) },
+                  ]
+                : []),
+            ],
+          },
+        }),
       )
     return () => timers.forEach((t) => window.clearTimeout(t))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -49,41 +70,44 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
     tapTimer.current = window.setTimeout(() => setLit(null), 150)
     if (tile !== seq[pos]) {
       setWrongTile(tile)
-      setLit(seq[pos]) // show which one it should have been
-      return setPhase('fail')
+      return setPhase('fail') // the board then shows which tile it should have been
     }
+    // Click times for the result stats (correct clicks only: the wrong last click isn't a "time per click").
+    const now = performance.now()
+    clickMs.current.push(now - lastAt.current)
+    lastAt.current = now
     if (pos + 1 === seq.length) setPhase('success')
     else setPos(pos + 1)
   }
 
-  const message: Record<Phase, string> = {
-    pause: 'Watch…',
-    show: 'Watch the sequence',
-    input: `Repeat it (${pos} / ${seq.length})`,
-    success: 'Correct!',
+  const middle: Record<Phase, string> = {
+    pause: 'Watch',
+    show: 'Watch',
+    input: `Repeat · ${pos} / ${seq.length}`,
+    success: 'Correct',
     fail: 'Wrong tile',
   }
 
   return (
-    <div>
-      <div className="mb-3 text-sm text-zinc-500">Length {seq.length}</div>
-      <p className="mb-3 text-center font-medium" role="status">{message[phase]}</p>
-      <div
-        className={`play-area mx-auto grid aspect-square w-full max-w-[min(420px,55vh)] gap-2 rounded-2xl p-2 ${boardBg(phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null)}`}
-        style={{ gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))` }}
-      >
-        {Array.from({ length: GRID * GRID }, (_, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`Tile ${i + 1}`}
-            onPointerDown={() => tap(i)}
-            className={`rounded-xl transition-colors duration-100 ${
-              wrongTile === i ? 'bg-rose-500' : lit === i ? 'bg-violet-500' : 'bg-white dark:bg-zinc-700'
-            }`}
-          />
-        ))}
-      </div>
-    </div>
+    <>
+      <GameInfo
+        left={<InfoValue value={`Length ${seq.length}`} />}
+        middle={<span className={phase === 'fail' ? 'text-rose-300' : ''}>{middle[phase]}</span>}
+        right={<InfoValue label="Score" value={seq.length - 1} />}
+      />
+      <SquareLayout>
+        <TileGrid
+          cols={GRID}
+          frame={phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null}
+          onTap={phase === 'input' ? tap : undefined}
+          tile={(i) => {
+            if (i === wrongTile && phase === 'fail') return { tone: 'wrong' }
+            if (phase === 'fail' && i === seq[pos]) return { tone: 'hint' }
+            if (i === lit) return { tone: 'lit' }
+            return { tone: 'idle' }
+          }}
+        />
+      </SquareLayout>
+    </>
   )
 }

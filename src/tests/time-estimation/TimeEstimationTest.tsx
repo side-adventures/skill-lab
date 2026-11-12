@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { FullLayout } from '../../components/game/layouts'
+import { RoundResult } from '../../components/game/RoundResult'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { ROUNDS, errorPct, makeTargets, scoreRounds, signedErrorLabel } from './scoring'
+import { ROUNDS, errorPct, makeTargets, resultDetails, scoreRounds, signedErrorLabel } from './scoring'
 
 type Phase = 'ready' | 'timing' | 'shown'
 interface Round { target: number; actual: number }
@@ -24,54 +27,57 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
       const actual = (performance.now() - startedAt.current) / 1000
       setRounds([...rounds, { target, actual }])
       setPhase('shown')
-    } else if (rounds.length >= ROUNDS) {
-      onFinish({
-        score: scoreRounds(rounds),
-        details: Object.fromEntries(rounds.map((r, i) => [`Round ${i + 1} · ${r.target} s`, `${r.actual.toFixed(2)} s (${signedErrorLabel(r.target, r.actual)})`])),
-      })
-    } else {
-      setPhase('ready')
     }
+    // 'shown': the round result handles "click anywhere"
   }
   useActionKey(press)
 
-  const bg = phase === 'timing' ? 'bg-violet-600' : 'bg-sky-600'
+  const next = () => {
+    if (rounds.length < ROUNDS) return setPhase('ready')
+    onFinish({
+      score: scoreRounds(rounds),
+      details: resultDetails(rounds),
+    })
+  }
+
   return (
-    <div>
-      <div className="mb-3 flex justify-between text-sm text-zinc-500">
-        <span>Round {roundIndex + 1} / {ROUNDS}</span>
-        {rounds.length > 0 && <span>Avg error so far: {scoreRounds(rounds).toFixed(1)} %</span>}
-      </div>
-      <button
-        type="button"
+    <>
+      <GameInfo
+        left={<InfoValue value={`Round ${roundIndex + 1}`} of={ROUNDS} />}
+        middle={phase === 'ready' ? 'Click to start the hidden timer' : phase === 'timing' ? 'Click when the time is up' : ''}
+        right={rounds.length > 0 && <InfoValue label="Avg error" value={scoreRounds(rounds).toFixed(1)} unit="%" />}
+      />
+      <FullLayout
         onPointerDown={(e) => e.button === 0 && press()}
-        onKeyDown={(e) => e.preventDefault()}
-        className={`play-area flex h-[60vh] max-h-[480px] min-h-[300px] w-full cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center text-white transition-colors ${bg}`}
+        className={`grid cursor-pointer place-items-center text-center transition-colors ${phase === 'timing' ? 'bg-violet-600 text-white' : 'bg-zinc-900'}`}
       >
         {phase === 'ready' && (
-          <>
-            <span className="text-lg opacity-90">Target</span>
-            <span className="text-6xl font-bold tabular-nums">{target} s</span>
-            <span className="mt-4 text-lg opacity-90">Tap to start the hidden timer</span>
-          </>
+          <div>
+            <p className="text-zinc-400">Target</p>
+            <p className="text-7xl font-bold tabular-nums">{target} s</p>
+            <p className="mt-4 text-zinc-400">Click to start</p>
+          </div>
         )}
         {phase === 'timing' && (
-          <>
-            <span className="text-lg opacity-90">Counting to {target} s…</span>
-            <span className="mt-2 text-4xl font-bold">Tap to stop</span>
-          </>
+          <div>
+            <p className="text-white/80">Counting to {target} s…</p>
+            <p className="mt-2 text-4xl font-bold">Click to stop</p>
+          </div>
         )}
         {phase === 'shown' && last && (
-          <>
-            <span className="text-lg opacity-90">Target {last.target} s — you stopped at</span>
-            <span className="text-6xl font-bold tabular-nums">{last.actual.toFixed(2)} s</span>
-            <span className="mt-2 text-xl">
-              {last.actual < last.target ? 'Too early' : 'Too late'} by {errorPct(last.target, last.actual).toFixed(1)} %
-            </span>
-            <span className="mt-4 opacity-90">{rounds.length >= ROUNDS ? 'Tap to see your result' : 'Tap for the next round'}</span>
-          </>
+          <RoundResult
+            value={last.actual.toFixed(2)}
+            unit="s"
+            line={`Target ${last.target} s · ${
+              errorPct(last.target, last.actual).toFixed(1) === '0.0'
+                ? 'spot on'
+                : `${errorPct(last.target, last.actual).toFixed(1)} % ${last.actual < last.target ? 'too early' : 'too late'}`
+            }`}
+            chips={{ done: rounds.map((r) => signedErrorLabel(r.target, r.actual)), total: ROUNDS }}
+            onContinue={next}
+          />
         )}
-      </button>
-    </div>
+      </FullLayout>
+    </>
   )
 }

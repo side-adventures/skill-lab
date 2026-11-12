@@ -1,20 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '../../components/Button'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { SquarePanelLayout } from '../../components/game/layouts'
+import { RoundResult } from '../../components/game/RoundResult'
+import { TileGrid } from '../../components/game/TileGrid'
+import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { GRID, ITEM_MS, LIT_MS, PASS_ACCURACY, START_N, blockAccuracy, isMatch, makeBlock } from './scoring'
+import { GRID, ITEM_MS, LIT_MS, PASS_ACCURACY, START_N, blockAccuracy, isMatch, makeBlock, blockCounts } from './scoring'
 
 type Phase = 'brief' | 'running' | 'passed'
 
 export default function NBackTest({ onFinish }: TestComponentProps) {
   const [n, setN] = useState(START_N)
-  const [phase, setPhase] = useState<Phase>('brief')
-  const [seq, setSeq] = useState<number[]>([])
+  const [phase, setPhase] = useState<Phase>('running')
+  const [seq, setSeq] = useState<number[]>(() => makeBlock(START_N))
   const [index, setIndex] = useState(-1)
   const [lit, setLit] = useState(false)
   const [feedback, setFeedback] = useState<'hit' | 'false' | 'miss' | null>(null)
+  const [flash, signal] = useAnswerFlash()
   const tapped = useRef<boolean[]>([])
-  const results = useRef<{ n: number; acc: number }[]>([])
+  const results = useRef<({ n: number; acc: number } & ReturnType<typeof blockCounts>)[]>([])
 
   // Run a block: one item every ITEM_MS, lit for LIT_MS.
   useEffect(() => {
@@ -23,8 +28,10 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
     seq.forEach((_, i) => {
       timers.push(window.setTimeout(() => {
         // a match the player didn't tap on the previous item → show "missed"
-        if (i > 0 && isMatch(seq, i - 1, n) && !tapped.current[i - 1]) setFeedback('miss')
-        else setFeedback(null)
+        if (i > 0 && isMatch(seq, i - 1, n) && !tapped.current[i - 1]) {
+          setFeedback('miss')
+          signal(false)
+        } else setFeedback(null)
         setIndex(i)
         setLit(true)
       }, i * ITEM_MS + 600))
@@ -32,12 +39,21 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
     })
     timers.push(window.setTimeout(() => {
       const acc = blockAccuracy(seq, tapped.current, n)
-      results.current.push({ n, acc })
+      results.current.push({ n, acc, ...blockCounts(seq, tapped.current, n) })
       if (acc >= PASS_ACCURACY) return setPhase('passed')
       const passed = results.current.filter((r) => r.acc >= PASS_ACCURACY)
       onFinish({
         score: passed.length ? Math.max(...passed.map((r) => r.n)) : 0,
-        details: Object.fromEntries(results.current.map((r) => [`${r.n}-back accuracy`, `${Math.round(r.acc * 100)} %`])),
+        details: {
+          extra: {
+            kind: 'table',
+            columns: ['Level', 'Accuracy', 'Hits', 'Wrong clicks', 'Missed'],
+            rows: results.current.slice(-5).map((r) => ({
+              cells: [`${r.n}-back`, `${Math.round(r.acc * 100)} %`, `${r.hits} / ${r.matches}`, String(r.wrong), String(r.missed)],
+              dim: r.acc < PASS_ACCURACY,
+            })),
+          },
+        },
       })
     }, seq.length * ITEM_MS + 600))
     return () => timers.forEach((t) => window.clearTimeout(t))
@@ -56,58 +72,55 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
   const tapMatch = () => {
     if (phase !== 'running' || index < 0 || tapped.current[index]) return
     tapped.current[index] = true
-    setFeedback(isMatch(seq, index, n) ? 'hit' : 'false')
+    const hit = isMatch(seq, index, n)
+    setFeedback(hit ? 'hit' : 'false')
+    signal(hit)
   }
   useActionKey(tapMatch, phase === 'running')
 
-  if (phase !== 'running') {
-    const last = results.current.at(-1)
-    return (
-      <div className="rounded-2xl bg-white p-6 text-center dark:bg-zinc-900">
-        {phase === 'passed' && last && (
-          <p className="mb-2 font-semibold text-emerald-500">{last.n}-back passed with {Math.round(last.acc * 100)} %!</p>
-        )}
-        <p className="text-5xl font-bold">{phase === 'passed' ? n + 1 : n}-back</p>
-        <p className="mx-auto mt-3 max-w-sm text-zinc-500">
-          Tap MATCH when the lit square is in the same place as {phase === 'passed' ? n + 1 : n} steps before.
-          Reach {PASS_ACCURACY * 100} % to go up a level.
-        </p>
-        <Button className="mt-5" autoFocus onClick={() => startBlock(phase === 'passed' ? n + 1 : n)}>
-          Start {phase === 'passed' ? n + 1 : n}-back
-        </Button>
-      </div>
-    )
-  }
-
-  const fb = {
-    hit: { text: 'Match ✓', cls: 'text-emerald-500' },
-    false: { text: 'No match ✗', cls: 'text-rose-500' },
-    miss: { text: 'Missed a match', cls: 'text-amber-500' },
-  }
+  const last = results.current.at(-1)
+  const fb = { hit: 'Match', false: 'Not a match', miss: 'Missed a match' }
   return (
-    <div>
-      <div className="mb-3 flex justify-between text-sm text-zinc-500">
-        <span>{n}-back</span>
-        <span>{Math.max(0, index + 1)} / {seq.length}</span>
-      </div>
-      <div
-        className="mx-auto grid aspect-square w-full max-w-[min(360px,45vh)] gap-2 rounded-2xl bg-zinc-200 p-2 dark:bg-zinc-800"
-        style={{ gridTemplateColumns: `repeat(${GRID}, minmax(0, 1fr))` }}
-      >
-        {Array.from({ length: GRID * GRID }, (_, i) => (
-          <div key={i} className={`rounded-xl transition-colors duration-75 ${lit && seq[index] === i ? 'bg-violet-500' : 'bg-white dark:bg-zinc-700'}`} />
-        ))}
-      </div>
-      <p className={`my-3 h-6 text-center font-semibold ${feedback ? fb[feedback].cls : ''}`}>{feedback && fb[feedback].text}</p>
-      <div className="play-area text-center">
-        <button
-          type="button"
-          onPointerDown={tapMatch}
-          className="h-16 w-full max-w-xs rounded-xl bg-violet-600 text-lg font-bold tracking-wider text-white active:bg-violet-700"
-        >
-          MATCH
-        </button>
-      </div>
-    </div>
+    <>
+      <GameInfo
+        left={<InfoValue value={`${n}-back`} />}
+        middle={feedback ? <span className={feedback === 'hit' ? 'text-emerald-300' : 'text-rose-300'}>{fb[feedback]}</span> : ''}
+        right={phase === 'running' && <InfoValue value={Math.max(0, index + 1)} of={seq.length} />}
+      />
+      <SquarePanelLayout
+        boardClassName={feedbackRing(flash)}
+        board={
+          <TileGrid
+            cols={GRID}
+            tile={(i) => ({ tone: phase === 'running' && lit && seq[index] === i ? 'lit' : 'idle' })}
+          />
+        }
+        panel={
+          phase === 'passed' && last ? (
+            <div className="grid flex-1 place-items-center">
+              <RoundResult
+                value={Math.round(last.acc * 100)}
+                unit="%"
+                line={`${last.n}-back passed · next: ${last.n + 1}-back`}
+                onContinue={() => startBlock(n + 1)}
+              />
+            </div>
+          ) : (
+            <>
+              <p className="text-3xl font-bold">{n}-back</p>
+              <p className="mt-2 text-zinc-400">Click MATCH when the lit square is in the same spot as {n} steps before.</p>
+              <button
+                type="button"
+                onPointerDown={(e) => e.button === 0 && tapMatch()}
+                className="mt-auto flex h-14 w-full items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-5 text-lg font-bold tracking-wider text-zinc-100 transition-colors hover:border-zinc-600 active:scale-[0.98]"
+              >
+                MATCH
+                <kbd className="rounded-md border border-zinc-700 px-1.5 text-xs font-medium text-zinc-500">Space</kbd>
+              </button>
+            </>
+          )
+        }
+      />
+    </>
   )
 }

@@ -1,3 +1,5 @@
+import type { ResultDetails } from '../tests/types'
+
 /**
  * Saved results, per test (localStorage, always wrapped in try/catch).
  *
@@ -9,8 +11,11 @@ export interface ResultEntry {
   score: number
   /** ms since epoch */
   at: number
-  /** Optional breakdown from the result screen (label → value). Not shown yet. */
-  details?: Record<string, string>
+  /**
+   * Optional breakdown from the result screen. Current results save `ResultDetails`; attempts from
+   * before the result screen redesign have a plain label → value map. Not shown anywhere yet.
+   */
+  details?: ResultDetails | Record<string, string>
 }
 
 export interface TestRecord {
@@ -87,7 +92,7 @@ export function getRecord(testId: string, higherIsBetter: boolean): TestRecord {
 export const getBest = (testId: string, higherIsBetter: boolean) => getRecord(testId, higherIsBetter).best
 
 /** Saves a result and reports whether it beat the previous best. */
-export function saveResult(testId: string, score: number, higherIsBetter: boolean, details?: Record<string, string>) {
+export function saveResult(testId: string, score: number, higherIsBetter: boolean, details?: ResultDetails) {
   const entry: ResultEntry = { score, at: Date.now(), ...(details && { details }) }
   const { next, isBest, previousBest } = addResult(getRecord(testId, higherIsBetter), entry, higherIsBetter)
   try {

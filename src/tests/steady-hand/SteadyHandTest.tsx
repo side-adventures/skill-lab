@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { TimerBar } from '../../components/TimerBar'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { FullLayout } from '../../components/game/layouts'
 import { useLatest } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { DURATION_MS, RAMP_IN_MS, pathAt, radiusAt, randomPhases, scoreInside, speedAt } from './scoring'
@@ -45,6 +46,8 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
     const phases = randomPhases()
     const start = performance.now()
     let last = start, t = 0, insideMs = 0, lastHud = 0, raf = 0
+    // For the result stats: how often you left the circle, and the longest stretch inside.
+    let wasInside = true, exits = 0, stretch = 0, longest = 0
     const tick = (now: number) => {
       const elapsed = Math.min(now - start, DURATION_MS)
       const dt = Math.min(now - last, 100) // ignore big gaps (tab switch)
@@ -53,7 +56,16 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
       t += (dt / 1000) * speedAt(progress)
       const amp = Math.min(1, elapsed / RAMP_IN_MS) // glide out of the centre
       const pos = pathAt(t, phases)
-      if (draw(pos.x * amp, pos.y * amp, radiusAt(progress))) insideMs += dt
+      const inside = draw(pos.x * amp, pos.y * amp, radiusAt(progress))
+      if (inside) {
+        insideMs += dt
+        stretch += dt
+        longest = Math.max(longest, stretch)
+      } else {
+        if (wasInside) exits++
+        stretch = 0
+      }
+      wasInside = inside
       if (now - lastHud > 100 || elapsed >= DURATION_MS) {
         lastHud = now
         setHud({ remaining: DURATION_MS - elapsed, pct: scoreInside(insideMs, Math.max(elapsed, 1)) })
@@ -62,7 +74,14 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
         const score = scoreInside(insideMs)
         return onFinishRef.current({
           score,
-          details: { 'Time inside': `${(insideMs / 1000).toFixed(1)} s`, 'Time outside': `${((DURATION_MS - insideMs) / 1000).toFixed(1)} s` },
+          details: {
+            stats: [
+              { label: 'Time inside', value: `${(insideMs / 1000).toFixed(1)} s` },
+              { label: 'Time outside', value: `${((DURATION_MS - insideMs) / 1000).toFixed(1)} s` },
+              { label: 'Times you left', value: String(exits) },
+              { label: 'Longest stretch inside', value: `${(longest / 1000).toFixed(1)} s` },
+            ],
+          },
         })
       }
       raf = requestAnimationFrame(tick)
@@ -77,29 +96,27 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
   }
 
   return (
-    <div>
-      <TimerBar remaining={hud.remaining} total={DURATION_MS}>
-        {playing ? `Inside: ${hud.pct.toFixed(1)} %` : 'Not started'}
-      </TimerBar>
-      <div
+    <>
+      <GameInfo
+        left={<InfoValue value={(hud.remaining / 1000).toFixed(1)} unit="s left" />}
+        middle={playing ? 'Stay inside the circle' : 'Move your pointer into the circle to start'}
+        right={playing && <InfoValue label="Inside" value={hud.pct.toFixed(1)} unit="%" />}
+        timer={hud.remaining / DURATION_MS}
+      />
+      <FullLayout
         ref={area}
         onPointerMove={track}
         onPointerDown={track}
         onPointerLeave={() => (pointer.current = null)}
         onPointerUp={(e) => e.pointerType === 'touch' && (pointer.current = null)}
-        className="play-area relative h-[60vh] max-h-[480px] min-h-[300px] w-full cursor-crosshair overflow-hidden rounded-2xl bg-white dark:bg-zinc-900"
+        className="cursor-crosshair bg-zinc-900"
         style={{ touchAction: 'none' }}
       >
         <div
           ref={circle}
           className="pointer-events-none absolute top-0 left-0 rounded-full border-4 border-rose-500 bg-rose-500/15 data-[inside=true]:border-emerald-500 data-[inside=true]:bg-emerald-500/20"
         />
-        {!playing && (
-          <p className="pointer-events-none absolute inset-x-0 bottom-6 text-center text-zinc-500">
-            Move your pointer (or finger) into the circle to start
-          </p>
-        )}
-      </div>
-    </div>
+      </FullLayout>
+    </>
   )
 }

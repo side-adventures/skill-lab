@@ -1,11 +1,20 @@
-import { useEffect, useState } from 'react'
-import { Button } from '../../components/Button'
-import { DrainBar } from '../../components/DrainBar'
+import { useState } from 'react'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { PromptLayout } from '../../components/game/layouts'
 import { NumberPad } from '../../components/NumberPad'
+import { END_MOMENT_MS, feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
+import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { START_DIGITS, makeNumber, showMs } from './scoring'
 
 type Phase = 'show' | 'input' | 'correct' | 'wrong'
+
+const PHASE_TEXT: Record<Phase, string> = {
+  show: 'Memorize',
+  input: 'Type it, then Enter',
+  correct: 'Correct',
+  wrong: 'Not quite',
+}
 
 export default function NumberMemoryTest({ onFinish }: TestComponentProps) {
   const [digits, setDigits] = useState(START_DIGITS)
@@ -13,67 +22,76 @@ export default function NumberMemoryTest({ onFinish }: TestComponentProps) {
   const [phase, setPhase] = useState<Phase>('show')
   const [input, setInput] = useState('')
   const [answer, setAnswer] = useState('')
+  const [flash, signal] = useAnswerFlash()
+  const { later } = useLater()
 
-  useEffect(() => {
-    let t: number | undefined
-    if (phase === 'show') t = window.setTimeout(() => setPhase('input'), showMs(digits))
-    if (phase === 'correct')
-      t = window.setTimeout(() => {
+  // Memorize time, shown as the timer line in the info row.
+  const showLeft = useCountdown(showMs(digits), phase === 'show', () => setPhase('input'))
+
+  const submit = (value: string) => {
+    if (phase !== 'input') return
+    setAnswer(value)
+    const ok = value === number
+    signal(ok)
+    if (ok) {
+      setPhase('correct')
+      later(900, () => {
         setDigits(digits + 1)
         setNumber(makeNumber(digits + 1))
         setInput('')
         setPhase('show')
-      }, 1000)
-    return () => window.clearTimeout(t)
-  }, [phase, digits])
-
-  const submit = (value: string) => {
-    setAnswer(value)
-    setPhase(value === number ? 'correct' : 'wrong')
+      })
+    } else {
+      setPhase('wrong')
+      // End moment: the number and your input side by side, then the result.
+      later(END_MOMENT_MS, () =>
+        onFinish({
+          score: digits - 1 >= START_DIGITS ? digits - 1 : 0,
+          details: { extra: { kind: 'digits', target: number, typed: value } },
+        }),
+      )
+    }
   }
 
-  const finish = () =>
-    onFinish({
-      score: digits - 1 >= START_DIGITS ? digits - 1 : 0,
-      details: { 'Last number': number, 'You typed': answer },
-    })
-
+  const big = 'font-mono text-5xl font-bold tracking-[0.18em] break-all'
   return (
-    <div>
-      <div className="mb-3 text-sm text-zinc-500">{digits} digits</div>
-      <div className="mb-4 grid min-h-48 place-items-center rounded-2xl bg-white p-6 text-center dark:bg-zinc-900">
-        {phase === 'show' && (
-          <div className="w-full">
-            <p className="mb-6 font-mono text-4xl font-bold tracking-[0.2em] break-all sm:text-5xl">{number}</p>
-            <DrainBar key={number} ms={showMs(digits)} />
+    <>
+      <GameInfo
+        left={<InfoValue value={digits} unit="digits" />}
+        middle={<span className={phase === 'wrong' ? 'text-rose-300' : ''}>{PHASE_TEXT[phase]}</span>}
+        right={<InfoValue label="Score" value={digits - 1 >= START_DIGITS ? digits - 1 : 0} />}
+        timer={phase === 'show' ? showLeft / showMs(digits) : undefined}
+      />
+      <PromptLayout
+        displayClassName={feedbackRing(flash)}
+        display={
+          <div className="w-full px-8 text-center">
+            {phase === 'show' && <p className={big}>{number}</p>}
+            {(phase === 'input' || phase === 'correct') && (
+              <>
+                <p className="mb-3 text-zinc-500">What was the number?</p>
+                <p className={`${big} min-h-14 text-violet-300`}>{input || <span className="text-zinc-700">_</span>}</p>
+              </>
+            )}
+            {phase === 'wrong' && (
+              <div className="space-y-3 font-mono text-4xl font-bold break-all">
+                <p><span className="mr-3 font-sans text-sm font-normal text-zinc-500">Number</span>{number}</p>
+                <p>
+                  <span className="mr-3 font-sans text-sm font-normal text-zinc-500">You</span>
+                  {[...answer].map((d, i) => (
+                    <span key={i} className={d === number[i] ? '' : 'text-rose-400 line-through'}>{d}</span>
+                  ))}
+                </p>
+              </div>
+            )}
           </div>
-        )}
-        {phase === 'input' && (
-          <div>
-            <p className="mb-2 text-zinc-500">What was the number?</p>
-            <p className="min-h-12 font-mono text-4xl font-bold tracking-[0.2em] break-all text-violet-600 dark:text-violet-400">
-              {input || <span className="text-zinc-300 dark:text-zinc-700">_</span>}
-            </p>
+        }
+        answers={
+          <div className={phase === 'show' ? 'opacity-30' : ''}>
+            <NumberPad value={input} onChange={setInput} onSubmit={submit} maxLength={digits} disabled={phase !== 'input'} layout="row" />
           </div>
-        )}
-        {phase === 'correct' && <p className="text-3xl font-bold text-emerald-500">Correct!</p>}
-        {phase === 'wrong' && (
-          <div className="space-y-2 font-mono text-2xl break-all sm:text-3xl">
-            <p><span className="font-sans text-sm text-zinc-500">Number </span>{number}</p>
-            <p>
-              <span className="font-sans text-sm text-zinc-500">You </span>
-              {[...answer].map((d, i) => (
-                <span key={i} className={d === number[i] ? '' : 'text-rose-500 line-through'}>{d}</span>
-              ))}
-            </p>
-          </div>
-        )}
-      </div>
-      {phase === 'wrong' ? (
-        <div className="text-center"><Button onClick={finish} autoFocus>See result</Button></div>
-      ) : (
-        <NumberPad value={input} onChange={setInput} onSubmit={submit} maxLength={digits} disabled={phase !== 'input'} />
-      )}
-    </div>
+        }
+      />
+    </>
   )
 }

@@ -23,9 +23,46 @@ export interface TestResult {
    * The message is shown instead of a score and nothing is saved; `score` is ignored.
    */
   failed?: string
-  /** Optional per-test breakdown shown on the result screen (label -> value). */
-  details?: Record<string, string>
+  /** Per-test breakdown shown under the score (also for failed runs) and saved with the attempt. */
+  details?: ResultDetails
 }
+
+/**
+ * The stats under the score on the result screen. Shown in this order: `stats`, `extra`, `chips`.
+ * Values are already formatted ("251 ms"); each test picks what is interesting for it.
+ */
+export interface ResultDetails {
+  /** Label / value pairs, most interesting first; wraps onto more lines when needed. */
+  stats?: ResultStat[]
+  /** One per-test block that doesn't fit the stat row. */
+  extra?: ResultExtra
+  /** Two-line chips (rounds, levels, time frames); the screen shows the last ones that fit. */
+  chips?: { title: string; items: ResultChip[] }
+}
+export interface ResultStat { label: string; value: string }
+export interface ResultChip { label: string; value: string }
+export type ResultExtra =
+  /** Two values that belong together and how they differ (Stroop: same vs different color). */
+  | { kind: 'pair'; a: ResultStat; b: ResultStat; diff?: ResultStat }
+  /** A small table (N-Back: one row per level). Dim rows are e.g. a level that wasn't passed. */
+  | { kind: 'table'; columns: string[]; rows: { cells: string[]; dim?: boolean }[] }
+  /** The number shown vs what you typed, wrong digits marked (Number Memory). */
+  | { kind: 'digits'; target: string; typed: string }
+
+/**
+ * How a run starts: 'countdown' = 3-2-1 (you must be ready the moment it starts), 'quick' = a short
+ * "Ready", 'none' = your own first action starts it (Tap Speed, Line Tracing, Steady Hand).
+ */
+export type StartMode = 'countdown' | 'quick' | 'none'
+
+/**
+ * Which layout the test uses (components/game/layouts.tsx). The game frame draws this shape, empty,
+ * during the start transition, so the countdown already shows the play area.
+ */
+export type StageLayout = 'full' | 'prompt' | 'square' | 'panel'
+
+/** A test's lazily loaded play component; `preload()` fetches its code ahead of time. */
+export type TestComponent = LazyExoticComponent<ComponentType<TestComponentProps>> & { preload: () => void }
 
 /** Props every test's play component receives. */
 export interface TestComponentProps {
@@ -40,20 +77,29 @@ export interface TestDefinition {
   icon: string
   category: Category
   tagline: string
-  /** Short bullet points shown on the intro screen. */
-  instructions: string[]
+  /** The skill it tests, shown as "Tests …" on the rules screen (lowercase start, e.g. "reaction speed"). */
+  skill: string
+  /** How to play: one short line per step, as many as the test needs. */
+  howTo: string[]
+  /** How the score works: usually 1–2 short lines (what counts, penalties, lives, what ends it). */
+  scoring: string[]
   durationHint: string
   /** e.g. "Average reaction time" */
   scoreLabel: string
   higherIsBetter: boolean
   formatScore: (score: number) => string
+  /** How a run starts (see StartMode). */
+  start: StartMode
+  /** The layout it is built with (see StageLayout); `boardAspect` for a non-square board in 'square'. */
+  layout: StageLayout
+  boardAspect?: number
   /**
    * Bump when scoring changes so old saved scores aren't compared with new ones
    * (results are stored under a separate key per version).
    */
   scoreVersion?: number
   /** Missing => shown as "coming soon". */
-  Component?: LazyExoticComponent<ComponentType<TestComponentProps>>
+  Component?: TestComponent
 }
 
 /** localStorage id for a test's results; changes when its scoring version is bumped. */

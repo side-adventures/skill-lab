@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { GetReady } from '../../components/GetReady'
-import { TimerBar } from '../../components/TimerBar'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { FullLayout } from '../../components/game/layouts'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { CENTER_FRACTION, DURATION_MS, TARGET_PX, hitPoints, nextSpot, type Spot } from './scoring'
@@ -8,7 +8,6 @@ import { CENTER_FRACTION, DURATION_MS, TARGET_PX, hitPoints, nextSpot, type Spot
 interface Pop { id: number; pts: number; spot: Spot }
 
 export default function AimTrainerTest({ onFinish }: TestComponentProps) {
-  const [started, setStarted] = useState(false)
   const [spot, setSpot] = useState(() => nextSpot(undefined))
   const [points, setPoints] = useState(0)
   const [centers, setCenters] = useState(0)
@@ -17,23 +16,31 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
   // Little "+2" / "+1" that floats up where the last target was hit.
   const [pop, setPop] = useState<Pop | null>(null)
   const popTimer = useRef<number | undefined>(undefined)
+  // When the current target appeared, and the fastest hit (for the result stats).
+  const shownAt = useRef(0)
+  const fastest = useRef(Infinity)
+  useEffect(() => {
+    shownAt.current = performance.now()
+  }, [])
   useEffect(() => () => window.clearTimeout(popTimer.current), [])
 
-  const remaining = useCountdown(DURATION_MS, started, () => {
+  const remaining = useCountdown(DURATION_MS, true, () => {
     const hits = centers + edges
     onFinish({
       score: points,
       details: {
-        'Center hits (2 pts)': String(centers),
-        'Edge hits (1 pt)': String(edges),
-        Misses: String(misses),
-        Accuracy: hits + misses ? `${Math.round((hits / (hits + misses)) * 100)} %` : '–',
-        'Avg per target': hits ? `${Math.round(DURATION_MS / hits)} ms` : '–',
+        stats: [
+          { label: 'Center hits', value: String(centers) },
+          { label: 'Edge hits', value: String(edges) },
+          { label: 'Misses', value: String(misses) },
+          { label: 'Accuracy', value: hits + misses ? `${Math.round((hits / (hits + misses)) * 100)} %` : '–' },
+          { label: 'Avg per target', value: hits ? `${Math.round(DURATION_MS / hits)} ms` : '–' },
+          ...(hits ? [{ label: 'Fastest hit', value: `${Math.round(fastest.current)} ms` }] : []),
+        ],
       },
     })
   })
 
-  if (!started) return <GetReady onDone={() => setStarted(true)} />
 
   const live = remaining > 0
   const place = (s: Spot) => ({
@@ -41,12 +48,15 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
     top: `calc(${s.y} * (100% - ${TARGET_PX}px))`,
   })
   return (
-    <div>
-      <TimerBar remaining={remaining} total={DURATION_MS}>
-        🎯 {points} pts · missed {misses}
-      </TimerBar>
-      <div
-        className="play-area relative h-[60vh] max-h-[520px] min-h-[320px] w-full cursor-crosshair overflow-hidden rounded-2xl bg-white dark:bg-zinc-900"
+    <>
+      <GameInfo
+        left={<InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" />}
+        middle={misses ? `${misses} missed` : ''}
+        right={<InfoValue label="Score" value={points} unit="pts" />}
+        timer={remaining / DURATION_MS}
+      />
+      <FullLayout
+        className="cursor-crosshair bg-zinc-900"
         style={{ touchAction: 'none' }}
         onPointerDown={() => live && setMisses((m) => m + 1)}
       >
@@ -73,6 +83,9 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
             setPop({ id: performance.now(), pts, spot })
             window.clearTimeout(popTimer.current)
             popTimer.current = window.setTimeout(() => setPop(null), 500)
+            const now = performance.now()
+            fastest.current = Math.min(fastest.current, now - shownAt.current)
+            shownAt.current = now
             setSpot((s) => nextSpot(s))
           }}
           // Classic red/white target: white ring with a red border (1 pt), red bullseye (2 pts).
@@ -84,7 +97,7 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
             style={{ width: TARGET_PX * CENTER_FRACTION, height: TARGET_PX * CENTER_FRACTION }}
           />
         </button>
-      </div>
-    </div>
+      </FullLayout>
+    </>
   )
 }

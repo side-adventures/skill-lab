@@ -6,6 +6,6 @@
 export function scoreParts(formatted: string): { value: string; unit: string } {
   const level = formatted.match(/^Level (\d+)$/)
   if (level) return { value: level[1], unit: 'level' }
-  const m = formatted.match(/^(-?\d+(?:\.\d+)?)\s+(.+)$/)
+  const m = formatted.match(/^([-−]?\d+(?:\.\d+)?)\s+(.+)$/)
   return m ? { value: m[1], unit: m[2] } : { value: formatted, unit: '' }
 }

@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { FullLayout } from '../../components/game/layouts'
+import { RoundResult } from '../../components/game/RoundResult'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { ROUNDS, errorLabel, errorMs, makeRounds, scoreRounds } from './scoring'
+import { ROUNDS, errorLabel, errorMs, makeRounds, scoreRounds, resultDetails, speedName } from './scoring'
 
 type Phase = 'ready' | 'moving' | 'shown'
 
@@ -45,47 +48,53 @@ export default function StopTheBarTest({ onFinish }: TestComponentProps) {
     } else if (phase === 'moving') {
       const pos = ((performance.now() - startAt.current) / 1000) * round.speed
       if (pos > 0) stop(pos)
-    } else if (errors.length >= ROUNDS) {
-      onFinish({
-        score: scoreRounds(errors),
-        details: Object.fromEntries(errors.map((e, i) => [`Round ${i + 1} · ${rounds[i].speed >= 0.8 ? 'fast' : rounds[i].speed >= 0.6 ? 'medium' : 'slow'}`, errorLabel(e)])),
-      })
-    } else setPhase('ready')
+    }
+    // 'shown': the round result handles "click anywhere"
   }
   useActionKey(press)
 
+  const next = () => {
+    if (errors.length < ROUNDS) return setPhase('ready')
+    onFinish({
+      score: scoreRounds(errors),
+      details: resultDetails(rounds, errors),
+    })
+  }
+
   const last = errors.at(-1)
   return (
-    <div>
-      <div className="mb-3 flex justify-between text-sm text-zinc-500">
-        <span>Round {roundIndex + 1} / {ROUNDS}</span>
-        {errors.length > 0 && <span>Avg so far: {scoreRounds(errors)} ms</span>}
-      </div>
-      <button
-        type="button"
+    <>
+      <GameInfo
+        left={<InfoValue value={`Round ${roundIndex + 1}`} of={ROUNDS} />}
+        middle={phase === 'ready' ? 'Click to start' : phase === 'moving' ? 'Click to stop on the line' : ''}
+        right={errors.length > 0 && <InfoValue label="Avg" value={scoreRounds(errors)} unit="ms off" />}
+      />
+      <FullLayout
         onPointerDown={(e) => e.button === 0 && press()}
-        onKeyDown={(e) => e.preventDefault()}
-        className="play-area flex h-[50vh] max-h-[420px] min-h-[260px] w-full cursor-pointer flex-col justify-center gap-8 rounded-2xl bg-white px-6 dark:bg-zinc-900"
+        className="flex cursor-pointer flex-col justify-center gap-10 bg-zinc-900 px-10"
       >
-        <div className="relative h-16 w-full rounded-xl bg-zinc-200 dark:bg-zinc-800">
-          <div className="absolute inset-y-[-8px] w-1 -translate-x-1/2 rounded bg-emerald-500" style={{ left: `${round.target * 100}%` }} />
+        <div className="relative h-16 w-full rounded-xl bg-zinc-800">
+          <div className="absolute -inset-y-2 w-1 -translate-x-1/2 rounded bg-emerald-500" style={{ left: `${round.target * 100}%` }} />
           <div
             ref={marker}
-            className={`absolute inset-y-1 w-2 -translate-x-1/2 rounded ${phase === 'shown' ? 'bg-zinc-900 dark:bg-white' : 'bg-violet-500'}`}
+            className={`absolute inset-y-1 w-2 -translate-x-1/2 rounded ${phase === 'shown' ? 'bg-white' : 'bg-violet-500'}`}
             style={{ left: phase === 'shown' ? `${stopPos * 100}%` : phase === 'ready' ? '0%' : undefined }}
           />
         </div>
-        <div className="text-center">
-          {phase === 'ready' && <p className="text-xl font-semibold">Tap to start — then tap again to stop on the green line</p>}
-          {phase === 'moving' && <p className="text-xl font-semibold">Tap to stop!</p>}
+        <div className="grid h-44 place-items-center text-center">
+          {phase === 'ready' && <p className="text-2xl font-semibold">Click to start, then click again to stop on the green line</p>}
+          {phase === 'moving' && <p className="text-3xl font-semibold">Click to stop!</p>}
           {phase === 'shown' && last !== undefined && (
-            <>
-              <p className="text-4xl font-bold tabular-nums">{errorLabel(last)}</p>
-              <p className="text-zinc-500">{last < 0 ? 'early' : 'late'} · {errors.length >= ROUNDS ? 'tap to see your result' : 'tap for the next round'}</p>
-            </>
+            <RoundResult
+              value={errorLabel(last).replace(' ms', '')}
+              unit="ms"
+              line={`${last < 0 ? 'Too early' : 'Too late'} · ${speedName(round)} speed`}
+              chips={{ done: errors.map((e) => errorLabel(e).replace(' ms', '')), total: ROUNDS }}
+              onContinue={next}
+            />
           )}
         </div>
-      </button>
-    </div>
+      </FullLayout>
+    </>
   )
 }

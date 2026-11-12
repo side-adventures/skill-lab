@@ -1,29 +1,41 @@
 import { useEffect, useRef, useState } from 'react'
-import { GetReady } from '../../components/GetReady'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { PromptLayout } from '../../components/game/layouts'
 import { NumberPad } from '../../components/NumberPad'
-import { TimerBar } from '../../components/TimerBar'
+import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
+import { answerStats, fmtMs, type TimedAnswer } from '../../lib/resultFormat'
 import { DURATION_MS, levelFor, makeProblem } from './scoring'
 
 export default function MentalMathTest({ onFinish }: TestComponentProps) {
-  const [started, setStarted] = useState(false)
   const [problem, setProblem] = useState(() => makeProblem(0))
   const [input, setInput] = useState('')
   const [correct, setCorrect] = useState(0)
-  const [wrong, setWrong] = useState(0)
-  const [flash, setFlash] = useState<'ok' | 'bad' | null>(null)
-  const flashTimer = useRef<number | undefined>(undefined)
-  useEffect(() => () => window.clearTimeout(flashTimer.current), [])
+  const [flash, signal] = useAnswerFlash()
+  // When the current problem appeared, and every answer's time (for the result stats).
+  const shownAt = useRef(0)
+  useEffect(() => {
+    shownAt.current = performance.now()
+  }, [])
+  const answers = useRef<(TimedAnswer & { task: string })[]>([])
 
-  const remaining = useCountdown(DURATION_MS, started, () => {
-    const total = correct + wrong
+  const remaining = useCountdown(DURATION_MS, true, () => {
+    // Fastest (correct) and longest answer, with their problem: "7 × 8 = 56 · 1.2 s".
+    const all = answers.current
+    const ok = all.filter((a) => a.correct)
+    const show = (a: { task: string; ms: number }) => `${a.task} · ${fmtMs(a.ms)}`
+    const fastest = ok.length ? ok.reduce((m, a) => (a.ms < m.ms ? a : m)) : undefined
+    const longest = all.length ? all.reduce((m, a) => (a.ms > m.ms ? a : m)) : undefined
     onFinish({
       score: correct,
       details: {
-        Wrong: String(wrong),
-        Accuracy: total ? `${Math.round((correct / total) * 100)} %` : '–',
-        'Avg per answer': correct ? `${(DURATION_MS / 1000 / correct).toFixed(1)} s` : '–',
+        stats: [
+          // Correct is the score itself, Fastest gets the problem below.
+          ...answerStats(all).filter((s) => s.label !== 'Fastest answer' && s.label !== 'Correct'),
+          ...(fastest ? [{ label: 'Fastest answer', value: show(fastest) }] : []),
+          ...(longest ? [{ label: 'Longest answer', value: show(longest) }] : []),
+        ],
       },
     })
   })
@@ -31,33 +43,36 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
   const submit = (value: string) => {
     if (remaining <= 0) return
     const ok = Number(value) === problem.answer
+    const now = performance.now()
+    answers.current.push({ ms: now - shownAt.current, correct: ok, task: `${problem.a} ${problem.op} ${problem.b} = ${problem.answer}` })
+    shownAt.current = now
     const nextCorrect = ok ? correct + 1 : correct
     if (ok) setCorrect(nextCorrect)
-    else setWrong((w) => w + 1)
-    setFlash(ok ? 'ok' : 'bad')
-    window.clearTimeout(flashTimer.current)
-    flashTimer.current = window.setTimeout(() => setFlash(null), 250)
+    signal(ok)
     setProblem(makeProblem(levelFor(nextCorrect)))
     setInput('')
   }
 
-  if (!started) return <GetReady onDone={() => setStarted(true)} />
-
-  const color = flash === 'ok' ? 'text-emerald-500' : flash === 'bad' ? 'text-rose-500' : ''
   return (
-    <div>
-      <TimerBar remaining={remaining} total={DURATION_MS}>
-        ✓ {correct} · ✗ {wrong}
-      </TimerBar>
-      <div className="mb-4 rounded-2xl bg-white py-8 text-center dark:bg-zinc-900">
-        <p className={`text-5xl font-bold tabular-nums transition-colors sm:text-6xl ${color}`}>
-          {problem.a} {problem.op} {problem.b}
-        </p>
-        <p className="mt-4 h-10 text-4xl font-bold text-violet-600 tabular-nums dark:text-violet-400">
-          {input || <span className="text-zinc-300 dark:text-zinc-700">?</span>}
-        </p>
-      </div>
-      <NumberPad value={input} onChange={setInput} onSubmit={submit} maxLength={3} disabled={remaining <= 0} />
-    </div>
+    <>
+      <GameInfo
+        left={<InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" />}
+        middle="Type the answer, then Enter"
+        right={<InfoValue label="Correct" value={correct} />}
+        timer={remaining / DURATION_MS}
+      />
+      <PromptLayout
+        displayClassName={feedbackRing(flash)}
+        display={
+          <div className="text-center">
+            <p className="text-7xl font-bold tabular-nums">{problem.a} {problem.op} {problem.b}</p>
+            <p className="mt-5 h-12 text-5xl font-bold text-violet-300 tabular-nums">
+              {input || <span className="text-zinc-700">?</span>}
+            </p>
+          </div>
+        }
+        answers={<NumberPad value={input} onChange={setInput} onSubmit={submit} maxLength={3} disabled={remaining <= 0} layout="row" />}
+      />
+    </>
   )
 }

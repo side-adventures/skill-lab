@@ -1,8 +1,11 @@
 import { useRef, useState } from 'react'
 import { Button } from '../../components/Button'
+import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { SquarePanelLayout } from '../../components/game/layouts'
+import { RoundResult } from '../../components/game/RoundResult'
 import { NumberPad } from '../../components/NumberPad'
 import type { TestComponentProps } from '../types'
-import { add, angleTo, clampToRange, dirOf, makeTasks, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
+import { add, angleTo, clampToRange, dirOf, makeTasks, resultDetails, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
 
 const STROKE = 0.9
 
@@ -106,7 +109,7 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
     if (index + 1 >= tasks.length) {
       return onFinish({
         score: totalScore(results.map((r) => r.ev.points)),
-        details: Object.fromEntries(results.map((r) => [r.task.title, `${r.ev.points} pts · ${r.ev.label}`])),
+        details: resultDetails(results),
       })
     }
     const nt = tasks[index + 1]
@@ -119,59 +122,56 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
 
   const handle = handleAt(task, answer)
   const ready = task.input === 'number' ? typed !== '' : touched
+  // The score is the average accuracy, so the info row shows the average so far too.
+  const soFar = results.length ? totalScore(results.map((r) => r.ev.points)) : 0
 
   return (
-    <div>
-      <div className="mb-2 flex justify-between text-sm text-zinc-500">
-        <span>Round {index + 1} / {tasks.length}</span>
-        <span>{results.length ? `${Math.round(results.reduce((s, r) => s + r.ev.points, 0))} pts so far` : ''}</span>
-      </div>
-      <div className="mb-3 text-center">
-        <p className="text-lg font-bold">{task.title}</p>
-        <p className="text-sm text-zinc-500">{task.prompt}</p>
-      </div>
-      <div className="play-area mx-auto w-full max-w-[min(460px,52vh)] overflow-hidden rounded-2xl bg-white dark:bg-zinc-900" style={{ touchAction: 'none' }}>
-        <svg
-          ref={svg}
-          viewBox="0 0 100 100"
-          className={`aspect-square w-full ${task.input === 'number' || evaluation ? '' : 'cursor-crosshair'}`}
-          onPointerDown={(e) => {
-            dragging.current = true
-            e.currentTarget.setPointerCapture(e.pointerId)
-            fromPointer(e)
-          }}
-          onPointerMove={(e) => dragging.current && fromPointer(e)}
-          onPointerUp={() => (dragging.current = false)}
-          onPointerCancel={() => (dragging.current = false)}
-        >
-          {task.shapes.map((s, i) => <Draw key={`b${i}`} shape={s} tone="base" />)}
-          {answerShapes(task, answer).map((s, i) => <Draw key={`a${i}`} shape={s} tone="answer" />)}
-          {handle && !evaluation && <circle cx={handle.x} cy={handle.y} r={2.6} className="fill-violet-500/30 stroke-violet-500" strokeWidth={0.5} />}
-          {evaluation?.solution.map((s, i) => <Draw key={`s${i}`} shape={s} tone="solution" />)}
-        </svg>
-      </div>
-
-      <div className="mt-4">
-        {evaluation ? (
-          <div className="text-center">
-            <p className="text-3xl font-bold tabular-nums">{evaluation.points} pts</p>
-            <p className="mb-3 text-zinc-500">{evaluation.label}</p>
-            <Button onClick={next} autoFocus className="w-full max-w-xs">
-              {index + 1 >= tasks.length ? 'See result' : 'Next'}
-            </Button>
-          </div>
-        ) : task.input === 'number' ? (
+    <>
+      <GameInfo
+        left={<InfoValue value={`Round ${index + 1}`} of={tasks.length} />}
+        middle={evaluation ? '' : task.input === 'number' ? 'Type the angle, then Enter' : touched ? 'Adjust, then Done' : 'Click or drag on the board'}
+        right={<InfoValue label="Accuracy" value={soFar.toFixed(1)} unit="%" />}
+      />
+      <SquarePanelLayout
+        board={
+          <svg
+            ref={svg}
+            viewBox="0 0 100 100"
+            className={`block size-full ${task.input === 'number' || evaluation ? '' : 'cursor-crosshair'}`}
+            onPointerDown={(e) => {
+              dragging.current = true
+              e.currentTarget.setPointerCapture(e.pointerId)
+              fromPointer(e)
+            }}
+            onPointerMove={(e) => dragging.current && fromPointer(e)}
+            onPointerUp={() => (dragging.current = false)}
+            onPointerCancel={() => (dragging.current = false)}
+          >
+            {task.shapes.map((s, i) => <Draw key={`b${i}`} shape={s} tone="base" />)}
+            {answerShapes(task, answer).map((s, i) => <Draw key={`a${i}`} shape={s} tone="answer" />)}
+            {handle && !evaluation && <circle cx={handle.x} cy={handle.y} r={2.6} className="fill-violet-500/30 stroke-violet-500" strokeWidth={0.5} />}
+            {evaluation?.solution.map((s, i) => <Draw key={`s${i}`} shape={s} tone="solution" />)}
+          </svg>
+        }
+        panel={
           <>
-            <p className="mb-2 h-10 text-center text-3xl font-bold tabular-nums">{typed ? `${typed}°` : <span className="text-zinc-400">–</span>}</p>
-            <NumberPad value={typed} onChange={setTyped} onSubmit={submit} maxLength={3} />
+            <p className="text-2xl font-bold">{task.title}</p>
+            <p className="mt-1 text-zinc-400">{task.prompt}</p>
+            <div className="mt-auto">
+              {evaluation ? (
+                <RoundResult value={evaluation.points} unit="pts" line={evaluation.label} button={index + 1 >= tasks.length ? 'See result' : 'Next'} onContinue={next} />
+              ) : task.input === 'number' ? (
+                <>
+                  <p className="mb-3 h-12 text-4xl font-bold tabular-nums">{typed ? `${typed}°` : <span className="text-zinc-700">–</span>}</p>
+                  <NumberPad value={typed} onChange={setTyped} onSubmit={submit} maxLength={3} />
+                </>
+              ) : (
+                <Button onClick={() => submit()} disabled={!ready} className="w-full">Done</Button>
+              )}
+            </div>
           </>
-        ) : (
-          <div className="text-center">
-            <p className="mb-2 text-sm text-zinc-500">{touched ? 'Adjust as much as you like, then confirm.' : 'Tap or drag on the board.'}</p>
-            <Button onClick={() => submit()} disabled={!ready} className="w-full max-w-xs">Done</Button>
-          </div>
-        )}
-      </div>
-    </div>
+        }
+      />
+    </>
   )
 }
