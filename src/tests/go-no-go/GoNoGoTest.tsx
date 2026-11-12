@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
-import { flashRing, useAnswerFlash } from '../../lib/game'
+import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { MAX_WAIT_MS, MIN_WAIT_MS, WINDOW_MS, makeTrials, totalMs, type Stats } from './scoring'
@@ -91,7 +91,7 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
       />
       <FullLayout
         onPointerDown={(e) => e.button === 0 && tap()}
-        className={`grid cursor-pointer place-items-center bg-zinc-900 ${flashRing(flash)}`}
+        className={`grid cursor-pointer place-items-center bg-zinc-900 ${feedbackRing(flash)}`}
       >
         {/* No fade: the color must never change while the circle is still (partly) visible. */}
         <span className={`size-48 rounded-full ${showStim ? (trials[i] ? 'bg-emerald-600' : 'bg-rose-700') : 'bg-transparent'}`} />

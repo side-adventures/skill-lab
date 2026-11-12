@@ -105,9 +105,11 @@ all best scores in one message.
     - *Single square* (no box, board at full height; the info row matches its width): Visual Memory, Sequence
       Memory, Number Order and Flash Order (6:5 grid). Tiles via `TileGrid`.
     - *Square + panel* (box; board left, panel right with its own keypad): N-Back, Quick Count, Eye for Geometry.
-  - **Answer flash:** a faint green / red ring on the display or board for ~0.2 s (`useAnswerFlash`).
-  - **Colors:** large areas never use bright green / red (dark theme): board frames turn emerald-900 / rose-900,
-    Reaction's full area uses rose-900 / emerald-700 / amber-800.
+  - **Correct / wrong feedback:** always the same green / red ring (`FEEDBACK_RING` in `lib/game.ts`:
+    emerald-400 at 60 %, rose-400 at 65 %), never a filled area. Answer tests flash it on the display for ~0.2 s
+    (`useAnswerFlash`); tile boards show it around the board on success / fail (`TileGrid` `frame`).
+  - **Colors:** large areas never use bright green / red (dark theme): Reaction's full area uses rose-900 /
+    emerald-700 / amber-800; a wrong tile is rose-700.
   - **Round result** (`RoundResult`): one big value, one line of context, chips with the rounds so far (5-round
     tests: Reaction, Time Estimation, Stop the Bar), "Click anywhere to continue" (any click, Enter or Space).
     In panel layouts it sits in the panel and the board keeps showing the answer. Eye for Geometry shows a Next

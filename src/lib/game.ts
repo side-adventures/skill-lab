@@ -73,8 +73,12 @@ export function useAnswerFlash() {
   return [flash, signal] as const
 }
 
-/** Ring classes for the answer flash: faint, never bright. */
-export const flashRing = (flash: Flash) =>
-  `ring-2 transition-shadow duration-150 ${
-    flash === 'ok' ? 'ring-emerald-400/35' : flash === 'bad' ? 'ring-rose-400/40' : 'ring-transparent'
-  }`
+/**
+ * The one correct / wrong look for every test: a green / red ring around the display or board (never a
+ * filled area, too bright in dark mode). Red is 5 % stronger because it reads weaker on dark backgrounds.
+ */
+export const FEEDBACK_RING = { ok: 'ring-emerald-400/60', bad: 'ring-rose-400/65' } as const
+
+/** Ring classes for a feedback state: the answer flash (`useAnswerFlash`) or a board's success / fail. */
+export const feedbackRing = (flash: Flash) =>
+  `ring-2 transition-shadow duration-150 ${flash ? FEEDBACK_RING[flash] : 'ring-transparent'}`

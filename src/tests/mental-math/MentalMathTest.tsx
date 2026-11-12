@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
 import { NumberPad } from '../../components/NumberPad'
-import { flashRing, useAnswerFlash } from '../../lib/game'
+import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { DURATION_MS, levelFor, makeProblem } from './scoring'
@@ -46,7 +46,7 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
         timer={remaining / DURATION_MS}
       />
       <PromptLayout
-        displayClassName={flashRing(flash)}
+        displayClassName={feedbackRing(flash)}
         display={
           <div className="text-center">
             <p className="text-7xl font-bold tabular-nums">{problem.a} {problem.op} {problem.b}</p>

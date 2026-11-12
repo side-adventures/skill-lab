@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { boardBg, type BoardState } from '../boardFeedback'
+import { feedbackRing } from '../../lib/game'
 
 export type TileTone = 'idle' | 'lit' | 'found' | 'wrong' | 'hint' | 'revealed' | 'hidden' | 'done' | 'empty'
 
@@ -15,9 +15,12 @@ const TONE: Record<TileTone, string> = {
   empty: 'bg-transparent',
 }
 
+/** Success / fail state of a whole board: shown as the shared feedback ring around it. */
+export type BoardState = 'success' | 'fail' | null
+
 /**
  * A grid of tiles that fills its parent (Visual / Sequence Memory, N-Back, Number / Flash Order).
- * `tile(i)` gives each tile's tone and optional content; `frame` tints the board green / red.
+ * `tile(i)` gives each tile's tone and optional content; `frame` puts a green / red ring around the board.
  */
 export function TileGrid({ cols, rows = cols, tile, onTap, frame = null, gap = 'gap-2' }: {
   cols: number
@@ -29,7 +32,7 @@ export function TileGrid({ cols, rows = cols, tile, onTap, frame = null, gap = '
 }) {
   return (
     <div
-      className={`play-area grid size-full rounded-2xl p-2 ${gap} ${boardBg(frame)}`}
+      className={`play-area relative grid size-full rounded-2xl p-2 ${gap} bg-zinc-800 ${feedbackRing(frame === 'success' ? 'ok' : frame === 'fail' ? 'bad' : null)}`}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}
     >
       {Array.from({ length: cols * rows }, (_, i) => {

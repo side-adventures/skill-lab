@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnswerButtons } from '../../components/game/AnswerButtons'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
-import { flashRing, useAnswerFlash } from '../../lib/game'
+import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { COLORS, DURATION_MS, averageTimes, nextTrial, stroopScore, type Answer } from './scoring'
@@ -58,7 +58,7 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
         timer={remaining / DURATION_MS}
       />
       <PromptLayout
-        displayClassName={flashRing(flash)}
+        displayClassName={feedbackRing(flash)}
         display={
           <span className="text-7xl font-black tracking-wider" style={{ color: COLORS[trial.ink].hex }}>
             {COLORS[trial.word].label}

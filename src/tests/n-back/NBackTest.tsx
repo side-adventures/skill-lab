@@ -3,7 +3,7 @@ import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { TileGrid } from '../../components/game/TileGrid'
-import { flashRing, useAnswerFlash } from '../../lib/game'
+import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { GRID, ITEM_MS, LIT_MS, PASS_ACCURACY, START_N, blockAccuracy, isMatch, makeBlock } from './scoring'
@@ -79,7 +79,7 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
         right={phase === 'running' && <InfoValue value={Math.max(0, index + 1)} of={seq.length} />}
       />
       <SquarePanelLayout
-        boardClassName={flashRing(flash)}
+        boardClassName={feedbackRing(flash)}
         board={
           <TileGrid
             cols={GRID}
