@@ -5,6 +5,7 @@ import { PromptLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
+import { answerStats, sign } from '../../lib/resultFormat'
 import { COLORS, DURATION_MS, averageTimes, nextTrial, stroopScore, type Answer } from './scoring'
 
 export default function StroopTest({ onFinish }: TestComponentProps) {
@@ -25,13 +26,15 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
     onFinish({
       score: stroopScore(correct, wrong),
       details: {
-        Correct: String(correct),
-        Wrong: String(wrong),
-        'Avg · same color': fmt(matchMs),
-        'Avg · different color': fmt(mismatchMs),
-        ...(matchMs !== undefined && mismatchMs !== undefined && {
-          'Mismatch slowdown': `${mismatchMs >= matchMs ? '+' : '−'}${Math.round(Math.abs(mismatchMs - matchMs))} ms`,
-        }),
+        stats: answerStats(answers.current),
+        extra: {
+          kind: 'pair',
+          a: { label: 'Same color', value: fmt(matchMs) },
+          b: { label: 'Different color', value: fmt(mismatchMs) },
+          ...(matchMs !== undefined && mismatchMs !== undefined && {
+            diff: { label: 'Slowed down by', value: `${sign(mismatchMs - matchMs)}${Math.round(Math.abs(mismatchMs - matchMs))} ms` },
+          }),
+        },
       },
     })
   })

@@ -47,7 +47,7 @@ export default function NumberMemoryTest({ onFinish }: TestComponentProps) {
       later(END_MOMENT_MS, () =>
         onFinish({
           score: digits - 1 >= START_DIGITS ? digits - 1 : 0,
-          details: { 'Last number': number, 'You typed': value },
+          details: { extra: { kind: 'digits', target: number, typed: value } },
         }),
       )
     }

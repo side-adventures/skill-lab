@@ -53,10 +53,10 @@ describe('storage', () => {
   })
 
   it('saves details with the result', () => {
-    saveResult('aim', 40, true, { Misses: '3' })
+    saveResult('aim', 40, true, { stats: [{ label: 'Misses', value: '3' }] })
     const rec = getRecord('aim', true)
     expect(rec.attempts).toBe(1)
-    expect(rec.history[0].details).toEqual({ Misses: '3' })
+    expect(rec.history[0].details).toEqual({ stats: [{ label: 'Misses', value: '3' }] })
   })
 
   it('survives broken data', () => {

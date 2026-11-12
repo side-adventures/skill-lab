@@ -1,3 +1,5 @@
+import { tendency } from '../../lib/resultFormat'
+import type { ResultDetails } from '../types'
 import { mean, randInt, round1, shuffle, type Rand } from '../../lib/random'
 
 export const ROUNDS = 5
@@ -22,3 +24,20 @@ export const scoreRounds = (rounds: { target: number; actual: number }[]) =>
 /** "-10.0 %" (too early) / "+4.2 %" (too late). */
 export const signedErrorLabel = (targetS: number, actualS: number) =>
   `${actualS < targetS ? '−' : '+'}${errorPct(targetS, actualS).toFixed(1)} %`
+
+/** Result screen stats: closest / furthest round, which way you tend to be off, and each round. */
+export function resultDetails(rounds: { target: number; actual: number }[]): ResultDetails {
+  const errors = rounds.map((r) => errorPct(r.target, r.actual))
+  const signed = rounds.map((r) => ((r.actual - r.target) / r.target) * 100)
+  return {
+    stats: [
+      { label: 'Closest', value: `${Math.min(...errors).toFixed(1)} % off` },
+      { label: 'Furthest off', value: `${Math.max(...errors).toFixed(1)} %` },
+      { label: 'Tendency', value: tendency(mean(signed), ' %', 'too early', 'too late') },
+    ],
+    chips: {
+      title: 'Target · your time',
+      items: rounds.map((r) => ({ label: `${r.target} s`, value: `${r.actual.toFixed(2)} s · ${signedErrorLabel(r.target, r.actual)}` })),
+    },
+  }
+}

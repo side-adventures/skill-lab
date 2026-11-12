@@ -1,20 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { buildShareText, testUrl } from '../lib/share'
 import { scoreParts } from '../lib/scoreParts'
 import { getRecord, saveResult, type ResultEntry, type TestRecord } from '../lib/storage'
 import { CATEGORY_COLORS, storageId, type TestDefinition, type TestResult } from '../tests/types'
 import { Button } from './Button'
 import { RulesContent } from './RulesContent'
+import { ResultScreen } from './ResultScreen'
 import { RulesOverlay } from './RulesOverlay'
 import { GameFrame } from './game/GameFrame'
-import { ShareButton } from './ShareButton'
 import { TestIcon } from './TestIcon'
 
 type Phase =
   | { name: 'intro' }
   | { name: 'playing' }
-  | { name: 'result'; result: TestResult; isBest: boolean; previousBest?: ResultEntry }
+  | { name: 'result'; result: TestResult; isBest: boolean; previousBest?: ResultEntry; attemptNo?: number }
 
 /** Shared intro → play → result flow used by every test. */
 export function TestRunner({ test }: { test: TestDefinition }) {
@@ -39,7 +38,8 @@ export function TestRunner({ test }: { test: TestDefinition }) {
       return setPhase({ name: 'result', result, isBest: false, previousBest: record.best })
     }
     const { isBest, previousBest } = saveResult(storageId(test), result.score, test.higherIsBetter, result.details)
-    setPhase({ name: 'result', result, isBest, previousBest })
+    const attemptNo = getRecord(storageId(test), test.higherIsBetter).attempts
+    setPhase({ name: 'result', result, isBest, previousBest, attemptNo })
   }
 
   // Top bar, right side: "All tests" on the rules and result screens; best + rules button while playing.
@@ -93,7 +93,16 @@ export function TestRunner({ test }: { test: TestDefinition }) {
       </>
     )
   } else if (phase.name === 'result') {
-    body = <ResultScreen test={test} phase={phase} onRetry={start} />
+    body = (
+      <ResultScreen
+        test={test}
+        result={phase.result}
+        isBest={phase.isBest}
+        previousBest={phase.previousBest}
+        onRetry={start}
+        onRules={() => setPhase({ name: 'intro' })}
+      />
+    )
   } else {
     body = <RulesScreen test={test} record={record} onStart={start} />
   }
@@ -113,6 +122,7 @@ export function TestRunner({ test }: { test: TestDefinition }) {
             <span>{test.durationHint}</span>
           </>
         )}
+        {phase.name === 'result' && <span>{phase.attemptNo ? `Attempt ${phase.attemptNo}` : 'Not counted'}</span>}
       </div>}
       {body}
     </>
@@ -159,80 +169,6 @@ const AllTestsLink = () => (
     All tests
   </Link>
 )
-
-const RESULT_INPUT_DELAY_MS = 800
-
-function ResultScreen({
-  test,
-  phase,
-  onRetry,
-}: {
-  test: TestDefinition
-  phase: Extract<Phase, { name: 'result' }>
-  onRetry: () => void
-}) {
-  // Ignore input for a moment so a last tap in the test doesn't hit "Try again" by accident.
-  const [armed, setArmed] = useState(false)
-  useEffect(() => {
-    const t = window.setTimeout(() => setArmed(true), RESULT_INPUT_DELAY_MS)
-    return () => window.clearTimeout(t)
-  }, [])
-  const block = (e: React.SyntheticEvent) => {
-    if (armed) return
-    e.preventDefault()
-    e.stopPropagation()
-  }
-  const formatted = test.formatScore(phase.result.score)
-
-
-  const failed = phase.result.failed
-  return (
-    <Card>
-      {failed ? (
-        <>
-          <p className="text-center text-sm font-medium tracking-wide text-zinc-500 uppercase">No score</p>
-          <p className="my-2 text-center text-3xl font-bold sm:text-4xl">{failed}</p>
-        </>
-      ) : (
-        <>
-          <p className="text-center text-sm font-medium tracking-wide text-zinc-500 uppercase">{test.scoreLabel}</p>
-          <p className="my-2 text-center text-5xl font-bold tabular-nums sm:text-6xl">{formatted}</p>
-        </>
-      )}
-      <p className="mb-6 text-center text-sm">
-        {phase.isBest ? (
-          <span className="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-            {phase.previousBest ? '🏆 New personal best!' : '🏆 First score!'}
-          </span>
-        ) : (
-          phase.previousBest && <span className="text-zinc-500">Your best: {test.formatScore(phase.previousBest.score)}</span>
-        )}
-      </p>
-
-      {phase.result.details && (
-        <dl className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {Object.entries(phase.result.details).map(([label, value]) => (
-            <div key={label} className="rounded-lg bg-zinc-100 px-3 py-2 dark:bg-zinc-800/60">
-              <dt className="text-xs text-zinc-500">{label}</dt>
-              <dd className="font-semibold tabular-nums">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-
-      <div
-        className={`flex flex-col gap-3 transition-opacity duration-300 sm:flex-row sm:justify-center ${armed ? '' : 'pointer-events-none opacity-40'}`}
-        onClickCapture={block}
-        onKeyDownCapture={block}
-      >
-        <Button onClick={onRetry} autoFocus>Try again</Button>
-        {!failed && (
-          <ShareButton label="Share score" getShare={() => ({ text: buildShareText(test.name, formatted), url: testUrl(test.id) })} />
-        )}
-      </div>
-    </Card>
-  )
-}
 
 /** "Which test am I on" bar, shown on every screen of a test. Fixed height so nothing below moves. */
 function TestBar({ test, children }: { test: TestDefinition; children?: React.ReactNode }) {

@@ -1,3 +1,5 @@
+import { tendency } from '../../lib/resultFormat'
+import type { ResultDetails } from '../types'
 import { mean, randInt, round1, spreadInts, type Rand } from '../../lib/random'
 
 export const ROUNDS = 10
@@ -37,3 +39,17 @@ export const accuracy = (actual: number, guess: number) =>
 
 export const scoreRounds = (rounds: { actual: number; guess: number }[]) =>
   round1(mean(rounds.map((r) => accuracy(r.actual, r.guess))))
+
+/** Result screen stats: exact guesses, how far off, which way you tend to be off, and each round. */
+export function resultDetails(rounds: { actual: number; guess: number }[]): ResultDetails {
+  const off = rounds.map((r) => r.guess - r.actual)
+  return {
+    stats: [
+      { label: 'Exact', value: `${off.filter((o) => o === 0).length} / ${rounds.length}` },
+      { label: 'Avg off by', value: `${mean(off.map(Math.abs)).toFixed(1)} dots` },
+      { label: 'Tendency', value: tendency(mean(off), '', 'too low', 'too high', 0.5, 1) },
+      { label: 'Biggest miss', value: `${Math.max(...off.map(Math.abs))} dots` },
+    ],
+    chips: { title: 'Dots · your guess', items: rounds.map((r) => ({ label: `${r.actual} dots`, value: String(r.guess) })) },
+  }
+}

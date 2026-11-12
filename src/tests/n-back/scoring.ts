@@ -56,3 +56,15 @@ export function blockAccuracy(seq: number[], tapped: boolean[], n: number) {
   const rejectRate = nonMatches ? rejections / nonMatches : 1
   return (hitRate + rejectRate) / 2
 }
+
+/** Counts of one block for the result table: hits (of all matches), wrong clicks, missed matches. */
+export function blockCounts(seq: number[], tapped: boolean[], n: number) {
+  let matches = 0, hits = 0, wrong = 0
+  seq.forEach((_, i) => {
+    const m = isMatch(seq, i, n)
+    if (m) matches++
+    if (m && tapped[i]) hits++
+    if (!m && tapped[i]) wrong++
+  })
+  return { matches, hits, wrong, missed: matches - hits }
+}

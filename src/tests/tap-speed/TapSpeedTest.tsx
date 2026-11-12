@@ -1,16 +1,19 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { DURATION_MS, tapsPerSecond } from './scoring'
+import { DURATION_MS, resultDetails, tapsPerSecond } from './scoring'
 
 export default function TapSpeedTest({ onFinish }: TestComponentProps) {
   const [taps, setTaps] = useState(0)
   const started = taps > 0
+  // Click times in ms since the first click (for the clicks-per-frame stats).
+  const times = useRef<number[]>([])
+  const firstAt = useRef(0)
 
   const remaining = useCountdown(DURATION_MS, started, () =>
-    onFinish({ score: tapsPerSecond(taps), details: { 'Total taps': String(taps) } }),
+    onFinish({ score: tapsPerSecond(taps), details: resultDetails(times.current) }),
   )
   const live = !started || remaining > 0
 
@@ -24,7 +27,13 @@ export default function TapSpeedTest({ onFinish }: TestComponentProps) {
       />
       <FullLayout
         // pointerdown per finger: multi-finger tapping is allowed
-        onPointerDown={() => live && setTaps((t) => t + 1)}
+        onPointerDown={() => {
+          if (!live) return
+          const now = performance.now()
+          if (!times.current.length) firstAt.current = now
+          times.current.push(now - firstAt.current)
+          setTaps((t) => t + 1)
+        }}
         className="grid cursor-pointer place-items-center bg-violet-600 text-white select-none active:bg-violet-700"
         style={{ touchAction: 'none' }}
       >

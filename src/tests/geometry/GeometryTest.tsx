@@ -5,7 +5,7 @@ import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { NumberPad } from '../../components/NumberPad'
 import type { TestComponentProps } from '../types'
-import { add, angleTo, clampToRange, dirOf, makeTasks, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
+import { add, angleTo, clampToRange, dirOf, makeTasks, resultDetails, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
 
 const STROKE = 0.9
 
@@ -109,7 +109,7 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
     if (index + 1 >= tasks.length) {
       return onFinish({
         score: totalScore(results.map((r) => r.ev.points)),
-        details: Object.fromEntries(results.map((r) => [r.task.title, `${r.ev.points} pts · ${r.ev.label}`])),
+        details: resultDetails(results),
       })
     }
     const nt = tasks[index + 1]

@@ -46,7 +46,7 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
    - "Try again" on the result screen starts a fresh run; the result screen ignores input for 0.8 s.
    - The top bar (test name, Best, "?") is visible in every phase.
    - No errors in `read_console_messages`.
-   - **The result screen is still the old design** (a redesign is planned): check its numbers and buttons, but skip design remarks about it.
+   - **Result screen** (see "Result screen" in `docs/SPEC.md`): check every stat against your inputs; "Attempt N" / "Not counted"; Rules / Stats links; Share · Try again · Next test (and which test Next picks); Enter / Space / N; nothing overflows the stage, even with many chips.
 6. **Keyboard extras:** answer buttons show their key inside (1–4, ← / → for two-choice tests, Space for N-Back MATCH); Enter / Space continue a round result. Keyboard is a bonus: report broken keys, never missing ones.
 
 Take a screenshot only when the visual result matters (colors, layout), at `scale: 0.5` to save tokens. Prefer `get_page_text` or DOM reads for text and numbers.

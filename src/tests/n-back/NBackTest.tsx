@@ -6,7 +6,7 @@ import { TileGrid } from '../../components/game/TileGrid'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { GRID, ITEM_MS, LIT_MS, PASS_ACCURACY, START_N, blockAccuracy, isMatch, makeBlock } from './scoring'
+import { GRID, ITEM_MS, LIT_MS, PASS_ACCURACY, START_N, blockAccuracy, isMatch, makeBlock, blockCounts } from './scoring'
 
 type Phase = 'brief' | 'running' | 'passed'
 
@@ -19,7 +19,7 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
   const [feedback, setFeedback] = useState<'hit' | 'false' | 'miss' | null>(null)
   const [flash, signal] = useAnswerFlash()
   const tapped = useRef<boolean[]>([])
-  const results = useRef<{ n: number; acc: number }[]>([])
+  const results = useRef<({ n: number; acc: number } & ReturnType<typeof blockCounts>)[]>([])
 
   // Run a block: one item every ITEM_MS, lit for LIT_MS.
   useEffect(() => {
@@ -39,12 +39,21 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
     })
     timers.push(window.setTimeout(() => {
       const acc = blockAccuracy(seq, tapped.current, n)
-      results.current.push({ n, acc })
+      results.current.push({ n, acc, ...blockCounts(seq, tapped.current, n) })
       if (acc >= PASS_ACCURACY) return setPhase('passed')
       const passed = results.current.filter((r) => r.acc >= PASS_ACCURACY)
       onFinish({
         score: passed.length ? Math.max(...passed.map((r) => r.n)) : 0,
-        details: Object.fromEntries(results.current.map((r) => [`${r.n}-back accuracy`, `${Math.round(r.acc * 100)} %`])),
+        details: {
+          extra: {
+            kind: 'table',
+            columns: ['Level', 'Accuracy', 'Hits', 'Wrong clicks', 'Missed'],
+            rows: results.current.slice(-5).map((r) => ({
+              cells: [`${r.n}-back`, `${Math.round(r.acc * 100)} %`, `${r.hits} / ${r.matches}`, String(r.wrong), String(r.missed)],
+              dim: r.acc < PASS_ACCURACY,
+            })),
+          },
+        },
       })
     }, seq.length * ITEM_MS + 600))
     return () => timers.forEach((t) => window.clearTimeout(t))

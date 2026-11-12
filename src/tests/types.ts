@@ -23,9 +23,31 @@ export interface TestResult {
    * The message is shown instead of a score and nothing is saved; `score` is ignored.
    */
   failed?: string
-  /** Optional per-test breakdown shown on the result screen (label -> value). */
-  details?: Record<string, string>
+  /** Per-test breakdown shown under the score (also for failed runs) and saved with the attempt. */
+  details?: ResultDetails
 }
+
+/**
+ * The stats under the score on the result screen. Shown in this order: `stats`, `extra`, `chips`.
+ * Values are already formatted ("251 ms"); each test picks what is interesting for it.
+ */
+export interface ResultDetails {
+  /** Label / value pairs, most interesting first; wraps onto more lines when needed. */
+  stats?: ResultStat[]
+  /** One per-test block that doesn't fit the stat row. */
+  extra?: ResultExtra
+  /** Two-line chips (rounds, levels, time frames); the screen shows the last ones that fit. */
+  chips?: { title: string; items: ResultChip[] }
+}
+export interface ResultStat { label: string; value: string }
+export interface ResultChip { label: string; value: string }
+export type ResultExtra =
+  /** Two values that belong together and how they differ (Stroop: same vs different color). */
+  | { kind: 'pair'; a: ResultStat; b: ResultStat; diff?: ResultStat }
+  /** A small table (N-Back: one row per level). Dim rows are e.g. a level that wasn't passed. */
+  | { kind: 'table'; columns: string[]; rows: { cells: string[]; dim?: boolean }[] }
+  /** The number shown vs what you typed, wrong digits marked (Number Memory). */
+  | { kind: 'digits'; target: string; typed: string }
 
 /**
  * How a run starts: 'countdown' = 3-2-1 (you must be ready the moment it starts), 'quick' = a short

@@ -116,7 +116,19 @@ all best scores in one message.
     button instead (its rounds end with a Done button too).
   - **End moment:** when a run ends by a mistake, the game freezes for 1.5 s (`END_MOMENT_MS`) showing what went
     wrong, then the result screen appears automatically.
-- The result screen is still the old version (redesign planned).
+- **Result screen** (`components/ResultScreen.tsx`): a 3:2 stage like the rules screen.
+  - Info row: "Attempt N" (runs without a score: "Not counted").
+  - Top of the stage: "‹ Rules" (back to the rules screen) on the left, "Stats ›" (`/stats?open=<id>`) on the right.
+  - Middle: score label and the score (or "No score" and the reason), then "New personal best" / "First score" as a
+    quiet violet badge, or "Your best: …" in gray. Below it the test's own stats (`TestResult.details`,
+    `ResultDetails` in `types.ts`): a wrapping row of label / value stats, an optional special block (pair with
+    difference, small table, digit comparison), and optional two-line chips (at most 10, the last ones).
+  - Footer: Share (left, quiet; missing without a score) · Try again (middle, primary) · Next test (right, with icon
+    in its category color). Next test = an unplayed test first, then one not played today, then any other; within
+    each group A–Z starting after the current test (`lib/nextTest.ts`).
+  - Keys: Enter / Space = Try again, N = next test. Input is ignored for the first 0.8 s.
+  - Details are saved structured with each attempt (older attempts keep their plain label → value text).
+  - Runs without a score show their stats too, but have no Share and aren't saved.
 
 ## Stats page (`#/stats`, `src/pages/Stats.tsx`)
 - Same category chips as the home page (stored in the URL). `?open=<id>` unfolds that test's row and scrolls to it.

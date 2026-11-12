@@ -1,27 +1,34 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
 import { NumberPad } from '../../components/NumberPad'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
+import { answerStats, fmtMs, type TimedAnswer } from '../../lib/resultFormat'
 import { DURATION_MS, levelFor, makeProblem } from './scoring'
 
 export default function MentalMathTest({ onFinish }: TestComponentProps) {
   const [problem, setProblem] = useState(() => makeProblem(0))
   const [input, setInput] = useState('')
   const [correct, setCorrect] = useState(0)
-  const [wrong, setWrong] = useState(0)
   const [flash, signal] = useAnswerFlash()
+  // When the current problem appeared, and every answer's time (for the result stats).
+  const shownAt = useRef(0)
+  useEffect(() => {
+    shownAt.current = performance.now()
+  }, [])
+  const answers = useRef<TimedAnswer[]>([])
 
   const remaining = useCountdown(DURATION_MS, true, () => {
-    const total = correct + wrong
+    const times = answers.current.map((a) => a.ms)
     onFinish({
       score: correct,
       details: {
-        Wrong: String(wrong),
-        Accuracy: total ? `${Math.round((correct / total) * 100)} %` : '–',
-        'Avg per answer': correct ? `${(DURATION_MS / 1000 / correct).toFixed(1)} s` : '–',
+        stats: [
+          ...answerStats(answers.current),
+          ...(times.length ? [{ label: 'Longest answer', value: fmtMs(Math.max(...times)) }] : []),
+        ],
       },
     })
   })
@@ -29,9 +36,11 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
   const submit = (value: string) => {
     if (remaining <= 0) return
     const ok = Number(value) === problem.answer
+    const now = performance.now()
+    answers.current.push({ ms: now - shownAt.current, correct: ok })
+    shownAt.current = now
     const nextCorrect = ok ? correct + 1 : correct
     if (ok) setCorrect(nextCorrect)
-    else setWrong((w) => w + 1)
     signal(ok)
     setProblem(makeProblem(levelFor(nextCorrect)))
     setInput('')

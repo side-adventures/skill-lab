@@ -4,7 +4,7 @@ import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { NumberPad } from '../../components/NumberPad'
 import type { TestComponentProps } from '../types'
-import { DOT_RADIUS, FLASH_MS, ROUNDS, accuracy, makeCounts, placeDots, scoreRounds, type Dot } from './scoring'
+import { DOT_RADIUS, FLASH_MS, ROUNDS, accuracy, makeCounts, placeDots, resultDetails, scoreRounds, type Dot } from './scoring'
 
 type Phase = 'ready' | 'flash' | 'answer' | 'feedback'
 interface Round { actual: number; guess: number }
@@ -34,10 +34,7 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
     if (rounds.length >= ROUNDS) {
       return onFinish({
         score: scoreRounds(rounds),
-        details: {
-          Exact: `${rounds.filter((r) => r.actual === r.guess).length} / ${ROUNDS}`,
-          'Avg off by': `${(rounds.reduce((s, r) => s + Math.abs(r.actual - r.guess), 0) / ROUNDS).toFixed(1)} dots`,
-        },
+        details: resultDetails(rounds),
       })
     }
     setDots(placeDots(counts[rounds.length]))

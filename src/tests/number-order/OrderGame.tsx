@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { SquareLayout } from '../../components/game/layouts'
 import { TileGrid } from '../../components/game/TileGrid'
@@ -9,11 +9,19 @@ import { COLS, ROWS, placeTiles } from './scoring'
 
 type Phase = 'show' | 'hidden' | 'success' | 'fail'
 
+/** What the run measured, for the result stats. */
+export interface OrderRunStats {
+  /** Per round: how long the numbers stayed visible (clicking 1 early ends it). */
+  memorizeUsed: { round: number; ms: number }[]
+  /** Time between consecutive correct clicks (from 2 on), over all rounds. */
+  tileMs: number[]
+}
+
 interface Props {
   tilesFor: (round: number) => number
   memorizeMsFor: (round: number) => number
   /** Builds the result from the number of cleared rounds when a wrong tile is tapped. */
-  result: (clearedRounds: number) => TestResult
+  result: (clearedRounds: number, stats: OrderRunStats) => TestResult
   roundLabel: (round: number) => string
   onFinish: (r: TestResult) => void
 }
@@ -29,9 +37,14 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
   const [next, setNext] = useState(0) // index of the number to tap next
   const [wrongCell, setWrongCell] = useState<number | null>(null)
   const memorizeMs = memorizeMsFor(round)
+  const showAt = useRef(0)
+  const lastTapAt = useRef(0)
+  const stats = useRef<OrderRunStats>({ memorizeUsed: [], tileMs: [] })
+  const endMemorize = () => stats.current.memorizeUsed.push({ round, ms: performance.now() - showAt.current })
 
   useEffect(() => {
     let t: number | undefined
+    if (phase === 'show') showAt.current = performance.now()
     if (phase === 'success')
       t = window.setTimeout(() => {
         setRound(round + 1)
@@ -39,13 +52,16 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
         setNext(0)
         setPhase('show')
       }, 700)
-    if (phase === 'fail') t = window.setTimeout(() => onFinish(result(round)), END_MOMENT_MS)
+    if (phase === 'fail') t = window.setTimeout(() => onFinish(result(round, stats.current)), END_MOMENT_MS)
     return () => window.clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
   // Memorize time, shown as the timer line; clicking 1 early ends it.
-  const showLeft = useCountdown(memorizeMs, phase === 'show', () => setPhase('hidden'))
+  const showLeft = useCountdown(memorizeMs, phase === 'show', () => {
+    endMemorize()
+    setPhase('hidden')
+  })
 
   const tap = (cell: number) => {
     if (phase !== 'show' && phase !== 'hidden') return
@@ -56,7 +72,13 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
       setWrongCell(cell)
       return setPhase('fail')
     }
-    if (phase === 'show') setPhase('hidden')
+    const now = performance.now()
+    if (index > 0) stats.current.tileMs.push(now - lastTapAt.current)
+    lastTapAt.current = now
+    if (phase === 'show') {
+      endMemorize()
+      setPhase('hidden')
+    }
     if (next + 1 === cells.length) setPhase('success')
     setNext(next + 1)
   }

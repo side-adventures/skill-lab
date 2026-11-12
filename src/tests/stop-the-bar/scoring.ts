@@ -1,3 +1,5 @@
+import { tendency } from '../../lib/resultFormat'
+import type { ResultDetails } from '../types'
 import { mean, shuffle, type Rand } from '../../lib/random'
 
 export const ROUNDS = 5
@@ -23,3 +25,16 @@ export const errorMs = (stopPos: number, r: RoundSetup) => ((stopPos - r.target)
 export const scoreRounds = (errors: number[]) => Math.round(mean(errors.map(Math.abs)))
 
 export const errorLabel = (ms: number) => `${ms < 0 ? '−' : '+'}${Math.abs(Math.round(ms))} ms`
+
+export const speedName = (r: { speed: number }) => (r.speed >= 0.8 ? 'fast' : r.speed >= 0.6 ? 'medium' : 'slow')
+
+/** Result screen stats: closest stop, which way you tend to be off, and each round (speed · ms off). */
+export function resultDetails(rounds: RoundSetup[], errors: number[]): ResultDetails {
+  return {
+    stats: [
+      { label: 'Closest', value: `${Math.round(Math.min(...errors.map(Math.abs)))} ms off` },
+      { label: 'Tendency', value: tendency(mean(errors), ' ms', 'too early', 'too late', 5) },
+    ],
+    chips: { title: 'Speed · off by', items: errors.map((e, i) => ({ label: speedName(rounds[i]), value: errorLabel(e) })) },
+  }
+}

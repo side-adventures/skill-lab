@@ -4,7 +4,7 @@ import { FullLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { ROUNDS, errorPct, makeTargets, scoreRounds, signedErrorLabel } from './scoring'
+import { ROUNDS, errorPct, makeTargets, resultDetails, scoreRounds, signedErrorLabel } from './scoring'
 
 type Phase = 'ready' | 'timing' | 'shown'
 interface Round { target: number; actual: number }
@@ -36,7 +36,7 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
     if (rounds.length < ROUNDS) return setPhase('ready')
     onFinish({
       score: scoreRounds(rounds),
-      details: Object.fromEntries(rounds.map((r, i) => [`Round ${i + 1} · ${r.target} s`, `${r.actual.toFixed(2)} s (${signedErrorLabel(r.target, r.actual)})`])),
+      details: resultDetails(rounds),
     })
   }
 

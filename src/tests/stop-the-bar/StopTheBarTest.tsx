@@ -4,7 +4,7 @@ import { FullLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { ROUNDS, errorLabel, errorMs, makeRounds, scoreRounds } from './scoring'
+import { ROUNDS, errorLabel, errorMs, makeRounds, scoreRounds, resultDetails, speedName } from './scoring'
 
 type Phase = 'ready' | 'moving' | 'shown'
 
@@ -53,12 +53,11 @@ export default function StopTheBarTest({ onFinish }: TestComponentProps) {
   }
   useActionKey(press)
 
-  const speedName = (r: { speed: number }) => (r.speed >= 0.8 ? 'fast' : r.speed >= 0.6 ? 'medium' : 'slow')
   const next = () => {
     if (errors.length < ROUNDS) return setPhase('ready')
     onFinish({
       score: scoreRounds(errors),
-      details: Object.fromEntries(errors.map((e, i) => [`Round ${i + 1} · ${speedName(rounds[i])}`, errorLabel(e)])),
+      details: resultDetails(rounds, errors),
     })
   }
 
