@@ -18,16 +18,22 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
   useEffect(() => {
     shownAt.current = performance.now()
   }, [])
-  const answers = useRef<TimedAnswer[]>([])
+  const answers = useRef<(TimedAnswer & { task: string })[]>([])
 
   const remaining = useCountdown(DURATION_MS, true, () => {
-    const times = answers.current.map((a) => a.ms)
+    // Fastest (correct) and longest answer, with their problem: "7 × 8 = 56 · 1.2 s".
+    const all = answers.current
+    const ok = all.filter((a) => a.correct)
+    const show = (a: { task: string; ms: number }) => `${a.task} · ${fmtMs(a.ms)}`
+    const fastest = ok.length ? ok.reduce((m, a) => (a.ms < m.ms ? a : m)) : undefined
+    const longest = all.length ? all.reduce((m, a) => (a.ms > m.ms ? a : m)) : undefined
     onFinish({
       score: correct,
       details: {
         stats: [
-          ...answerStats(answers.current),
-          ...(times.length ? [{ label: 'Longest answer', value: fmtMs(Math.max(...times)) }] : []),
+          ...answerStats(all).filter((s) => s.label !== 'Fastest answer'),
+          ...(fastest ? [{ label: 'Fastest answer', value: show(fastest) }] : []),
+          ...(longest ? [{ label: 'Longest answer', value: show(longest) }] : []),
         ],
       },
     })
@@ -37,7 +43,7 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
     if (remaining <= 0) return
     const ok = Number(value) === problem.answer
     const now = performance.now()
-    answers.current.push({ ms: now - shownAt.current, correct: ok })
+    answers.current.push({ ms: now - shownAt.current, correct: ok, task: `${problem.a} ${problem.op} ${problem.b} = ${problem.answer}` })
     shownAt.current = now
     const nextCorrect = ok ? correct + 1 : correct
     if (ok) setCorrect(nextCorrect)

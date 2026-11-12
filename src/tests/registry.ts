@@ -98,7 +98,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Average error',
     higherIsBetter: false,
     formatScore: (s) => `${s.toFixed(1)} % off`,
-    start: 'quick',
+    start: 'none',
     layout: 'full',
     Component: lazyTest(() => import('./time-estimation/TimeEstimationTest')),
   },

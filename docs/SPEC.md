@@ -46,7 +46,7 @@ screen then shows why, and nothing is saved.
 | `visual-memory` | Visual Memory | A grid flashes some tiles (level + 2) for 1 s; tap them back. Grid grows 3×3 → 7×7 with level. 3 wrong taps fail a level (retry with a new pattern); 3 failed levels end the game. | Levels cleared | Higher |
 | `stroop` | Stroop Test | A color word (red/blue/green/yellow) is shown in an ink color (75 % mismatched); tap the button matching the **ink**. 45 s after a 3-2-1 countdown. | Correct − wrong (result also shows avg response time for same vs different word/ink color, correct answers only) | Higher |
 | `time-estimation` | Time Estimation | Given a target (3–10 s; each game has at least one short 3–4 s, medium 5–7 s and long 8–10 s target, the other two random, all distinct, shuffled), press Start and Stop when you think the time has passed. Timer is hidden. 5 rounds. | Average error in % | Lower |
-| `quick-count` | Quick Count | A number of dots flashes for 0.6 s; enter how many you saw. 10 rounds: first round 20–40 (calibration), then one count from each ninth of 5–60, shuffled. | Average accuracy % | Higher |
+| `quick-count` | Quick Count | Before each flash the board gets a violet frame and a "+" for 1 s (look here); then a number of dots flashes for 0.6 s; enter how many you saw. 10 rounds: first round 20–40 (calibration), then one count from each ninth of 5–60, shuffled. | Average accuracy % | Higher |
 | `mental-math` | Mental Math Sprint | Simple arithmetic (+ − × ÷), non-negative integer answers, numbers grow slightly every 5 correct. On-screen keypad or keyboard. 60 s. | Correct answers | Higher |
 | `steady-hand` | Steady Hand | Starts when the pointer enters the centred circle. The circle drifts on a smooth random path, speeds up (×1.8) and shrinks (radius 14 % → 5.5 % of the area). 30 s. | % of time inside | Higher |
 
@@ -90,7 +90,7 @@ all best scores in one message.
   itself) at the same place as the rules screen, so nothing moves when you press Start.
   - **Start:** per test `start` in the registry: `countdown` (3-2-1, 0.6 s steps: Stroop, Mental Rotation, Word
     Memory, Mental Math, Aim Trainer, Go / No-Go, N-Back, Quick Count), `quick` (a short "Ready"), or `none`
-    (your first action starts it: Tap Speed, Line Tracing, Steady Hand). The countdown is drawn on an empty
+    (your first action starts it: Tap Speed, Line Tracing, Steady Hand, Time Estimation). The countdown is drawn on an empty
     version of the test's layout (registry `layout`), so the play area is already there. The test's code is
     preloaded on the rules screen, so no loading state shows.
   - **Info row** (`<GameInfo>`): left = where you are (time left, round, level, lives), middle = what to do now

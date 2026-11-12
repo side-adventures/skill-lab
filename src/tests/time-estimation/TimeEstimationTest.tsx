@@ -55,6 +55,7 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
           <div>
             <p className="text-zinc-400">Target</p>
             <p className="text-7xl font-bold tabular-nums">{target} s</p>
+            <p className="mt-4 text-zinc-400">Click to start</p>
           </div>
         )}
         {phase === 'timing' && (
