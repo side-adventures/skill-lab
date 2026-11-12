@@ -71,8 +71,8 @@ export default function MentalRotationTest({ onFinish }: TestComponentProps) {
           <AnswerButtons
             disabled={remaining <= 0}
             options={[
-              { label: 'SAME', key: 's', onPress: () => answer(false), primary: true },
-              { label: 'MIRRORED', key: 'm', onPress: () => answer(true) },
+              { label: 'SAME', key: 'ArrowLeft', onPress: () => answer(false) },
+              { label: 'MIRRORED', key: 'ArrowRight', onPress: () => answer(true) },
             ]}
           />
         }

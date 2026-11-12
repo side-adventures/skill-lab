@@ -94,7 +94,7 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
         className={`grid cursor-pointer place-items-center bg-zinc-900 ${flashRing(flash)}`}
       >
         {/* No fade: the color must never change while the circle is still (partly) visible. */}
-        <span className={`size-48 rounded-full ${showStim ? (trials[i] ? 'bg-emerald-500' : 'bg-rose-600') : 'bg-transparent'}`} />
+        <span className={`size-48 rounded-full ${showStim ? (trials[i] ? 'bg-emerald-600' : 'bg-rose-700') : 'bg-transparent'}`} />
       </FullLayout>
     </>
   )

@@ -90,7 +90,9 @@ all best scores in one message.
   itself) at the same place as the rules screen, so nothing moves when you press Start.
   - **Start:** per test `start` in the registry: `countdown` (3-2-1, 0.6 s steps: Stroop, Mental Rotation, Word
     Memory, Mental Math, Aim Trainer, Go / No-Go, N-Back, Quick Count), `quick` (a short "Ready"), or `none`
-    (your first action starts it: Tap Speed, Line Tracing, Steady Hand).
+    (your first action starts it: Tap Speed, Line Tracing, Steady Hand). The countdown is drawn on an empty
+    version of the test's layout (registry `layout`), so the play area is already there. The test's code is
+    preloaded on the rules screen, so no loading state shows.
   - **Info row** (`<GameInfo>`): left = where you are (time left, round, level, lives), middle = what to do now
     (phase, short feedback like "Not a match"), right = how you're doing (score, average, accuracy). A thin
     timer line below it for timed tests and memorize times. With a single board it is as wide as the board.
@@ -98,14 +100,18 @@ all best scores in one message.
     - *Full* (area = the whole stage, no padding): Reaction, Go / No-Go, Tap Speed, Time Estimation, Stop the Bar,
       Steady Hand, Aim Trainer, Line Tracing.
     - *Prompt + answers* (box; large display on top, answer strip at the bottom: `AnswerButtons` with keys, or the
-      keypad row): Stroop, Word Memory, Mental Rotation, Mental Math, Number Memory.
+      keypad row): Stroop, Word Memory, Mental Rotation, Mental Math, Number Memory. Two-choice tests use ← / → as keys
+      and equal-looking buttons.
     - *Single square* (no box, board at full height; the info row matches its width): Visual Memory, Sequence
       Memory, Number Order and Flash Order (6:5 grid). Tiles via `TileGrid`.
     - *Square + panel* (box; board left, panel right with its own keypad): N-Back, Quick Count, Eye for Geometry.
   - **Answer flash:** a faint green / red ring on the display or board for ~0.2 s (`useAnswerFlash`).
+  - **Colors:** large areas never use bright green / red (dark theme): board frames turn emerald-900 / rose-900,
+    Reaction's full area uses rose-900 / emerald-700 / amber-800.
   - **Round result** (`RoundResult`): one big value, one line of context, chips with the rounds so far (5-round
     tests: Reaction, Time Estimation, Stop the Bar), "Click anywhere to continue" (any click, Enter or Space).
-    In panel layouts it sits in the panel and the board keeps showing the answer.
+    In panel layouts it sits in the panel and the board keeps showing the answer. Eye for Geometry shows a Next
+    button instead (its rounds end with a Done button too).
   - **End moment:** when a run ends by a mistake, the game freezes for 1.5 s (`END_MOMENT_MS`) showing what went
     wrong, then the result screen appears automatically.
 - The result screen is still the old version (redesign planned).

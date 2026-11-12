@@ -103,10 +103,10 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
               <button
                 type="button"
                 onPointerDown={(e) => e.button === 0 && tapMatch()}
-                className="mt-auto flex h-28 w-full items-center justify-between rounded-2xl bg-violet-600 px-6 text-2xl font-bold tracking-wider text-white transition-colors hover:bg-violet-500 active:bg-violet-700"
+                className="mt-auto flex h-14 w-full items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-5 text-lg font-bold tracking-wider text-zinc-100 transition-colors hover:border-zinc-600 active:scale-[0.98]"
               >
                 MATCH
-                <kbd className="rounded-md border border-white/30 px-2 text-sm font-medium text-white/80">Space</kbd>
+                <kbd className="rounded-md border border-zinc-700 px-1.5 text-xs font-medium text-zinc-500">Space</kbd>
               </button>
             </>
           )

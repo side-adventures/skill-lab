@@ -7,7 +7,7 @@ const TONE: Record<TileTone, string> = {
   idle: 'bg-zinc-700',
   lit: 'bg-violet-500',
   found: 'bg-violet-500',
-  wrong: 'bg-rose-500',
+  wrong: 'bg-rose-700',
   hint: 'bg-violet-500/35 ring-2 ring-inset ring-violet-400',
   revealed: 'bg-zinc-100 text-zinc-900',
   hidden: 'bg-violet-500',

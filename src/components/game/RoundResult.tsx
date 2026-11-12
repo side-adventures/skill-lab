@@ -1,17 +1,21 @@
 import { useEffect, type ReactNode } from 'react'
 import { useLatest } from '../../lib/hooks'
+import { Button } from '../Button'
 
 /**
  * Between rounds: one big value, one line of context, optional chips with the rounds so far, and
  * "Click anywhere to continue" (any click on the page, Enter or Space; ignored for the first 300 ms
  * so the click that ended the round doesn't skip it).
+ * With `button` it shows a button with that label instead (Enter / Space still work) — for tests where
+ * the round ended with a button too (Eye for Geometry), so the next step is in the same place.
  */
-export function RoundResult({ value, unit, line, chips, onContinue }: {
+export function RoundResult({ value, unit, line, chips, button, onContinue }: {
   value: ReactNode
   unit?: string
   line?: ReactNode
   /** Results of the rounds so far (last = this round) and the total number of rounds. */
   chips?: { done: string[]; total: number }
+  button?: string
   onContinue: () => void
 }) {
   const cont = useLatest(onContinue)
@@ -25,14 +29,14 @@ export function RoundResult({ value, unit, line, chips, onContinue }: {
         go()
       }
     }
-    window.addEventListener('pointerdown', go)
+    if (!button) window.addEventListener('pointerdown', go)
     window.addEventListener('keydown', onKey)
     return () => {
       window.clearTimeout(arm)
       window.removeEventListener('pointerdown', go)
       window.removeEventListener('keydown', onKey)
     }
-  }, [cont])
+  }, [cont, button])
 
   return (
     <div className="text-center">
@@ -61,7 +65,11 @@ export function RoundResult({ value, unit, line, chips, onContinue }: {
           })}
         </div>
       )}
-      <p className="mt-5 text-xs text-zinc-600">Click anywhere to continue</p>
+      {button ? (
+        <Button onClick={() => cont.current()} className="mt-5 w-full">{button}</Button>
+      ) : (
+        <p className="mt-5 text-xs text-zinc-600">Click anywhere to continue</p>
+      )}
     </div>
   )
 }

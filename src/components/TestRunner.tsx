@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { buildShareText, testUrl } from '../lib/share'
 import { scoreParts } from '../lib/scoreParts'
@@ -23,6 +23,9 @@ export function TestRunner({ test }: { test: TestDefinition }) {
   const [rulesOpen, setRulesOpen] = useState(false)
   const Component = test.Component
   const record = getRecord(storageId(test), test.higherIsBetter)
+
+  // Fetch the test's code while the rules are read, so Start never shows a loading state.
+  useEffect(() => Component?.preload(), [Component])
 
   const start = () => {
     setRulesOpen(false)
@@ -73,10 +76,8 @@ export function TestRunner({ test }: { test: TestDefinition }) {
     )
     body = (
       <>
-        <GameFrame key={attempt} start={test.start}>
-          <Suspense fallback={<p className="grid h-full place-items-center text-zinc-500">Loading…</p>}>
-            <Component onFinish={finish} />
-          </Suspense>
+        <GameFrame key={attempt} start={test.start} layout={test.layout} boardAspect={test.boardAspect}>
+          <Component onFinish={finish} />
         </GameFrame>
         {rulesOpen && (
           <RulesOverlay

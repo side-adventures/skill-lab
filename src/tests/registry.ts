@@ -1,5 +1,11 @@
-import { lazy } from 'react'
-import type { TestDefinition } from './types'
+import { lazy, type ComponentType } from 'react'
+import type { TestComponent, TestComponentProps, TestDefinition } from './types'
+
+/** A lazily loaded test component that can be preloaded (rules screen) so no loading shows on Start. */
+function lazyTest(load: () => Promise<{ default: ComponentType<TestComponentProps> }>): TestComponent {
+  return Object.assign(lazy(load), { preload: () => void load() })
+}
+
 
 export const TESTS: TestDefinition[] = [
   {
@@ -22,7 +28,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: false,
     formatScore: (s) => `${Math.round(s)} ms`,
     start: 'quick',
-    Component: lazy(() => import('./reaction/ReactionTest')),
+    layout: 'full',
+    Component: lazyTest(() => import('./reaction/ReactionTest')),
   },
   {
     id: 'visual-memory',
@@ -45,7 +52,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `Level ${s}`,
     start: 'quick',
-    Component: lazy(() => import('./visual-memory/VisualMemoryTest')),
+    layout: 'square',
+    Component: lazyTest(() => import('./visual-memory/VisualMemoryTest')),
   },
   {
     id: 'stroop',
@@ -68,7 +76,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s} pts`,
     start: 'countdown',
-    Component: lazy(() => import('./stroop/StroopTest')),
+    layout: 'prompt',
+    Component: lazyTest(() => import('./stroop/StroopTest')),
   },
   {
     id: 'time-estimation',
@@ -90,7 +99,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: false,
     formatScore: (s) => `${s.toFixed(1)} % off`,
     start: 'quick',
-    Component: lazy(() => import('./time-estimation/TimeEstimationTest')),
+    layout: 'full',
+    Component: lazyTest(() => import('./time-estimation/TimeEstimationTest')),
   },
   {
     id: 'quick-count',
@@ -112,7 +122,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
     start: 'countdown',
-    Component: lazy(() => import('./quick-count/QuickCountTest')),
+    layout: 'panel',
+    Component: lazyTest(() => import('./quick-count/QuickCountTest')),
   },
   {
     id: 'mental-math',
@@ -135,7 +146,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s} correct`,
     start: 'countdown',
-    Component: lazy(() => import('./mental-math/MentalMathTest')),
+    layout: 'prompt',
+    Component: lazyTest(() => import('./mental-math/MentalMathTest')),
   },
   {
     id: 'steady-hand',
@@ -157,7 +169,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
     start: 'none',
-    Component: lazy(() => import('./steady-hand/SteadyHandTest')),
+    layout: 'full',
+    Component: lazyTest(() => import('./steady-hand/SteadyHandTest')),
   },
 
   // ---------- batch 2 ----------
@@ -182,7 +195,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s} digits`,
     start: 'quick',
-    Component: lazy(() => import('./number-memory/NumberMemoryTest')),
+    layout: 'prompt',
+    Component: lazyTest(() => import('./number-memory/NumberMemoryTest')),
   },
   {
     id: 'sequence-memory',
@@ -205,7 +219,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s} steps`,
     start: 'quick',
-    Component: lazy(() => import('./sequence-memory/SequenceMemoryTest')),
+    layout: 'square',
+    Component: lazyTest(() => import('./sequence-memory/SequenceMemoryTest')),
   },
   {
     id: 'number-order',
@@ -229,7 +244,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s} tiles`,
     start: 'quick',
-    Component: lazy(() => import('./number-order/NumberOrderTest')),
+    layout: 'square', boardAspect: 6 / 5,
+    Component: lazyTest(() => import('./number-order/NumberOrderTest')),
   },
   {
     id: 'flash-order',
@@ -252,7 +268,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: false,
     formatScore: (s) => `${Math.round(s)} ms`,
     start: 'quick',
-    Component: lazy(() => import('./flash-order/FlashOrderTest')),
+    layout: 'square', boardAspect: 6 / 5,
+    Component: lazyTest(() => import('./flash-order/FlashOrderTest')),
   },
   {
     id: 'word-memory',
@@ -275,7 +292,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s} words`,
     start: 'countdown',
-    Component: lazy(() => import('./word-memory/WordMemoryTest')),
+    layout: 'prompt',
+    Component: lazyTest(() => import('./word-memory/WordMemoryTest')),
   },
   {
     id: 'n-back',
@@ -298,7 +316,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => (s ? `${s}-back` : 'Not passed'),
     start: 'countdown',
-    Component: lazy(() => import('./n-back/NBackTest')),
+    layout: 'panel',
+    Component: lazyTest(() => import('./n-back/NBackTest')),
   },
   {
     id: 'go-no-go',
@@ -321,8 +340,9 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: false,
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
     start: 'countdown',
+    layout: 'full',
     scoreVersion: 3, // v2: 30 trials (24/6) · v3: 21 green / 9 red
-    Component: lazy(() => import('./go-no-go/GoNoGoTest')),
+    Component: lazyTest(() => import('./go-no-go/GoNoGoTest')),
   },
   {
     id: 'aim-trainer',
@@ -345,8 +365,9 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s} pts`,
     start: 'countdown',
+    layout: 'full',
     scoreVersion: 3, // v2: points in 30 s · v3: smaller bullseye
-    Component: lazy(() => import('./aim-trainer/AimTrainerTest')),
+    Component: lazyTest(() => import('./aim-trainer/AimTrainerTest')),
   },
   {
     id: 'tap-speed',
@@ -367,7 +388,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} /s`,
     start: 'none',
-    Component: lazy(() => import('./tap-speed/TapSpeedTest')),
+    layout: 'full',
+    Component: lazyTest(() => import('./tap-speed/TapSpeedTest')),
   },
   {
     id: 'stop-the-bar',
@@ -389,7 +411,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: false,
     formatScore: (s) => `${Math.round(s)} ms off`,
     start: 'quick',
-    Component: lazy(() => import('./stop-the-bar/StopTheBarTest')),
+    layout: 'full',
+    Component: lazyTest(() => import('./stop-the-bar/StopTheBarTest')),
   },
   {
     id: 'mental-rotation',
@@ -411,7 +434,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s} pts`,
     start: 'countdown',
-    Component: lazy(() => import('./mental-rotation/MentalRotationTest')),
+    layout: 'prompt',
+    Component: lazyTest(() => import('./mental-rotation/MentalRotationTest')),
   },
   {
     id: 'line-tracing',
@@ -434,7 +458,8 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: false,
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
     start: 'none',
-    Component: lazy(() => import('./line-tracing/LineTracingTest')),
+    layout: 'full',
+    Component: lazyTest(() => import('./line-tracing/LineTracingTest')),
   },
   {
     id: 'geometry',
@@ -457,8 +482,9 @@ export const TESTS: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
     start: 'quick',
+    layout: 'panel',
     scoreVersion: 2, // "Make it level" replaced by "Make it parallel"
-    Component: lazy(() => import('./geometry/GeometryTest')),
+    Component: lazyTest(() => import('./geometry/GeometryTest')),
   },
 ]
 
