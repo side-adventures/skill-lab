@@ -122,14 +122,15 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
 
   const handle = handleAt(task, answer)
   const ready = task.input === 'number' ? typed !== '' : touched
-  const soFar = Math.round(results.reduce((sum, r) => sum + r.ev.points, 0))
+  // The score is the average accuracy, so the info row shows the average so far too.
+  const soFar = results.length ? totalScore(results.map((r) => r.ev.points)) : 0
 
   return (
     <>
       <GameInfo
         left={<InfoValue value={`Round ${index + 1}`} of={tasks.length} />}
         middle={evaluation ? '' : task.input === 'number' ? 'Type the angle, then Enter' : touched ? 'Adjust, then Done' : 'Click or drag on the board'}
-        right={<InfoValue label="Score" value={soFar} unit="pts" />}
+        right={<InfoValue label="Accuracy" value={soFar.toFixed(1)} unit="%" />}
       />
       <SquarePanelLayout
         board={

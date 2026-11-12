@@ -18,7 +18,6 @@ export default function NumberOrderTest({ onFinish }: TestComponentProps) {
             { label: 'Rounds cleared', value: String(cleared) },
             { label: 'Failed with', value: `${START_TILES + cleared} tiles` },
             ...(tileMs.length ? [{ label: 'Avg time per tile', value: fmtMs(tileMs.reduce((a, b) => a + b, 0) / tileMs.length) }] : []),
-            ...(memorizeUsed.length ? [{ label: 'Memorize time used', value: fmtMs(memorizeUsed[memorizeUsed.length - 1].ms) }] : []),
           ],
           chips: { title: 'Memorize time used', items: memorizeUsed.map((m) => ({ label: `Round ${m.round + 1}`, value: fmtMs(m.ms) })) },
         },

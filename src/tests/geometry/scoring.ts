@@ -297,7 +297,6 @@ export function resultDetails(results: { task: Task; ev: Evaluation }[]): Result
     stats: [
       { label: 'Best task', value: `${best.task.title} · ${best.ev.points}` },
       { label: 'Weakest task', value: `${worst.task.title} · ${worst.ev.points}` },
-      { label: 'Avg per task', value: String(Math.round(mean(results.map((r) => r.ev.points)))) },
     ],
     chips: { title: 'Points per task', items: results.map((r) => ({ label: shortName(r.task), value: String(r.ev.points) })) },
   }

@@ -70,7 +70,7 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
         details: {
           stats: [
             { label: 'Avg off-center', value: fmtPct(o.count ? o.sum / o.count / HALF_WIDTH : 0) },
-            { label: 'Closest call', value: `${fmtPct(o.max / HALF_WIDTH)} to the edge` },
+            { label: 'Furthest off-center', value: fmtPct(o.max / HALF_WIDTH) },
           ],
         },
       }),

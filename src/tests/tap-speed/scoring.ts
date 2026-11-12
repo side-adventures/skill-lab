@@ -23,8 +23,8 @@ export function resultDetails(times: number[]): ResultDetails {
   return {
     stats: [
       { label: 'Total clicks', value: String(times.length) },
-      { label: 'Fastest frame', value: perS(Math.max(...frames)) },
-      { label: 'Last frame', value: perS(frames[frames.length - 1]) },
+      { label: 'Fastest 2 s', value: perS(Math.max(...frames)) },
+      { label: 'Last 2 s', value: perS(frames[frames.length - 1]) },
     ],
     chips: {
       title: 'Clicks per 2 s',

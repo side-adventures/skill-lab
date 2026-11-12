@@ -33,12 +33,9 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
                   { label: 'Slowest', value: `${Math.round(Math.max(...s.rts))} ms` },
                 ]
               : []),
+            { label: 'Wrong clicks', value: String(s.falseTaps) },
+            { label: 'Missed greens', value: String(s.misses) },
           ],
-          extra: {
-            kind: 'pair',
-            a: { label: 'Wrong clicks', value: String(s.falseTaps) },
-            b: { label: 'Missed greens', value: String(s.misses) },
-          },
         },
       })
     }

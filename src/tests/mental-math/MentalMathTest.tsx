@@ -31,7 +31,8 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
       score: correct,
       details: {
         stats: [
-          ...answerStats(all).filter((s) => s.label !== 'Fastest answer'),
+          // Correct is the score itself, Fastest gets the problem below.
+          ...answerStats(all).filter((s) => s.label !== 'Fastest answer' && s.label !== 'Correct'),
           ...(fastest ? [{ label: 'Fastest answer', value: show(fastest) }] : []),
           ...(longest ? [{ label: 'Longest answer', value: show(longest) }] : []),
         ],

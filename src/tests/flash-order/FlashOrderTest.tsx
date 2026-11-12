@@ -21,7 +21,16 @@ export default function FlashOrderTest({ onFinish }: TestComponentProps) {
                 ],
               },
             }
-          : { score: 0, failed: 'Not even the first round — try again!' }
+          : {
+              score: 0,
+              failed: 'Not even the first round — try again!',
+              details: {
+                stats: [
+                  { label: 'Failed at', value: `${flashOrderMs(0)} ms` },
+                  ...(tileMs.length ? [{ label: 'Avg time per tile', value: fmtMs(tileMs.reduce((a, b) => a + b, 0) / tileMs.length) }] : []),
+                ],
+              },
+            }
       }
       onFinish={onFinish}
     />

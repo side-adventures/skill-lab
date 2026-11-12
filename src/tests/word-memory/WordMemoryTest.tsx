@@ -45,12 +45,9 @@ export default function WordMemoryTest({ onFinish }: TestComponentProps) {
             stats: [
               { label: 'Different words', value: String(seen.current.length) },
               { label: 'Avg per answer', value: fmtMs(ms.reduce((a, b) => a + b, 0) / ms.length) },
+              { label: 'Mistakes on seen words', value: String(wrongOn.current.seen) },
+              { label: 'Mistakes on new words', value: String(wrongOn.current.fresh) },
             ],
-            extra: {
-              kind: 'pair',
-              a: { label: 'Mistakes · seen words', value: String(wrongOn.current.seen) },
-              b: { label: 'Mistakes · new words', value: String(wrongOn.current.fresh) },
-            },
           },
         }),
       )

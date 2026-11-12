@@ -22,8 +22,10 @@ export const scoreRounds = (rounds: { target: number; actual: number }[]) =>
   round1(mean(rounds.map((r) => errorPct(r.target, r.actual))))
 
 /** "-10.0 %" (too early) / "+4.2 %" (too late). */
-export const signedErrorLabel = (targetS: number, actualS: number) =>
-  `${actualS < targetS ? '−' : '+'}${errorPct(targetS, actualS).toFixed(1)} %`
+export const signedErrorLabel = (targetS: number, actualS: number) => {
+  const e = errorPct(targetS, actualS).toFixed(1)
+  return e === '0.0' ? '±0.0 %' : `${actualS < targetS ? '−' : '+'}${e} %`
+}
 
 /** Result screen stats: closest / furthest round, which way you tend to be off, and each round. */
 export function resultDetails(rounds: { target: number; actual: number }[]): ResultDetails {

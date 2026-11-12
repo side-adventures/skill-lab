@@ -68,7 +68,11 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
           <RoundResult
             value={last.actual.toFixed(2)}
             unit="s"
-            line={`Target ${last.target} s · ${errorPct(last.target, last.actual).toFixed(1)} % ${last.actual < last.target ? 'too early' : 'too late'}`}
+            line={`Target ${last.target} s · ${
+              errorPct(last.target, last.actual).toFixed(1) === '0.0'
+                ? 'spot on'
+                : `${errorPct(last.target, last.actual).toFixed(1)} % ${last.actual < last.target ? 'too early' : 'too late'}`
+            }`}
             chips={{ done: rounds.map((r) => signedErrorLabel(r.target, r.actual)), total: ROUNDS }}
             onContinue={next}
           />
