@@ -32,7 +32,8 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 
 ## Adding a test
 1. Create `src/tests/<id>/` with:
-   - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`).
+   - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`;
+     `details` is a `ResultDetails`: stats row, optional special block, optional chips — pick what's interesting for this test).
      Only the play phase: intro, countdown, result, best score, sharing are handled by `TestRunner` / `GameFrame`.
      A run that can't produce a score calls `onFinish({ score: 0, failed: 'why' })` — shown, never saved.
      Build it from the shared pieces in `components/game/`: pick one layout (`FullLayout`, `PromptLayout`,

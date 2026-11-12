@@ -25,3 +25,15 @@ describe('time estimation', () => {
     expect(scoreRounds([{ target: 5, actual: 5.5 }, { target: 4, actual: 4 }])).toBe(5)
   })
 })
+
+describe('result stats', () => {
+  it('finds closest / furthest round and the tendency', async () => {
+    const { resultDetails } = await import('./scoring')
+    const d = resultDetails([{ target: 4, actual: 4.4 }, { target: 10, actual: 9.5 }, { target: 5, actual: 5.75 }])
+    expect(d.stats).toEqual([
+      { label: 'Closest', value: '5.0 % off' },
+      { label: 'Furthest off', value: '15.0 %' },
+      { label: 'Tendency', value: '+7 % too late' },
+    ])
+  })
+})

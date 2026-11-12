@@ -1,6 +1,9 @@
 import { lazy, type ComponentType } from 'react'
 import type { TestComponent, TestComponentProps, TestDefinition } from './types'
 
+/** "1 step", "8 steps". */
+const count = (n: number, unit: string) => `${n} ${n === 1 ? unit : `${unit}s`}`
+
 /** A lazily loaded test component that can be preloaded (rules screen) so no loading shows on Start. */
 function lazyTest(load: () => Promise<{ default: ComponentType<TestComponentProps> }>): TestComponent {
   return Object.assign(lazy(load), { preload: () => void load() })
@@ -50,7 +53,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '~2 min',
     scoreLabel: 'Levels cleared',
     higherIsBetter: true,
-    formatScore: (s) => `Level ${s}`,
+    formatScore: (s) => count(s, 'level'),
     start: 'quick',
     layout: 'square',
     Component: lazyTest(() => import('./visual-memory/VisualMemoryTest')),
@@ -74,7 +77,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '45 s',
     scoreLabel: 'Points (correct − wrong)',
     higherIsBetter: true,
-    formatScore: (s) => `${s} pts`,
+    formatScore: (s) => `${s < 0 ? '−' : ''}${Math.abs(s)} pts`,
     start: 'countdown',
     layout: 'prompt',
     Component: lazyTest(() => import('./stroop/StroopTest')),
@@ -98,7 +101,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Average error',
     higherIsBetter: false,
     formatScore: (s) => `${s.toFixed(1)} % off`,
-    start: 'quick',
+    start: 'none',
     layout: 'full',
     Component: lazyTest(() => import('./time-estimation/TimeEstimationTest')),
   },
@@ -193,7 +196,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '~2 min',
     scoreLabel: 'Longest number',
     higherIsBetter: true,
-    formatScore: (s) => `${s} digits`,
+    formatScore: (s) => count(s, 'digit'),
     start: 'quick',
     layout: 'prompt',
     Component: lazyTest(() => import('./number-memory/NumberMemoryTest')),
@@ -217,7 +220,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '~2 min',
     scoreLabel: 'Longest sequence',
     higherIsBetter: true,
-    formatScore: (s) => `${s} steps`,
+    formatScore: (s) => count(s, 'step'),
     start: 'quick',
     layout: 'square',
     Component: lazyTest(() => import('./sequence-memory/SequenceMemoryTest')),
@@ -242,7 +245,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '~3 min',
     scoreLabel: 'Most tiles',
     higherIsBetter: true,
-    formatScore: (s) => `${s} tiles`,
+    formatScore: (s) => count(s, 'tile'),
     start: 'quick',
     layout: 'square', boardAspect: 6 / 5,
     Component: lazyTest(() => import('./number-order/NumberOrderTest')),
@@ -290,7 +293,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '~2 min',
     scoreLabel: 'Correct answers',
     higherIsBetter: true,
-    formatScore: (s) => `${s} words`,
+    formatScore: (s) => count(s, 'word'),
     start: 'countdown',
     layout: 'prompt',
     Component: lazyTest(() => import('./word-memory/WordMemoryTest')),
@@ -363,7 +366,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '30 s',
     scoreLabel: 'Points',
     higherIsBetter: true,
-    formatScore: (s) => `${s} pts`,
+    formatScore: (s) => `${s < 0 ? '−' : ''}${Math.abs(s)} pts`,
     start: 'countdown',
     layout: 'full',
     scoreVersion: 3, // v2: points in 30 s · v3: smaller bullseye
@@ -384,7 +387,7 @@ export const TESTS: TestDefinition[] = [
       'Your clicks per second.',
     ],
     durationHint: '10 s',
-    scoreLabel: 'Taps per second',
+    scoreLabel: 'Clicks per second',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} /s`,
     start: 'none',
@@ -432,7 +435,7 @@ export const TESTS: TestDefinition[] = [
     durationHint: '60 s',
     scoreLabel: 'Points (correct − wrong)',
     higherIsBetter: true,
-    formatScore: (s) => `${s} pts`,
+    formatScore: (s) => `${s < 0 ? '−' : ''}${Math.abs(s)} pts`,
     start: 'countdown',
     layout: 'prompt',
     Component: lazyTest(() => import('./mental-rotation/MentalRotationTest')),

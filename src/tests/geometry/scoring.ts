@@ -1,3 +1,4 @@
+import type { ResultDetails } from '../types'
 import { mean, round1, shuffle, type Rand } from '../../lib/random'
 
 /** Board is a 100 × 100 viewBox. Angles are in degrees, counter-clockwise on screen. */
@@ -280,3 +281,23 @@ export const TASK_MAKERS = [
 export const makeTasks = (rand: Rand = Math.random) => shuffle(TASK_MAKERS, rand).map((make) => make(rand))
 
 export const totalScore = (points: number[]) => round1(mean(points))
+
+/** Short task names for the result chips (10 must fit in two rows). */
+const SHORT: Record<string, string> = {
+  middle: 'Middle', center: 'Center', 'guess-angle': 'Name angle', bisect: 'Half angle', parallel: 'Parallel',
+  square: 'Square', 'copy-length': 'Length', equidistant: 'Equal dist.', split: 'Split',
+}
+const shortName = (t: Task) => SHORT[t.kind] ?? t.title
+
+/** Result screen stats: best and weakest task, average, and the points of each task. */
+export function resultDetails(results: { task: Task; ev: Evaluation }[]): ResultDetails {
+  const byPoints = [...results].sort((a, b) => b.ev.points - a.ev.points)
+  const best = byPoints[0], worst = byPoints[byPoints.length - 1]
+  return {
+    stats: [
+      { label: 'Best task', value: `${best.task.title} · ${best.ev.points}` },
+      { label: 'Weakest task', value: `${worst.task.title} · ${worst.ev.points}` },
+    ],
+    chips: { title: 'Points per task', items: results.map((r) => ({ label: shortName(r.task), value: String(r.ev.points) })) },
+  }
+}

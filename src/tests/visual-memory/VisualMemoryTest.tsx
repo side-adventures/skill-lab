@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { SquareLayout } from '../../components/game/layouts'
 import { TileGrid } from '../../components/game/TileGrid'
 import { END_MOMENT_MS } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
+import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import { LIVES, MISSES_PER_LEVEL, SHOW_MS, gridSize, pickTiles } from './scoring'
 
@@ -17,6 +18,10 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
   const [found, setFound] = useState<Set<number>>(new Set())
   const [wrong, setWrong] = useState<Set<number>>(new Set())
   const [phase, setPhase] = useState<Phase>('pause')
+  // For the result stats: when the current input phase began, time to clear each level, wrong clicks.
+  const inputAt = useRef(0)
+  const levelTimes = useRef<{ level: number; ms: number }[]>([])
+  const mistakes = useRef(0)
 
   const startLevel = (lvl: number) => {
     setLevel(lvl)
@@ -33,9 +38,19 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
     else if (phase === 'failed')
       t = window.setTimeout(() => {
         if (lives > 0) return startLevel(level)
+        const times = levelTimes.current
+        const size = gridSize(level)
         onFinish({
           score: cleared,
-          details: { 'Levels cleared': String(cleared), 'Last level tiles': String(targets.size) },
+          details: {
+            stats: [
+              { label: 'Last grid', value: `${size}×${size}` },
+              { label: 'Tiles at the end', value: String(targets.size) },
+              { label: 'Mistakes', value: String(mistakes.current) },
+              ...(times.length ? [{ label: 'Avg per level', value: fmtMs(times.reduce((s, t) => s + t.ms, 0) / times.length) }] : []),
+            ],
+            chips: { title: 'Time to clear', items: times.map((t) => ({ label: `Level ${t.level}`, value: fmtMs(t.ms) })) },
+          },
         })
       }, END_MOMENT_MS)
     return () => window.clearTimeout(t)
@@ -43,7 +58,10 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
   }, [phase])
 
   // Memorize time, shown as the timer line.
-  const showLeft = useCountdown(SHOW_MS, phase === 'show', () => setPhase('input'))
+  const showLeft = useCountdown(SHOW_MS, phase === 'show', () => {
+    inputAt.current = performance.now()
+    setPhase('input')
+  })
 
   const tap = (cell: number) => {
     if (phase !== 'input' || found.has(cell) || wrong.has(cell)) return
@@ -52,10 +70,12 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
       setFound(next)
       if (next.size === targets.size) {
         setCleared(level)
+        levelTimes.current.push({ level, ms: performance.now() - inputAt.current })
         setPhase('cleared')
       }
     } else {
       const next = new Set(wrong).add(cell)
+      mistakes.current++
       setWrong(next)
       if (next.size >= MISSES_PER_LEVEL) {
         setLives((l) => l - 1)

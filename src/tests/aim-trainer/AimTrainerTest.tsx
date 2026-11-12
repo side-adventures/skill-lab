@@ -16,6 +16,12 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
   // Little "+2" / "+1" that floats up where the last target was hit.
   const [pop, setPop] = useState<Pop | null>(null)
   const popTimer = useRef<number | undefined>(undefined)
+  // When the current target appeared, and the fastest hit (for the result stats).
+  const shownAt = useRef(0)
+  const fastest = useRef(Infinity)
+  useEffect(() => {
+    shownAt.current = performance.now()
+  }, [])
   useEffect(() => () => window.clearTimeout(popTimer.current), [])
 
   const remaining = useCountdown(DURATION_MS, true, () => {
@@ -23,11 +29,14 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
     onFinish({
       score: points,
       details: {
-        'Center hits (2 pts)': String(centers),
-        'Edge hits (1 pt)': String(edges),
-        Misses: String(misses),
-        Accuracy: hits + misses ? `${Math.round((hits / (hits + misses)) * 100)} %` : '–',
-        'Avg per target': hits ? `${Math.round(DURATION_MS / hits)} ms` : '–',
+        stats: [
+          { label: 'Center hits', value: String(centers) },
+          { label: 'Edge hits', value: String(edges) },
+          { label: 'Misses', value: String(misses) },
+          { label: 'Accuracy', value: hits + misses ? `${Math.round((hits / (hits + misses)) * 100)} %` : '–' },
+          { label: 'Avg per target', value: hits ? `${Math.round(DURATION_MS / hits)} ms` : '–' },
+          ...(hits ? [{ label: 'Fastest hit', value: `${Math.round(fastest.current)} ms` }] : []),
+        ],
       },
     })
   })
@@ -74,6 +83,9 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
             setPop({ id: performance.now(), pts, spot })
             window.clearTimeout(popTimer.current)
             popTimer.current = window.setTimeout(() => setPop(null), 500)
+            const now = performance.now()
+            fastest.current = Math.min(fastest.current, now - shownAt.current)
+            shownAt.current = now
             setSpot((s) => nextSpot(s))
           }}
           // Classic red/white target: white ring with a red border (1 pt), red bullseye (2 pts).

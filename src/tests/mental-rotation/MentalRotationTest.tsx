@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnswerButtons } from '../../components/game/AnswerButtons'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
+import { answerStats, fmtPct, type TimedAnswer } from '../../lib/resultFormat'
 import { correctMinusWrong } from '../../lib/scoring'
 import type { TestComponentProps } from '../types'
 import { DURATION_MS, makeTrial, mirror, type Shape } from './scoring'
@@ -25,19 +26,30 @@ function ShapeView({ shape, angle }: { shape: Shape; angle: number }) {
   )
 }
 
+const accuracyOf = (xs: TimedAnswer[]) => (xs.length ? fmtPct(xs.filter((a) => a.correct).length / xs.length) : '–')
+
 export default function MentalRotationTest({ onFinish }: TestComponentProps) {
   const [trial, setTrial] = useState(makeTrial)
   const [correct, setCorrect] = useState(0)
   const [wrong, setWrong] = useState(0)
   const [flash, signal] = useAnswerFlash()
+  // When the current pair appeared, and every answer (for the result stats).
+  const shownAt = useRef(0)
+  useEffect(() => {
+    shownAt.current = performance.now()
+  }, [])
+  const answers = useRef<(TimedAnswer & { mirrored: boolean })[]>([])
 
   const remaining = useCountdown(DURATION_MS, true, () =>
     onFinish({
       score: correctMinusWrong(correct, wrong),
       details: {
-        Correct: String(correct),
-        Wrong: String(wrong),
-        'Avg per answer': correct + wrong ? `${(DURATION_MS / 1000 / (correct + wrong)).toFixed(1)} s` : '–',
+        stats: answerStats(answers.current),
+        extra: {
+          kind: 'pair',
+          a: { label: 'Accuracy · same', value: accuracyOf(answers.current.filter((a) => !a.mirrored)) },
+          b: { label: 'Accuracy · mirrored', value: accuracyOf(answers.current.filter((a) => a.mirrored)) },
+        },
       },
     }),
   )
@@ -45,6 +57,9 @@ export default function MentalRotationTest({ onFinish }: TestComponentProps) {
   const answer = (saysMirrored: boolean) => {
     if (remaining <= 0) return
     const ok = saysMirrored === trial.mirrored
+    const now = performance.now()
+    answers.current.push({ ms: now - shownAt.current, correct: ok, mirrored: trial.mirrored })
+    shownAt.current = now
     if (ok) setCorrect((c) => c + 1)
     else setWrong((w) => w + 1)
     signal(ok)

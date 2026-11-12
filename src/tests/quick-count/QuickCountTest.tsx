@@ -4,12 +4,14 @@ import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { NumberPad } from '../../components/NumberPad'
 import type { TestComponentProps } from '../types'
-import { DOT_RADIUS, FLASH_MS, ROUNDS, accuracy, makeCounts, placeDots, scoreRounds, type Dot } from './scoring'
+import { DOT_RADIUS, FLASH_MS, ROUNDS, accuracy, makeCounts, placeDots, resultDetails, scoreRounds, type Dot } from './scoring'
 
 type Phase = 'ready' | 'flash' | 'answer' | 'feedback'
 interface Round { actual: number; guess: number }
 
-const MIDDLE: Record<Phase, string> = { ready: 'Look', flash: 'Look', answer: 'How many dots?', feedback: '' }
+const MIDDLE: Record<Phase, string> = { ready: 'Look at the board', flash: 'Look at the board', answer: 'How many dots?', feedback: '' }
+/** How long the board is marked before the dots flash, so your eyes are back on it in time. */
+const READY_MS = 1000
 
 export default function QuickCountTest({ onFinish }: TestComponentProps) {
   const [counts] = useState(makeCounts)
@@ -20,7 +22,7 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
 
   useEffect(() => {
     if (phase !== 'ready' && phase !== 'flash') return
-    const t = window.setTimeout(() => setPhase(phase === 'ready' ? 'flash' : 'answer'), phase === 'ready' ? 700 : FLASH_MS)
+    const t = window.setTimeout(() => setPhase(phase === 'ready' ? 'flash' : 'answer'), phase === 'ready' ? READY_MS : FLASH_MS)
     return () => window.clearTimeout(t)
   }, [phase])
 
@@ -34,10 +36,7 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
     if (rounds.length >= ROUNDS) {
       return onFinish({
         score: scoreRounds(rounds),
-        details: {
-          Exact: `${rounds.filter((r) => r.actual === r.guess).length} / ${ROUNDS}`,
-          'Avg off by': `${(rounds.reduce((s, r) => s + Math.abs(r.actual - r.guess), 0) / ROUNDS).toFixed(1)} dots`,
-        },
+        details: resultDetails(rounds),
       })
     }
     setDots(placeDots(counts[rounds.length]))
@@ -58,6 +57,17 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
       <SquarePanelLayout
         board={
           <>
+            {phase === 'ready' && (
+              // "Look here": a soft ring of light grows from the center and fades, then the dots flash.
+              <span
+                key={rounds.length}
+                className="pointer-events-none absolute top-1/2 left-1/2 aspect-square w-[150%] rounded-full opacity-0"
+                style={{
+                  background: 'radial-gradient(circle, rgb(167 139 250 / 0) 25%, rgb(167 139 250 / 0.22) 50%, rgb(167 139 250 / 0) 70%)',
+                  animation: 'look-here 900ms ease-out',
+                }}
+              />
+            )}
             {showDots && (
               <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
                 {dots.map((d, i) => (
@@ -82,7 +92,7 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
             </div>
           ) : (
             <>
-              <p className="text-sm text-zinc-500">Your guess</p>
+              <p className="text-sm text-zinc-500">{phase === 'answer' ? 'Your guess' : '← Look at the board'}</p>
               <p className="h-16 text-6xl font-bold tabular-nums">{guess || <span className="text-zinc-700">–</span>}</p>
               <div className={`mt-auto ${phase === 'answer' ? '' : 'opacity-30'}`}>
                 <NumberPad value={guess} onChange={setGuess} onSubmit={submit} maxLength={2} disabled={phase !== 'answer'} />

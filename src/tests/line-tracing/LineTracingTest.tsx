@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
 import { END_MOMENT_MS, useLater } from '../../lib/game'
+import { fmtMs, fmtPct } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import { END_RADIUS, HALF_WIDTH, HEIGHT, WIDTH, cumulative, makeControlPoints, nearest, samplePath, type Pt } from './scoring'
 
@@ -28,6 +29,8 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
   const startedAt = useRef(0)
   const last = useRef<Pt | null>(null)
   const reached = useRef(0)
+  // For the result stats: distance from the center line, sampled on every checked point.
+  const off = useRef({ sum: 0, count: 0, max: 0 })
   const { later } = useLater()
 
   useEffect(() => {
@@ -46,14 +49,32 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     setFailAt(at)
     setPhase('done')
     const pct = Math.floor((reached.current / total) * 100)
-    later(END_MOMENT_MS, () => onFinish({ score: 0, failed: `Off the line at ${pct} %` }))
+    const ms = performance.now() - startedAt.current
+    later(END_MOMENT_MS, () =>
+      onFinish({
+        score: 0,
+        failed: `Off the line at ${pct} %`,
+        details: { stats: [{ label: 'Made it', value: `${pct} % of the path` }, { label: 'Time until then', value: fmtMs(ms) }] },
+      }),
+    )
   }
 
   const succeed = () => {
     setPhase('done')
     const ms = Math.round(performance.now() - startedAt.current)
     setElapsed(ms)
-    later(END_MOMENT_MS, () => onFinish({ score: ms }))
+    const o = off.current
+    later(END_MOMENT_MS, () =>
+      onFinish({
+        score: ms,
+        details: {
+          stats: [
+            { label: 'Avg off-center', value: fmtPct(o.count ? o.sum / o.count / HALF_WIDTH : 0) },
+            { label: 'Furthest off-center', value: fmtPct(o.max / HALF_WIDTH) },
+          ],
+        },
+      }),
+    )
   }
 
   const inStart = (q: Pt) => Math.hypot(q.x - start.x, q.y - start.y) <= END_RADIUS
@@ -84,6 +105,11 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
       const inEnd = Math.hypot(q.x - end.x, q.y - end.y) <= END_RADIUS
       const { dist, along } = nearest(q, path, acc)
       if (dist > HALF_WIDTH && !inEnd && !inStart(q)) return fail(q)
+      if (!inEnd && !inStart(q)) {
+        off.current.sum += dist
+        off.current.count++
+        off.current.max = Math.max(off.current.max, dist)
+      }
       // progress only advances continuously (no jumping ahead along the path)
       if (along > reached.current && along - reached.current < 80) reached.current = along
       if (inEnd && reached.current > total * 0.9) {

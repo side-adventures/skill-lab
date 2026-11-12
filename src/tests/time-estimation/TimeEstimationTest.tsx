@@ -4,7 +4,7 @@ import { FullLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { ROUNDS, errorPct, makeTargets, scoreRounds, signedErrorLabel } from './scoring'
+import { ROUNDS, errorPct, makeTargets, resultDetails, scoreRounds, signedErrorLabel } from './scoring'
 
 type Phase = 'ready' | 'timing' | 'shown'
 interface Round { target: number; actual: number }
@@ -36,7 +36,7 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
     if (rounds.length < ROUNDS) return setPhase('ready')
     onFinish({
       score: scoreRounds(rounds),
-      details: Object.fromEntries(rounds.map((r, i) => [`Round ${i + 1} · ${r.target} s`, `${r.actual.toFixed(2)} s (${signedErrorLabel(r.target, r.actual)})`])),
+      details: resultDetails(rounds),
     })
   }
 
@@ -55,6 +55,7 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
           <div>
             <p className="text-zinc-400">Target</p>
             <p className="text-7xl font-bold tabular-nums">{target} s</p>
+            <p className="mt-4 text-zinc-400">Click to start</p>
           </div>
         )}
         {phase === 'timing' && (
@@ -67,7 +68,11 @@ export default function TimeEstimationTest({ onFinish }: TestComponentProps) {
           <RoundResult
             value={last.actual.toFixed(2)}
             unit="s"
-            line={`Target ${last.target} s · ${errorPct(last.target, last.actual).toFixed(1)} % ${last.actual < last.target ? 'too early' : 'too late'}`}
+            line={`Target ${last.target} s · ${
+              errorPct(last.target, last.actual).toFixed(1) === '0.0'
+                ? 'spot on'
+                : `${errorPct(last.target, last.actual).toFixed(1)} % ${last.actual < last.target ? 'too early' : 'too late'}`
+            }`}
             chips={{ done: rounds.map((r) => signedErrorLabel(r.target, r.actual)), total: ROUNDS }}
             onContinue={next}
           />

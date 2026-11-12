@@ -24,7 +24,19 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
       const avg = s.rts.length ? Math.round(s.rts.reduce((a, b) => a + b, 0) / s.rts.length) : 0
       return onFinish({
         score: totalMs(s),
-        details: { 'Avg reaction': `${avg} ms`, 'Tapped on red / too early': String(s.falseTaps), 'Missed greens': String(s.misses) },
+        details: {
+          stats: [
+            { label: 'Avg reaction', value: `${avg} ms` },
+            ...(s.rts.length
+              ? [
+                  { label: 'Fastest', value: `${Math.round(Math.min(...s.rts))} ms` },
+                  { label: 'Slowest', value: `${Math.round(Math.max(...s.rts))} ms` },
+                ]
+              : []),
+            { label: 'Wrong clicks', value: String(s.falseTaps) },
+            { label: 'Missed greens', value: String(s.misses) },
+          ],
+        },
       })
     }
     setI(i + 1)

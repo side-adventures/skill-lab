@@ -22,3 +22,13 @@ describe('n-back', () => {
     expect(blockAccuracy(seq, sparse, 2)).toBe(0.75)
   })
 })
+
+describe('blockCounts', () => {
+  it('splits clicks into hits, wrong clicks and missed matches', async () => {
+    const { blockCounts } = await import('./scoring')
+    // 2-back: matches at 2 and 4
+    const seq = [1, 5, 1, 7, 1, 3]
+    const tapped = [false, false, true, true, false, false]
+    expect(blockCounts(seq, tapped, 2)).toEqual({ matches: 2, hits: 1, wrong: 1, missed: 1 })
+  })
+})

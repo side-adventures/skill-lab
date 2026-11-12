@@ -5,7 +5,14 @@ import { PromptLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
+import { answerStats } from '../../lib/resultFormat'
 import { COLORS, DURATION_MS, averageTimes, nextTrial, stroopScore, type Answer } from './scoring'
+
+/** How much slower different-color words were: "92 ms slower", "5 ms faster", "No difference". */
+const slowdown = (ms: number) => {
+  const r = Math.round(ms)
+  return r === 0 ? 'No difference' : `${Math.abs(r)} ms ${r > 0 ? 'slower' : 'faster'}`
+}
 
 export default function StroopTest({ onFinish }: TestComponentProps) {
   const [trial, setTrial] = useState(() => nextTrial(undefined))
@@ -25,13 +32,15 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
     onFinish({
       score: stroopScore(correct, wrong),
       details: {
-        Correct: String(correct),
-        Wrong: String(wrong),
-        'Avg · same color': fmt(matchMs),
-        'Avg · different color': fmt(mismatchMs),
-        ...(matchMs !== undefined && mismatchMs !== undefined && {
-          'Mismatch slowdown': `${mismatchMs >= matchMs ? '+' : '−'}${Math.round(Math.abs(mismatchMs - matchMs))} ms`,
-        }),
+        stats: answerStats(answers.current),
+        extra: {
+          kind: 'pair',
+          a: { label: 'Same color', value: fmt(matchMs) },
+          b: { label: 'Different color', value: fmt(mismatchMs) },
+          ...(matchMs !== undefined && mismatchMs !== undefined && {
+            diff: { label: 'Difference', value: slowdown(mismatchMs - matchMs) },
+          }),
+        },
       },
     })
   })

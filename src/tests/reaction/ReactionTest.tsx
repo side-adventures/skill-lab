@@ -25,6 +25,7 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
   const [state, setState] = useState<State>({ name: 'ready' })
   const [times, setTimes] = useState<number[]>([])
   const goAt = useRef(0)
+  const tooSoon = useRef(0)
   const { later, cancel } = useLater()
   const timer = useRef<number | undefined>(undefined)
 
@@ -40,6 +41,7 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
     if (state.name === 'ready' || state.name === 'early') return startRound()
     if (state.name === 'waiting') {
       cancel(timer.current)
+      tooSoon.current++
       return setState({ name: 'early' })
     }
     if (state.name === 'go') {
@@ -56,7 +58,14 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
     const { score, best, worst } = summarize(times)
     onFinish({
       score,
-      details: { Fastest: `${best} ms`, Slowest: `${worst} ms`, Rounds: times.map((t) => Math.round(t)).join(' · ') },
+      details: {
+        stats: [
+          { label: 'Fastest', value: `${best} ms` },
+          { label: 'Slowest', value: `${worst} ms` },
+          { label: 'Too soon', value: `${tooSoon.current}×` },
+        ],
+        chips: { title: 'Each round', items: times.map((t, i) => ({ label: `Round ${i + 1}`, value: `${Math.round(t)} ms` })) },
+      },
     })
   }
 
