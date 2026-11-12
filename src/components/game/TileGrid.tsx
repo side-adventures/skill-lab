@@ -23,8 +23,8 @@ const TONE: Record<TileTone, string> = {
  */
 export type FrameStyle = 'fill' | 'ring' | 'tint'
 
-const RING: Record<NonNullable<BoardState>, string> = { success: 'ring-emerald-400/35', fail: 'ring-rose-400/40' }
-const TINT: Record<NonNullable<BoardState>, string> = { success: 'bg-emerald-400/15', fail: 'bg-rose-400/15' }
+const RING: Record<NonNullable<BoardState>, string> = { success: 'ring-emerald-400/60', fail: 'ring-rose-400/65' }
+const TINT: Record<NonNullable<BoardState>, string> = { success: 'bg-emerald-400/5', fail: 'bg-rose-400/5' }
 
 /**
  * A grid of tiles that fills its parent (Visual / Sequence Memory, N-Back, Number / Flash Order).
