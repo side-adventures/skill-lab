@@ -57,7 +57,10 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
   unfair random setups and score-changing edits (no `scoreVersion` bumps while in development); proves findings with unit tests, never edits app code.
 - `play-tester` — after building or changing a test and before merging into `main`: plays it on localhost
   (desktop, dark theme) and reports bugs; never edits files.
-- Both report back; the main session decides and applies fixes. They can run in parallel.
+- `test-auditor` — after adding or reworking a test, or as a sweep over all tests: checks that name, icon, tagline,
+  rules and category fit what the test really does, and compares setup and score with research paradigms (sources,
+  reference values, reliability); never edits app code.
+- All report back; the main session decides and applies fixes. They can run in parallel.
 
 ## Conventions
 - **While in development: don't bump `scoreVersion`** when reworking a test; old scores don't matter yet.
