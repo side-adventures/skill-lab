@@ -35,3 +35,5 @@ body {
 @keyframes float-up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-24px); } }
 .float-up { animation: float-up 0.5s ease-out forwards; }
 @keyframes pop { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+/* Quick Count "look here": a soft violet ring of light grows from the center of the board and fades out. */
+@keyframes look-here { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.15); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.15); } }

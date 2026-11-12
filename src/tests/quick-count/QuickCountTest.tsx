@@ -55,12 +55,18 @@ export default function QuickCountTest({ onFinish }: TestComponentProps) {
         right={rounds.length > 0 && <InfoValue label="Accuracy" value={scoreRounds(rounds).toFixed(1)} unit="%" />}
       />
       <SquarePanelLayout
-        // Before each flash the board lights its frame and shows a fixation cross: look here now.
-        boardClassName={`ring-2 transition-shadow duration-200 ${phase === 'ready' ? 'ring-violet-400/70' : 'ring-transparent'}`}
         board={
           <>
             {phase === 'ready' && (
-              <span className="absolute inset-0 grid place-items-center text-5xl font-light text-violet-300">+</span>
+              // "Look here": a soft ring of light grows from the center and fades, then the dots flash.
+              <span
+                key={rounds.length}
+                className="pointer-events-none absolute top-1/2 left-1/2 aspect-square w-[150%] rounded-full opacity-0"
+                style={{
+                  background: 'radial-gradient(circle, rgb(167 139 250 / 0) 25%, rgb(167 139 250 / 0.22) 50%, rgb(167 139 250 / 0) 70%)',
+                  animation: 'look-here 900ms ease-out',
+                }}
+              />
             )}
             {showDots && (
               <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
