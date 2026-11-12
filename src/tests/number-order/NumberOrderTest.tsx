@@ -11,6 +11,8 @@ export default function NumberOrderTest({ onFinish }: TestComponentProps) {
       roundLabel={(r) => `Round ${r + 1}`}
       result={(cleared, { memorizeUsed, tileMs }) => ({
         score: cleared ? numberOrderTiles(cleared - 1) : 0,
+        // Not even the first round: no score (shown, not saved), like Flash Order.
+        ...(!cleared && { failed: 'Not even the first round — try again!' }),
         details: {
           stats: [
             { label: 'Rounds cleared', value: String(cleared) },
