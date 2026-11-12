@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLatest } from '../lib/hooks'
-import { pickNextTest } from '../lib/nextTest'
+import { nextTestAfter } from '../lib/nextTest'
 import { scoreParts } from '../lib/scoreParts'
 import { buildShareText, testUrl } from '../lib/share'
-import { getRecord, type ResultEntry } from '../lib/storage'
-import { TESTS } from '../tests/registry'
-import { CATEGORY_COLORS, storageId, type ResultChip, type ResultDetails, type ResultExtra, type TestDefinition, type TestResult } from '../tests/types'
+import type { ResultEntry } from '../lib/storage'
+import { CATEGORY_COLORS, type ResultChip, type ResultDetails, type ResultExtra, type TestDefinition, type TestResult } from '../tests/types'
 import { Button } from './Button'
 import { ShareButton } from './ShareButton'
 import { TestIcon } from './TestIcon'
@@ -36,10 +35,7 @@ export function ResultScreen({ test, result, isBest, previousBest, onRetry, onRu
     return () => window.clearTimeout(t)
   }, [])
 
-  const next = useMemo(
-    () => pickNextTest(test.id, TESTS.filter((t) => t.Component), (t) => getRecord(storageId(t), t.higherIsBetter)),
-    [test.id],
-  )
+  const next = useMemo(() => nextTestAfter(test.id), [test.id])
 
   const keys = useLatest({ armed, onRetry, next })
   useEffect(() => {

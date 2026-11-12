@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { nextTestAfter } from '../lib/nextTest'
 import { scoreParts } from '../lib/scoreParts'
 import { getRecord, saveResult, type ResultEntry, type TestRecord } from '../lib/storage'
 import { CATEGORY_COLORS, storageId, type TestDefinition, type TestResult } from '../tests/types'
@@ -22,6 +23,9 @@ export function TestRunner({ test }: { test: TestDefinition }) {
   const [rulesOpen, setRulesOpen] = useState(false)
   const Component = test.Component
   const record = getRecord(storageId(test), test.higherIsBetter)
+
+  // Quiet "skip" link on the rules screen: the same suggestion as Next test on the result screen.
+  const skipTo = useMemo(() => nextTestAfter(test.id), [test.id])
 
   // Fetch the test's code while the rules are read, so Start never shows a loading state.
   useEffect(() => Component?.preload(), [Component])
@@ -120,6 +124,11 @@ export function TestRunner({ test }: { test: TestDefinition }) {
             </span>
             <span className="text-zinc-600">·</span>
             <span>{test.durationHint}</span>
+            {skipTo && (
+              <Link to={`/test/${skipTo.id}`} className="ml-auto text-zinc-500 transition-colors hover:text-zinc-200">
+                Skip to {skipTo.name} ›
+              </Link>
+            )}
           </>
         )}
         {phase.name === 'result' && <span>{phase.attemptNo ? `Attempt ${phase.attemptNo}` : 'Not counted'}</span>}

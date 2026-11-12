@@ -1,4 +1,6 @@
-import type { TestRecord } from './storage'
+import { TESTS } from '../tests/registry'
+import { storageId } from '../tests/types'
+import { getRecord, type TestRecord } from './storage'
 
 const sameDay = (a: number, b: number) => new Date(a).toDateString() === new Date(b).toDateString()
 
@@ -28,3 +30,7 @@ export function pickNextTest<T extends { id: string; name: string }>(
   }
   return undefined
 }
+
+/** The suggested next test for `testId` among all playable tests, from the saved records. */
+export const nextTestAfter = (testId: string) =>
+  pickNextTest(testId, TESTS.filter((t) => t.Component), (t) => getRecord(storageId(t), t.higherIsBetter))

@@ -126,6 +126,7 @@ all best scores in one message.
   - Footer: Share (left, quiet; missing without a score) · Try again (middle, primary) · Next test (right, with icon
     in its category color). Next test = an unplayed test first, then one not played today, then any other; within
     each group A–Z starting after the current test (`lib/nextTest.ts`).
+    The rules screen offers the same suggestion as a quiet "Skip to … ›" link at the right of its info row.
   - Keys: Enter / Space = Try again, N = next test. Input is ignored for the first 0.8 s.
   - Details are saved structured with each attempt (older attempts keep their plain label → value text).
   - Runs without a score show their stats too, but have no Share and aren't saved.
