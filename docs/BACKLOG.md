@@ -7,7 +7,7 @@ Ideas and TODOs for later. Not planned yet; move an item into the work when it's
   (style rules in `src/icons/README.md`).
 
 ## Later
-- **A finer score for every test.** Span tests (Number Memory, Number Order, Sequence Memory, Visual Memory) score whole
+- **A finer score for every test.** Span tests (Number Memory, Number Order, Sequence Memory, Pattern Memory) score whole
   levels, so many players tie (7 digits: ~25 % of simulated players). N-Back adds the failed block's accuracy
   (365 = passed 3-back, 65 % at 4-back). Decided 2026-11-13 to keep whole levels for now, because the score matches the
   goal you had; revisit with one approach for all tests.

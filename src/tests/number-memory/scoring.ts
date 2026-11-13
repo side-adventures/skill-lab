@@ -1,6 +1,8 @@
 import { randInt, type Rand } from '../../lib/random'
 
 export const START_DIGITS = 3
+/** Lives for the whole run: a wrong answer costs one, and you get a new number of the same length. */
+export const LIVES = 2
 
 /** How long the number stays visible. */
 export const showMs = (digits: number) => 1000 + 500 * digits

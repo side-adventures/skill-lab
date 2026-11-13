@@ -7,7 +7,7 @@ import { TileGrid } from '../../components/game/TileGrid'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { GRID, ITEM_MS, LIT_MS, LIVES, START_N, afterBlock, blockAccuracy, blockCounts, isMatch, makeBlock, runResult, type BlockResult } from './scoring'
+import { GRID, ITEM_MS, LIT_MS, LIVES, START_N, afterBlock, blockCounts, isMatch, makeBlock, runResult, type BlockResult } from './scoring'
 
 /** 'between': the round result after a block (passed → next level, or lives lost → same level again). */
 type Phase = 'running' | 'between'
@@ -44,7 +44,7 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
       const counts = blockCounts(seq, tapped.current, n)
       const mistakes = counts.missed + counts.wrong
       const step = afterBlock(mistakes, lives)
-      results.current.push({ n, acc: blockAccuracy(seq, tapped.current, n), clicked: tapped.current.some(Boolean), mistakes, lost: step.lost, ...counts })
+      results.current.push({ n, clicked: tapped.current.some(Boolean), mistakes, lost: step.lost, ...counts })
       if (step.over) return onFinish(runResult(results.current))
       setFeedback(null) // the last item's message doesn't belong to the round result
       setLives(step.livesLeft)

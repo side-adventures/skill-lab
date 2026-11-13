@@ -5,7 +5,7 @@ import { TileGrid } from '../../components/game/TileGrid'
 import { END_MOMENT_MS } from '../../lib/game'
 import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
-import { GRID, extend, stepTiming } from './scoring'
+import { GRID, STEP_GAP_MS, STEP_ON_MS, extend } from './scoring'
 
 type Phase = 'pause' | 'show' | 'input' | 'success' | 'fail'
 
@@ -27,7 +27,7 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
     const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms))
     if (phase === 'pause') at(700, () => setPhase('show'))
     if (phase === 'show') {
-      const { on, gap } = stepTiming(seq.length)
+      const on = STEP_ON_MS, gap = STEP_GAP_MS
       seq.forEach((tile, i) => {
         at(i * (on + gap), () => setLit(tile))
         at(i * (on + gap) + on, () => setLit(null))
@@ -99,6 +99,7 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
       <SquareLayout>
         <TileGrid
           cols={GRID}
+          instant={phase === 'show'} // the same tile can flash twice in a row: no fade, so the gap is visible
           frame={phase === 'success' ? 'success' : phase === 'fail' ? 'fail' : null}
           onTap={phase === 'input' ? tap : undefined}
           tile={(i) => {
