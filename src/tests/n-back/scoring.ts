@@ -6,7 +6,6 @@ export const START_N = 2
 /** Block length = 16 + N items (≈ 45 s at 2-back), keeping a strong player's run under ~3.5 min. */
 export const ITEMS_BASE = 16
 export const MATCH_RATE = 0.3
-export const PASS_ACCURACY = 0.8
 export const ITEM_MS = 2500
 export const LIT_MS = 500
 
@@ -72,41 +71,62 @@ export function blockCounts(seq: number[], tapped: boolean[], n: number) {
   return { matches, hits, wrong, missed: matches - hits }
 }
 
-/** Whole percent, rounded down so 79.6 % never shows as the 80 % pass mark (+ε against float noise). */
+/** Whole percent (accuracy shown and used in the score), rounded down so 79.6 % never shows as 80 % (+ε against float noise). */
 export const accuracyPct = (acc: number) => Math.floor(acc * 100 + 1e-9)
 
+/** A block with at most this many mistakes (missed matches + wrong clicks) is passed: move up a level. */
+export const FREE_MISTAKES = 2
+/** Lives for the whole run. Every mistake beyond FREE_MISTAKES in a block costs one. */
+export const LIVES = 4
+
+/** Lives a block costs: every mistake beyond the free ones (3 mistakes → 1, 6 mistakes → 4 = game over). */
+export const livesLost = (mistakes: number) => Math.max(0, mistakes - FREE_MISTAKES)
+
 /**
- * The run ends at the first failed block. Score = 100 × the last level passed (the level you failed − 1)
- * + your accuracy in the failed block: failing 4-back at 65 % gives 365, failing the first block (2-back)
- * at 65 % gives 165. The failed block is always below 80 %, so a score never reaches the next hundred.
+ * What happens after a block: passed (≤ 2 mistakes) → next level; otherwise lose lives and play the same
+ * level again, or the run is over when no lives are left.
  */
-export const runScore = (failedN: number, failedAcc: number) => (failedN - 1) * 100 + accuracyPct(failedAcc)
+export function afterBlock(mistakes: number, livesLeft: number) {
+  const lost = livesLost(mistakes)
+  const left = Math.max(0, livesLeft - lost)
+  return { passed: lost === 0, lost, livesLeft: left, over: lost > 0 && left === 0 }
+}
+
+/**
+ * Score = 100 × the level the run ended at + your accuracy in that last block:
+ * ending at 4-back with 65 % gives 465, ending at the first level (2-back) with 65 % gives 265.
+ * Accuracy is below 100 %, so reaching a higher level always beats any accuracy on a lower one.
+ */
+export const runScore = (endN: number, endAcc: number) => endN * 100 + Math.min(99, accuracyPct(endAcc))
 
 export interface BlockResult extends ReturnType<typeof blockCounts> {
   n: number
   acc: number
   /** Any MATCH click in the block, also on the first n items. */
   clicked: boolean
+  /** Missed matches + wrong clicks. */
+  mistakes: number
+  lost: number
 }
 
-/** The finished run: score, "No score" when the first block had no clicks at all, and the result details. */
+/** The finished run: score, "No score" when there was no click at all, and the result details. */
 export function runResult(blocks: BlockResult[]): TestResult {
-  const failed = blocks[blocks.length - 1]
-  const passed = blocks.filter((b) => b.acc >= PASS_ACCURACY)
+  const end = blocks[blocks.length - 1]
+  const passed = blocks.filter((b) => b.lost === 0)
   const details: ResultDetails = {
     stats: [
       { label: 'Highest level passed', value: passed.length ? `${Math.max(...passed.map((b) => b.n))}-back` : 'None' },
-      { label: 'Ended at', value: `${failed.n}-back · ${accuracyPct(failed.acc)} %` },
+      { label: 'Ended at', value: `${end.n}-back · ${accuracyPct(end.acc)} %` },
     ],
     extra: {
       kind: 'table',
-      columns: ['Level', 'Accuracy', 'Hits', 'Wrong clicks', 'Missed'],
-      rows: blocks.slice(-5).map((b) => ({
-        cells: [`${b.n}-back`, `${accuracyPct(b.acc)} %`, `${b.hits} / ${b.matches}`, String(b.wrong), String(b.missed)],
-        dim: b.acc < PASS_ACCURACY,
+      columns: ['Level', 'Mistakes', 'Hits', 'Wrong clicks', 'Lives'],
+      rows: blocks.slice(-6).map((b) => ({
+        cells: [`${b.n}-back`, String(b.mistakes), `${b.hits} / ${b.matches}`, String(b.wrong), b.lost ? `−${b.lost}` : '–'],
+        dim: b.lost > 0,
       })),
     },
   }
-  if (blocks.length === 1 && !failed.clicked) return { score: 0, failed: 'No clicks — try again!', details }
-  return { score: runScore(failed.n, failed.acc), details }
+  if (!blocks.some((b) => b.clicked)) return { score: 0, failed: 'No clicks — try again!', details }
+  return { score: runScore(end.n, end.acc), details }
 }
