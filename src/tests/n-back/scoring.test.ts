@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockAccuracy, blockLength, isMatch, makeBlock, matchCount } from './scoring'
+import { blockAccuracy, blockLength, isMatch, makeBlock, matchCount, type BlockResult } from './scoring'
 
 describe('n-back', () => {
   it('builds blocks with exactly the planned number of matches', () => {
@@ -30,5 +30,37 @@ describe('blockCounts', () => {
     const seq = [1, 5, 1, 7, 1, 3]
     const tapped = [false, false, true, true, false, false]
     expect(blockCounts(seq, tapped, 2)).toEqual({ matches: 2, hits: 1, wrong: 1, missed: 1 })
+  })
+})
+
+describe('run score', () => {
+  const block = (n: number, acc: number, clicked = true): BlockResult => ({ n, acc, clicked, matches: 6, hits: 4, wrong: 2, missed: 2 })
+
+  it('is 100 × the last level passed + the failed block accuracy', async () => {
+    const { runResult, runScore } = await import('./scoring')
+    expect(runScore(4, 0.65)).toBe(365)
+    expect(runScore(2, 0.65)).toBe(165) // failed the first block
+    expect(runScore(3, 0.7999)).toBe(279) // rounded down, never the pass mark
+    expect(runScore(2, 0.29)).toBe(129) // no float noise (0.29 × 100 = 28.999…)
+    const r = runResult([block(2, 0.9), block(3, 0.85), block(4, 0.65)])
+    expect(r.score).toBe(365)
+    expect(r.failed).toBeUndefined()
+    expect(r.details?.stats).toEqual([
+      { label: 'Highest level passed', value: '3-back' },
+      { label: 'Ended at', value: '4-back · 65 %' },
+    ])
+  })
+
+  it('first block: a score with clicks, No score without any click', async () => {
+    const { runResult } = await import('./scoring')
+    const r = runResult([block(2, 0.62)])
+    expect(r.score).toBe(162)
+    expect(r.details?.stats?.[0].value).toBe('None')
+    expect(runResult([block(2, 0.5, false)]).failed).toBeTruthy()
+  })
+
+  it('never reaches the next hundred: the best failed block scores below the next level', async () => {
+    const { runScore, PASS_ACCURACY } = await import('./scoring')
+    expect(runScore(3, PASS_ACCURACY - 1e-6)).toBeLessThan(300)
   })
 })
