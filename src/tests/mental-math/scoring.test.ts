@@ -17,3 +17,19 @@ describe('mental math', () => {
     expect([0, 4, 5, 12, 99].map(levelFor)).toEqual([0, 0, 1, 2, MAX_LEVEL])
   })
 })
+
+describe('operation table', () => {
+  it('has one row per operation played, in + − × ÷ order', async () => {
+    const { operationTable } = await import('./scoring')
+    const t = operationTable([
+      { op: '×', correct: true, ms: 1000 },
+      { op: '+', correct: true, ms: 400 },
+      { op: '×', correct: false, ms: 3000 },
+    ])
+    expect(t).toEqual({
+      kind: 'table',
+      columns: ['Operation', 'Correct', 'Wrong', 'Avg time'],
+      rows: [{ cells: ['+', '1', '0', '400 ms'] }, { cells: ['×', '1', '1', '2.0 s'] }],
+    })
+  })
+})

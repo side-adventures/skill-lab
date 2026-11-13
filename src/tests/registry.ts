@@ -89,7 +89,7 @@ export const TESTS: TestDefinition[] = [
     icon: '⏱️',
     category: 'Estimation',
     tagline: 'Feel the seconds without a clock.',
-    skill: 'your sense of time',
+    skill: 'keeping time in your head',
     howTo: [
       'You get a target time between 3 and 10 seconds.',
       'Click to start a hidden timer, then click again when you think the time is up.',
@@ -132,14 +132,14 @@ export const TESTS: TestDefinition[] = [
   },
   {
     id: 'mental-math',
-    name: 'Mental Math Sprint',
+    name: 'Quick Maths',
     icon: '➗',
     category: 'Thinking',
-    tagline: 'Solve as many sums as you can.',
+    tagline: 'Solve as many + − × ÷ problems as you can.',
     skill: 'mental arithmetic',
     howTo: [
       'Solve simple + − × ÷ problems. Every answer is a whole number.',
-      'Type your answer with the keypad or your keyboard and confirm it.',
+      'Type the answer on your keyboard, or click it on the keypad, then press Enter or OK.',
       'The numbers get a little bigger every 5 correct answers.',
     ],
     scoring: [
@@ -401,14 +401,14 @@ export const TESTS: TestDefinition[] = [
   },
   {
     id: 'stop-the-bar',
-    name: 'Stop the Bar',
+    name: 'Hit the Line',
     icon: '🛑',
     category: 'Motor',
     tagline: 'Stop the moving bar right on the line.',
-    skill: 'timing',
+    skill: 'timing a moving target',
     howTo: [
-      'Click to start: a marker slides along a track.',
-      'Click again to stop it exactly on the green line.',
+      'Click to start: the bar slides along a track.',
+      'Click again to stop the bar exactly on the green line.',
       '5 rounds, each at a different speed.',
     ],
     scoring: [

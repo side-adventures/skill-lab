@@ -54,6 +54,14 @@ export interface Trial {
   rightAngle: number
 }
 
+/** How far the right shape is turned from the left one, the short way round (45°–180°). */
+export const turnOf = (t: Pick<Trial, 'leftAngle' | 'rightAngle'>) => {
+  const d = (((t.rightAngle - t.leftAngle) % 360) + 360) % 360
+  return Math.min(d, 360 - d)
+}
+/** Small turns (up to 90°) vs big turns: research finds the answer takes longer the bigger the turn. */
+export const isBigTurn = (t: Pick<Trial, 'leftAngle' | 'rightAngle'>) => turnOf(t) > 90
+
 export function makeTrial(rand: Rand = Math.random): Trial {
   const leftAngle = randInt(0, 23, rand) * 15
   const delta = randInt(3, 21, rand) * 15 // 45°..315°, never (almost) the same orientation

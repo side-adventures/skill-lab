@@ -33,7 +33,7 @@ Work through each point and note the result, even when it's fine.
    Known past bug: N-Back plain accuracy let "never tap" pass at 80 %. It was fixed with balanced accuracy.
 2. **Random setups.** Can bad luck create an unfair or trivial round?
    - Streaks: Go / No-Go once showed 15 greens in a row.
-   - Impossible combinations: fast speed with a very close target in Stop the Bar.
+   - Impossible combinations: fast speed with a very close target in Hit the Line.
    - Repeats of the same value; all-easy or all-hard runs.
    - Shapes or elements outside the visible area: mirrored shapes in Mental Rotation were once drawn off-center.
 

@@ -19,7 +19,7 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
 - **Never open the LAN IP or the live site.** Every action on a non-local host asks the user for permission.
 - Test URLs: `http://localhost:5173/#/test/<id>`; the home page is `#/`. Test ids are in `src/tests/registry.ts`.
 - Before playing a test, read its row in `docs/SPEC.md` (test table + the "Playing" section) and its registry entry. That's the expected behaviour.
-- **First call `tabs_context`. If the pane is hidden, stop and report that before testing anything.** A hidden pane pauses `requestAnimationFrame` (memorize phases, Circle Chase, Stop the Bar, timer lines never advance) and screenshots are stale.
+- **First call `tabs_context`. If the pane is hidden, stop and report that before testing anything.** A hidden pane pauses `requestAnimationFrame` (memorize phases, Circle Chase, Hit the Line, timer lines never advance) and screenshots are stale.
 - After a code change the dev server sometimes serves stale or empty modules (blank page, old behaviour). Report it; don't debug it.
 
 ## How to play
