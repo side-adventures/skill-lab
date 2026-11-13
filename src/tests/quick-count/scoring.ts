@@ -44,9 +44,13 @@ export function placeDots(n: number, rand: Rand = Math.random): Dot[] {
   return dots
 }
 
-/** 100 % for exact, decreasing with relative error, never below 0. */
+/**
+ * 100 % for exact, decreasing with how far off you are as a ratio, never below 0: half and double the
+ * real count both score 30.7 %, so guessing low isn't safer than guessing high. Close guesses score
+ * about the same as a plain percent error (20 → 18: 89.5 %, 20 → 22: 90.5 %).
+ */
 export const accuracy = (actual: number, guess: number) =>
-  Math.max(0, 100 - (Math.abs(guess - actual) / actual) * 100)
+  guess <= 0 ? 0 : Math.max(0, 100 - Math.abs(Math.log(guess / actual)) * 100)
 
 export const scoreRounds = (rounds: { actual: number; guess: number }[]) =>
   round1(mean(rounds.map((r) => accuracy(r.actual, r.guess))))

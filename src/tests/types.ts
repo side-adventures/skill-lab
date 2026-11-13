@@ -51,7 +51,7 @@ export type ResultExtra =
 
 /**
  * How a run starts: 'countdown' = 3-2-1 (you must be ready the moment it starts), 'quick' = a short
- * "Ready", 'none' = your own first action starts it (Tap Speed, Line Tracing, Steady Hand).
+ * "Ready", 'none' = your own first action starts it (Tap Speed, Line Tracing, Circle Chase).
  */
 export type StartMode = 'countdown' | 'quick' | 'none'
 

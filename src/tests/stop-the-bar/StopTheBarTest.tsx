@@ -67,7 +67,7 @@ export default function StopTheBarTest({ onFinish }: TestComponentProps) {
       <GameInfo
         left={<InfoValue value={`Round ${roundIndex + 1}`} of={ROUNDS} />}
         middle={phase === 'ready' ? 'Click to start' : phase === 'moving' ? 'Click to stop on the line' : ''}
-        right={errors.length > 0 && <InfoValue label="Avg" value={scoreRounds(errors)} unit="ms off" />}
+        right={errors.length > 0 && <InfoValue label="Avg error" value={scoreRounds(errors)} unit="ms off" />}
       />
       <FullLayout
         onPointerDown={(e) => e.button === 0 && press()}

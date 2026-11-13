@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { AnswerButtons } from '../../components/game/AnswerButtons'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
@@ -70,9 +71,8 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={<InfoValue value={`${n}-back`} />}
+        left={phase === 'running' && <InfoValue value={`Item ${Math.max(1, index + 1)}`} of={seq.length} />}
         middle={feedback ? <span className={feedback === 'hit' ? 'text-emerald-300' : 'text-rose-300'}>{fb[feedback]}</span> : ''}
-        right={phase === 'running' && <InfoValue value={Math.max(0, index + 1)} of={seq.length} />}
       />
       <SquarePanelLayout
         boardClassName={feedbackRing(flash)}
@@ -96,14 +96,10 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
             <>
               <p className="text-3xl font-bold">{n}-back</p>
               <p className="mt-2 text-zinc-400">Click MATCH when the lit square is in the same spot as {n} steps before.</p>
-              <button
-                type="button"
-                onPointerDown={(e) => e.button === 0 && tapMatch()}
-                className="mt-auto flex h-14 w-full items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-5 text-lg font-bold tracking-wider text-zinc-100 transition-colors hover:border-zinc-600 active:scale-[0.98]"
-              >
-                MATCH
-                <kbd className="rounded-md border border-zinc-700 px-1.5 text-xs font-medium text-zinc-500">Space</kbd>
-              </button>
+              <div className="mt-auto">
+                {/* Space via the button's key; Enter also works (useActionKey). A double press is ignored by tapMatch. */}
+                <AnswerButtons columns={1} options={[{ label: 'MATCH', key: ' ', onPress: tapMatch }]} disabled={phase !== 'running'} />
+              </div>
             </>
           )
         }

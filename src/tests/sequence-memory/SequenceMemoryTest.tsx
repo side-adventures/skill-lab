@@ -5,7 +5,7 @@ import { TileGrid } from '../../components/game/TileGrid'
 import { END_MOMENT_MS } from '../../lib/game'
 import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
-import { GRID, STEP_GAP_MS, STEP_ON_MS, extend } from './scoring'
+import { GRID, extend, stepTiming } from './scoring'
 
 type Phase = 'pause' | 'show' | 'input' | 'success' | 'fail'
 
@@ -27,11 +27,12 @@ export default function SequenceMemoryTest({ onFinish }: TestComponentProps) {
     const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms))
     if (phase === 'pause') at(700, () => setPhase('show'))
     if (phase === 'show') {
+      const { on, gap } = stepTiming(seq.length)
       seq.forEach((tile, i) => {
-        at(i * (STEP_ON_MS + STEP_GAP_MS), () => setLit(tile))
-        at(i * (STEP_ON_MS + STEP_GAP_MS) + STEP_ON_MS, () => setLit(null))
+        at(i * (on + gap), () => setLit(tile))
+        at(i * (on + gap) + on, () => setLit(null))
       })
-      at(seq.length * (STEP_ON_MS + STEP_GAP_MS), () => {
+      at(seq.length * (on + gap), () => {
         lastAt.current = performance.now()
         setPos(0)
         setPhase('input')

@@ -31,6 +31,7 @@ export default function StroopTest({ onFinish }: TestComponentProps) {
     const fmt = (ms: number | undefined) => (ms === undefined ? '–' : `${Math.round(ms)} ms`)
     onFinish({
       score: stroopScore(correct, wrong),
+      ...(correct + wrong === 0 && { failed: 'No answers — try again!' }), // idle run: shown, not saved
       details: {
         stats: answerStats(answers.current),
         extra: {

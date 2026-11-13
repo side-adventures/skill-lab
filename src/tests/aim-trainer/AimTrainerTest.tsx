@@ -28,6 +28,7 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
     const hits = centers + edges
     onFinish({
       score: points,
+      ...(centers + edges + misses === 0 && { failed: 'No clicks — try again!' }), // idle run: shown, not saved
       details: {
         stats: [
           { label: 'Center hits', value: String(centers) },
@@ -58,7 +59,7 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
       <FullLayout
         className="cursor-crosshair bg-zinc-900"
         style={{ touchAction: 'none' }}
-        onPointerDown={() => live && setMisses((m) => m + 1)}
+        onPointerDown={(e) => live && e.button === 0 && setMisses((m) => m + 1)}
       >
         {pop && (
           <span
@@ -74,7 +75,7 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
           aria-label="Target"
           onPointerDown={(e) => {
             e.stopPropagation()
-            if (!live) return
+            if (!live || e.button !== 0) return
             const r = e.currentTarget.getBoundingClientRect()
             const pts = hitPoints(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2), r.width)
             setPoints((p) => p + pts)

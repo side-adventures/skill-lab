@@ -19,7 +19,7 @@ export function clicksPerFrame(times: number[]) {
 /** Result screen stats: total, fastest and last frame (do you slow down?), clicks per frame. */
 export function resultDetails(times: number[]): ResultDetails {
   const frames = clicksPerFrame(times)
-  const perS = (n: number) => `${round1(n / (FRAME_MS / 1000))} / s`
+  const perS = (n: number) => `${round1(n / (FRAME_MS / 1000))} /s`
   return {
     stats: [
       { label: 'Total clicks', value: String(times.length) },

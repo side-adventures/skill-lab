@@ -45,8 +45,13 @@ describe('quick count', () => {
   })
   it('scores accuracy', () => {
     expect(accuracy(20, 20)).toBe(100)
-    expect(accuracy(20, 18)).toBe(90)
+    expect(accuracy(20, 18)).toBeCloseTo(89.46, 2)
+    expect(accuracy(20, 22)).toBeCloseTo(90.47, 2)
+    // half and double are equally wrong
+    expect(accuracy(20, 10)).toBeCloseTo(30.69, 2)
+    expect(accuracy(20, 40)).toBeCloseTo(accuracy(20, 10), 10)
     expect(accuracy(10, 40)).toBe(0)
-    expect(scoreRounds([{ actual: 20, guess: 18 }, { actual: 10, guess: 10 }])).toBe(95)
+    expect(accuracy(20, 0)).toBe(0)
+    expect(scoreRounds([{ actual: 20, guess: 18 }, { actual: 10, guess: 10 }])).toBe(94.7)
   })
 })

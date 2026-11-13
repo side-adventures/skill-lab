@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GRID, extend } from './scoring'
+import { GRID, extend, stepTiming } from './scoring'
 
 describe('sequence memory', () => {
   it('grows by one with no immediate repeats', () => {
@@ -11,5 +11,9 @@ describe('sequence memory', () => {
       expect(next.at(-1)!).toBeLessThan(GRID * GRID)
       seq = next
     }
+  })
+  it('plays faster from length 8 on', () => {
+    expect(stepTiming(7)).toEqual({ on: 450, gap: 200 })
+    expect(stepTiming(8)).toEqual({ on: 350, gap: 150 })
   })
 })
