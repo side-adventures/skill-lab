@@ -55,11 +55,12 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
 
   const next = () => {
     if (times.length < ROUNDS) return startRound()
-    const { score, best, worst } = summarize(times)
+    const { score, average, best, worst } = summarize(times)
     onFinish({
       score,
       details: {
         stats: [
+          { label: 'Average', value: `${average} ms` },
           { label: 'Fastest', value: `${best} ms` },
           { label: 'Slowest', value: `${worst} ms` },
           { label: 'Too soon', value: `${tooSoon.current}×` },
@@ -75,7 +76,7 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
       <GameInfo
         left={<InfoValue value={`Round ${round}`} of={ROUNDS} />}
         middle={state.name === 'shown' ? '' : VIEW[state.name].phase}
-        right={times.length > 0 && <InfoValue label="Average" value={summarize(times).score} unit="ms" />}
+        right={times.length > 0 && <InfoValue label="Median" value={summarize(times).score} unit="ms" />}
       />
       <FullLayout
         // pointerdown fires earlier than click → more accurate timing

@@ -5,10 +5,19 @@ export const MAX_DELAY_MS = 5000
 export const randomDelay = (rand = Math.random) =>
   MIN_DELAY_MS + rand() * (MAX_DELAY_MS - MIN_DELAY_MS)
 
+/** Middle value (average of the two middle ones for an even count). */
+export function median(xs: number[]) {
+  const s = [...xs].sort((a, b) => a - b)
+  const m = Math.floor(s.length / 2)
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
+}
+
+/** Score = median, so one distracted slow round (or a lucky fast one) doesn't decide it. */
 export function summarize(times: number[]) {
   const avg = times.reduce((a, b) => a + b, 0) / times.length
   return {
-    score: Math.round(avg),
+    score: Math.round(median(times)),
+    average: Math.round(avg),
     best: Math.round(Math.min(...times)),
     worst: Math.round(Math.max(...times)),
   }

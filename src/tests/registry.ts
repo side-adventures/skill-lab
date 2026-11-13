@@ -24,10 +24,10 @@ export const TESTS: TestDefinition[] = [
       'Clicking while it is still red is too early and restarts the round.',
     ],
     scoring: [
-      'Your average reaction time over 5 rounds.',
+      'Your median reaction time over 5 rounds: the middle one of your 5 times, so one slow round does not spoil it.',
     ],
     durationHint: '~1 min',
-    scoreLabel: 'Average reaction time',
+    scoreLabel: 'Median reaction time',
     higherIsBetter: false,
     formatScore: (s) => `${Math.round(s)} ms`,
     start: 'quick',
@@ -337,7 +337,7 @@ export const TESTS: TestDefinition[] = [
     ],
     scoring: [
       'Your total reaction time for the green circles.',
-      'A missed green counts as 0.8 s, and every mistake adds 0.1 s.',
+      'A missed green counts as 0.8 s, and a click on red or before a circle appears adds 0.8 s.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Total time',

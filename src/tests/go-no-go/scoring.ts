@@ -7,7 +7,8 @@ export const GROUP_REDS = 2
 export const GREENS = GROUPS * GROUP_GREENS + 1
 export const REDS = GROUPS * GROUP_REDS + 1
 export const WINDOW_MS = 800 // how long a stimulus stays up
-export const PENALTY_MS = 100
+/** A click on red or before a circle appears costs as much as a missed green, so ignoring the color never pays. */
+export const WRONG_CLICK_MS = 800
 export const MIN_WAIT_MS = 700
 export const MAX_WAIT_MS = 1500
 
@@ -34,6 +35,6 @@ export const longestGreenRun = (t: boolean[]) =>
 
 export interface Stats { rts: number[]; misses: number; falseTaps: number }
 
-/** Total of green reaction times; a miss counts the full window; each mistake adds a penalty. */
+/** Total of green reaction times; a missed green counts the full window (0.8 s), a wrong click adds 0.8 s. */
 export const totalMs = ({ rts, misses, falseTaps }: Stats) =>
-  Math.round(rts.reduce((a, b) => a + b, 0) + misses * WINDOW_MS + (misses + falseTaps) * PENALTY_MS)
+  Math.round(rts.reduce((a, b) => a + b, 0) + misses * WINDOW_MS + falseTaps * WRONG_CLICK_MS)

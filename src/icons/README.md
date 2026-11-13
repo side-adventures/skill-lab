@@ -10,4 +10,4 @@ Mask ids must be unique across files (`<test-id>-…`), because the icons may be
 
 Shown via `components/TestIcon.tsx` (home page cards, test header); it falls back to the registry emoji if a file is missing. The emoji in the registry is still used in shared text messages. `src/tests/icons.test.ts` checks that every test has an icon, that only `currentColor` is used (black/white only inside masks), and that mask ids are unique.
 
-Tap Speed's icon is a placeholder for now.
+Tap Speed's icon is a placeholder for now (TODO in `docs/BACKLOG.md`).
