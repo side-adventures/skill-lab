@@ -5,7 +5,7 @@ import { RoundResult } from '../../components/game/RoundResult'
 import { useLater } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { ROUNDS, randomDelay, summarize } from './scoring'
+import { MAX_TOO_SOON, ROUNDS, isTooFast, randomDelay, summarize } from './scoring'
 
 type State =
   | { name: 'ready' }   // waiting for the player to start the round
@@ -37,15 +37,28 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
     })
   }
 
+  /** A click while red or within MIN_REACTION_MS of green; too many end the run without a score. */
+  const early = () => {
+    tooSoon.current++
+    if (tooSoon.current > MAX_TOO_SOON) {
+      return onFinish({
+        score: 0,
+        failed: 'Too many early clicks',
+        details: { stats: [{ label: 'Rounds done', value: `${times.length} / ${ROUNDS}` }, { label: 'Too soon', value: `${tooSoon.current}×` }] },
+      })
+    }
+    setState({ name: 'early' })
+  }
+
   const press = () => {
     if (state.name === 'ready' || state.name === 'early') return startRound()
     if (state.name === 'waiting') {
       cancel(timer.current)
-      tooSoon.current++
-      return setState({ name: 'early' })
+      return early()
     }
     if (state.name === 'go') {
       const ms = performance.now() - goAt.current
+      if (isTooFast(ms)) return early()
       setTimes([...times, ms])
       setState({ name: 'shown', ms })
     }
@@ -55,11 +68,12 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
 
   const next = () => {
     if (times.length < ROUNDS) return startRound()
-    const { score, best, worst } = summarize(times)
+    const { score, average, best, worst } = summarize(times)
     onFinish({
       score,
       details: {
         stats: [
+          { label: 'Average', value: `${average} ms` },
           { label: 'Fastest', value: `${best} ms` },
           { label: 'Slowest', value: `${worst} ms` },
           { label: 'Too soon', value: `${tooSoon.current}×` },
@@ -75,7 +89,7 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
       <GameInfo
         left={<InfoValue value={`Round ${round}`} of={ROUNDS} />}
         middle={state.name === 'shown' ? '' : VIEW[state.name].phase}
-        right={times.length > 0 && <InfoValue label="Average" value={summarize(times).score} unit="ms" />}
+        right={times.length > 0 && <InfoValue label="Median" value={summarize(times).score} unit="ms" />}
       />
       <FullLayout
         // pointerdown fires earlier than click → more accurate timing

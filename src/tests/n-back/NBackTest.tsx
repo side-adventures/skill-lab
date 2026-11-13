@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { AnswerButtons } from '../../components/game/AnswerButtons'
+import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { TileGrid } from '../../components/game/TileGrid'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { GRID, ITEM_MS, LIT_MS, PASS_ACCURACY, START_N, blockAccuracy, isMatch, makeBlock, blockCounts } from './scoring'
+import { GRID, ITEM_MS, LIT_MS, LIVES, START_N, afterBlock, blockAccuracy, blockCounts, isMatch, makeBlock, runResult, type BlockResult } from './scoring'
 
-type Phase = 'brief' | 'running' | 'passed'
+/** 'between': the round result after a block (passed → next level, or lives lost → same level again). */
+type Phase = 'running' | 'between'
 
 export default function NBackTest({ onFinish }: TestComponentProps) {
   const [n, setN] = useState(START_N)
+  const [lives, setLives] = useState(LIVES)
   const [phase, setPhase] = useState<Phase>('running')
   const [seq, setSeq] = useState<number[]>(() => makeBlock(START_N))
   const [index, setIndex] = useState(-1)
@@ -19,7 +22,7 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
   const [feedback, setFeedback] = useState<'hit' | 'false' | 'miss' | null>(null)
   const [flash, signal] = useAnswerFlash()
   const tapped = useRef<boolean[]>([])
-  const results = useRef<({ n: number; acc: number } & ReturnType<typeof blockCounts>)[]>([])
+  const results = useRef<BlockResult[]>([])
 
   // Run a block: one item every ITEM_MS, lit for LIT_MS.
   useEffect(() => {
@@ -38,23 +41,14 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
       timers.push(window.setTimeout(() => setLit(false), i * ITEM_MS + 600 + LIT_MS))
     })
     timers.push(window.setTimeout(() => {
-      const acc = blockAccuracy(seq, tapped.current, n)
-      results.current.push({ n, acc, ...blockCounts(seq, tapped.current, n) })
-      if (acc >= PASS_ACCURACY) return setPhase('passed')
-      const passed = results.current.filter((r) => r.acc >= PASS_ACCURACY)
-      onFinish({
-        score: passed.length ? Math.max(...passed.map((r) => r.n)) : 0,
-        details: {
-          extra: {
-            kind: 'table',
-            columns: ['Level', 'Accuracy', 'Hits', 'Wrong clicks', 'Missed'],
-            rows: results.current.slice(-5).map((r) => ({
-              cells: [`${r.n}-back`, `${Math.round(r.acc * 100)} %`, `${r.hits} / ${r.matches}`, String(r.wrong), String(r.missed)],
-              dim: r.acc < PASS_ACCURACY,
-            })),
-          },
-        },
-      })
+      const counts = blockCounts(seq, tapped.current, n)
+      const mistakes = counts.missed + counts.wrong
+      const step = afterBlock(mistakes, lives)
+      results.current.push({ n, acc: blockAccuracy(seq, tapped.current, n), clicked: tapped.current.some(Boolean), mistakes, lost: step.lost, ...counts })
+      if (step.over) return onFinish(runResult(results.current))
+      setFeedback(null) // the last item's message doesn't belong to the round result
+      setLives(step.livesLeft)
+      setPhase('between')
     }, seq.length * ITEM_MS + 600))
     return () => timers.forEach((t) => window.clearTimeout(t))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,9 +77,8 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={<InfoValue value={`${n}-back`} />}
+        left={<>{phase === 'running' && <InfoValue value={`Item ${Math.max(1, index + 1)}`} of={seq.length} />}<Lives left={lives} total={LIVES} /></>}
         middle={feedback ? <span className={feedback === 'hit' ? 'text-emerald-300' : 'text-rose-300'}>{fb[feedback]}</span> : ''}
-        right={phase === 'running' && <InfoValue value={Math.max(0, index + 1)} of={seq.length} />}
       />
       <SquarePanelLayout
         boardClassName={feedbackRing(flash)}
@@ -96,27 +89,29 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
           />
         }
         panel={
-          phase === 'passed' && last ? (
+          phase === 'between' && last ? (
             <div className="grid flex-1 place-items-center">
               <RoundResult
-                value={Math.round(last.acc * 100)}
-                unit="%"
-                line={`${last.n}-back passed · next: ${last.n + 1}-back`}
-                onContinue={() => startBlock(n + 1)}
+                value={last.mistakes}
+                unit={last.mistakes === 1 ? 'mistake' : 'mistakes'}
+                line={
+                  last.lost === 0 ? (
+                    `${last.n}-back passed · next: ${last.n + 1}-back`
+                  ) : (
+                    <span className="text-rose-300">−{last.lost} {last.lost === 1 ? 'life' : 'lives'} · {last.n}-back again</span>
+                  )
+                }
+                onContinue={() => startBlock(last.lost === 0 ? n + 1 : n)}
               />
             </div>
           ) : (
             <>
               <p className="text-3xl font-bold">{n}-back</p>
               <p className="mt-2 text-zinc-400">Click MATCH when the lit square is in the same spot as {n} steps before.</p>
-              <button
-                type="button"
-                onPointerDown={(e) => e.button === 0 && tapMatch()}
-                className="mt-auto flex h-14 w-full items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900 px-5 text-lg font-bold tracking-wider text-zinc-100 transition-colors hover:border-zinc-600 active:scale-[0.98]"
-              >
-                MATCH
-                <kbd className="rounded-md border border-zinc-700 px-1.5 text-xs font-medium text-zinc-500">Space</kbd>
-              </button>
+              <div className="mt-auto">
+                {/* Space via the button's key; Enter also works (useActionKey). A double press is ignored by tapMatch. */}
+                <AnswerButtons columns={1} options={[{ label: 'MATCH', key: ' ', onPress: tapMatch }]} disabled={phase !== 'running'} />
+              </div>
             </>
           )
         }

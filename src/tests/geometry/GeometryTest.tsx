@@ -4,6 +4,7 @@ import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { NumberPad } from '../../components/NumberPad'
+import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { add, angleTo, clampToRange, dirOf, makeTasks, resultDetails, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
 
@@ -122,15 +123,17 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
 
   const handle = handleAt(task, answer)
   const ready = task.input === 'number' ? typed !== '' : touched
+  // Enter / Space = Done in the drag tasks (the number tasks use the NumberPad's Enter)
+  useActionKey(() => ready && submit(), !evaluation && task.input !== 'number')
   // The score is the average accuracy, so the info row shows the average so far too.
   const soFar = results.length ? totalScore(results.map((r) => r.ev.points)) : 0
 
   return (
     <>
       <GameInfo
-        left={<InfoValue value={`Round ${index + 1}`} of={tasks.length} />}
+        left={<InfoValue value={`Task ${index + 1}`} of={tasks.length} />}
         middle={evaluation ? '' : task.input === 'number' ? 'Type the angle, then Enter' : touched ? 'Adjust, then Done' : 'Click or drag on the board'}
-        right={<InfoValue label="Accuracy" value={soFar.toFixed(1)} unit="%" />}
+        right={results.length > 0 && <InfoValue label="Accuracy" value={soFar.toFixed(1)} unit="%" />}
       />
       <SquarePanelLayout
         board={
@@ -159,7 +162,7 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
             <p className="mt-1 text-zinc-400">{task.prompt}</p>
             <div className="mt-auto">
               {evaluation ? (
-                <RoundResult value={evaluation.points} unit="pts" line={evaluation.label} button={index + 1 >= tasks.length ? 'See result' : 'Next'} onContinue={next} />
+                <RoundResult value={evaluation.points} unit="%" line={evaluation.label} button={index + 1 >= tasks.length ? 'See result' : 'Next'} onContinue={next} />
               ) : task.input === 'number' ? (
                 <>
                   <p className="mb-3 h-12 text-4xl font-bold tabular-nums">{typed ? `${typed}°` : <span className="text-zinc-700">–</span>}</p>

@@ -21,6 +21,12 @@ describe('go / no-go', () => {
   })
   it('adds penalties', () => {
     expect(totalMs({ rts: [300, 400], misses: 0, falseTaps: 0 })).toBe(700)
-    expect(totalMs({ rts: [300], misses: 1, falseTaps: 2 })).toBe(300 + 800 + 300)
+    expect(totalMs({ rts: [300], misses: 1, falseTaps: 2 })).toBe(300 + 800 + 2 * 800)
+  })
+  it('clicking every circle blindly loses to honest play', () => {
+    // honest: 21 greens at 380 ms; blind: 21 greens at 280 ms (no color check) but 9 clicks on red
+    const honest = totalMs({ rts: Array(21).fill(380), misses: 0, falseTaps: 0 })
+    const blind = totalMs({ rts: Array(21).fill(280), misses: 0, falseTaps: 9 })
+    expect(blind).toBeGreaterThan(honest + 4000)
   })
 })

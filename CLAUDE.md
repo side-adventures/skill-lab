@@ -1,6 +1,7 @@
 # Skill Lab — notes for Claude
 
 Static skill-test website (reaction, memory, focus…). Product spec: `docs/SPEC.md` — keep it in sync when scoring or rules change.
+Ideas and TODOs for later: `docs/BACKLOG.md`.
 
 ## Hard rules
 - **Frontend only.** No backend, no network/API calls. Deployed to GitHub Pages from `dist/`.
@@ -35,7 +36,8 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
    - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`;
      `details` is a `ResultDetails`: stats row, optional special block, optional chips — pick what's interesting for this test).
      Only the play phase: intro, countdown, result, best score, sharing are handled by `TestRunner` / `GameFrame`.
-     A run that can't produce a score calls `onFinish({ score: 0, failed: 'why' })` — shown, never saved.
+     A run without real play (no answers / clicks at all) calls `onFinish({ score: 0, failed: 'why' })` — shown, never saved;
+     a run that was played but failed early saves its honest result (e.g. 0). See "When a run gets no score" in the spec.
      Build it from the shared pieces in `components/game/`: pick one layout (`FullLayout`, `PromptLayout`,
      `SquareLayout`, `SquarePanelLayout`), render exactly one `<GameInfo left middle right timer>` for the info
      row, and use `AnswerButtons`, `TileGrid`, `RoundResult`, `Lives`, `useAnswerFlash`, `useLater`,
@@ -53,11 +55,18 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 5. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
 
 ## Subagents (`.claude/agents/`)
-- `scoring-reviewer` — after adding a test or changing scoring / rules / round generation: hunts loopholes,
-  unfair random setups and score-changing edits (no `scoreVersion` bumps while in development); proves findings with unit tests, never edits app code.
-- `play-tester` — after building or changing a test and before merging into `main`: plays it on localhost
-  (desktop, dark theme) and reports bugs; never edits files.
-- Both report back; the main session decides and applies fixes. They can run in parallel.
+Four reviewers, each answering one question with its own kind of evidence. They report back and never edit app code;
+the main session decides and applies fixes. They can run in parallel.
+- `play-tester` — *Does it work when played?* Plays full runs on localhost (desktop, dark theme) and reports bugs with
+  repro steps. After building or changing a test, and before merging into `main`.
+- `scoring-reviewer` — *Is the score fair and robust?* Loopholes, unfair random setups, luck vs. skill (same player,
+  similar score every run), edge cases, score-changing edits (no `scoreVersion` bumps while in development); proves
+  findings with unit tests. After adding a test or changing scoring / round generation.
+- `test-auditor` — *Does each test say what it does, and does its score mean something?* Name, icon, tagline, rules,
+  category, and the closest research paradigm (sources, reference values). After adding or reworking a test, or a sweep.
+- `consistency-reviewer` — *Do the tests and pages match each other?* Rules wording, scoring style, run flow, results,
+  Space / Enter, components, colors, test length, score ties; intended, test-defining differences are fine. After
+  adding or changing a test or shared screen, or a site sweep.
 
 ## Conventions
 - **While in development: don't bump `scoreVersion`** when reworking a test; old scores don't matter yet.

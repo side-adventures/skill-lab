@@ -4,7 +4,8 @@ import { Button } from './Button'
 import { RulesContent } from './RulesContent'
 
 /**
- * The rules during a game, centered over the page. The game keeps running underneath.
+ * The rules during a game, centered over the page. The game keeps running underneath, but its keys
+ * (Space, Enter, digits, answer keys) don't reach it while the rules are open.
  * Closes with ✕, a click outside, or Escape.
  */
 export function RulesOverlay({ test, onClose, onRestart, onBackToStart }: {
@@ -18,6 +19,16 @@ export function RulesOverlay({ test, onClose, onRestart, onBackToStart }: {
       if (e.key === 'Escape') {
         e.stopPropagation()
         onClose()
+        return
+      }
+      if (e.key === 'Tab') return // move between the overlay's buttons
+      // Window capture runs before every game listener: keep game keys from reaching the game.
+      e.stopImmediatePropagation()
+      // That also stops Enter / Space reaching a focused overlay button, so press it here.
+      const btn = (e.target as Element | null)?.closest?.('[role="dialog"] button')
+      if (btn instanceof HTMLButtonElement && (e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+        e.preventDefault()
+        btn.click()
       }
     }
     window.addEventListener('keydown', onKey, true)

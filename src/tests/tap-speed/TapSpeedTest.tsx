@@ -27,8 +27,8 @@ export default function TapSpeedTest({ onFinish }: TestComponentProps) {
       />
       <FullLayout
         // pointerdown per finger: multi-finger tapping is allowed
-        onPointerDown={() => {
-          if (!live) return
+        onPointerDown={(e) => {
+          if (!live || e.button !== 0) return // left button only (touch counts as button 0)
           const now = performance.now()
           if (!times.current.length) firstAt.current = now
           times.current.push(now - firstAt.current)

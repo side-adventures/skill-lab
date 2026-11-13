@@ -9,10 +9,11 @@ export default function NumberOrderTest({ onFinish }: TestComponentProps) {
       tilesFor={numberOrderTiles}
       memorizeMsFor={() => NUMBER_ORDER_MS}
       roundLabel={(r) => `Round ${r + 1}`}
+      roundUnit={(_, tiles) => `${tiles} tiles`}
+      scoreSoFar={(cleared) => ({ value: String(cleared ? numberOrderTiles(cleared - 1) : 0), unit: 'tiles' })}
       result={(cleared, { memorizeUsed, tileMs }) => ({
+        // Not even the first round: an honest 0 (you played, but completed no round).
         score: cleared ? numberOrderTiles(cleared - 1) : 0,
-        // Not even the first round: no score (shown, not saved), like Flash Order.
-        ...(!cleared && { failed: 'Not even the first round — try again!' }),
         details: {
           stats: [
             { label: 'Rounds cleared', value: String(cleared) },

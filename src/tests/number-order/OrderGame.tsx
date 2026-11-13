@@ -23,6 +23,10 @@ interface Props {
   /** Builds the result from the number of cleared rounds when a wrong tile is tapped. */
   result: (clearedRounds: number, stats: OrderRunStats) => TestResult
   roundLabel: (round: number) => string
+  /** Small text next to the round on the left: "6 tiles", "810 ms flash". */
+  roundUnit: (round: number, tiles: number) => string
+  /** The score so far (after this many cleared rounds), shown on the right like in the other tests. */
+  scoreSoFar: (clearedRounds: number) => { value: string; unit?: string }
   onFinish: (r: TestResult) => void
 }
 
@@ -30,7 +34,7 @@ interface Props {
  * Shared game for Number Order and Flash Order: numbers 1..N appear on a grid,
  * hide after a timer (or when you tap "1"), then you tap them in order. One mistake ends it.
  */
-export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinish }: Props) {
+export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, roundUnit, scoreSoFar, onFinish }: Props) {
   const [round, setRound] = useState(0)
   const [cells, setCells] = useState(() => placeTiles(tilesFor(0)))
   const [phase, setPhase] = useState<Phase>('show')
@@ -92,9 +96,9 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, onFinis
   return (
     <>
       <GameInfo
-        left={<InfoValue value={roundLabel(round)} unit={`${cells.length} tiles`} />}
+        left={<InfoValue value={roundLabel(round)} unit={roundUnit(round, cells.length)} />}
         middle={<span className={phase === 'fail' ? 'text-rose-300' : ''}>{middle}</span>}
-        right={<InfoValue label="Time" value={(memorizeMs / 1000).toFixed(memorizeMs < 1000 ? 2 : 1)} unit="s" />}
+        right={<InfoValue label="Score" {...scoreSoFar(round)} />}
         timer={phase === 'show' ? showLeft / memorizeMs : undefined}
       />
       <SquareLayout aspect={COLS / ROWS}>

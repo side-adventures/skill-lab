@@ -60,7 +60,7 @@ export function clampToRange(angle: number, { from, span }: { from: number; span
   return rel - span < 360 - rel ? from + span : from
 }
 
-/** 100 points for a perfect answer, falling linearly to 0 at `tolerance` error. */
+/** 100 (%) for a perfect answer, falling linearly to 0 at `tolerance` error. */
 export const pointsFor = (error: number, tolerance: number) => Math.round(100 * Math.max(0, 1 - error / tolerance))
 
 const pct = (e: number) => `${(e * 100).toFixed(1)} % off`
@@ -289,15 +289,15 @@ const SHORT: Record<string, string> = {
 }
 const shortName = (t: Task) => SHORT[t.kind] ?? t.title
 
-/** Result screen stats: best and weakest task, average, and the points of each task. */
+/** Result screen stats: best and weakest task, and the accuracy of each task (in %, like the score). */
 export function resultDetails(results: { task: Task; ev: Evaluation }[]): ResultDetails {
   const byPoints = [...results].sort((a, b) => b.ev.points - a.ev.points)
   const best = byPoints[0], worst = byPoints[byPoints.length - 1]
   return {
     stats: [
-      { label: 'Best task', value: `${best.task.title} · ${best.ev.points}` },
-      { label: 'Weakest task', value: `${worst.task.title} · ${worst.ev.points}` },
+      { label: 'Best task', value: `${best.task.title} · ${best.ev.points} %` },
+      { label: 'Weakest task', value: `${worst.task.title} · ${worst.ev.points} %` },
     ],
-    chips: { title: 'Points per task', items: results.map((r) => ({ label: shortName(r.task), value: String(r.ev.points) })) },
+    chips: { title: 'Accuracy per task', items: results.map((r) => ({ label: shortName(r.task), value: `${r.ev.points} %` })) },
   }
 }

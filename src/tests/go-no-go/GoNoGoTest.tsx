@@ -24,9 +24,10 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
       const avg = s.rts.length ? Math.round(s.rts.reduce((a, b) => a + b, 0) / s.rts.length) : 0
       return onFinish({
         score: totalMs(s),
+        ...(s.rts.length + s.falseTaps === 0 && { failed: 'No clicks — try again!' }), // idle run: shown, not saved
         details: {
           stats: [
-            { label: 'Avg reaction', value: `${avg} ms` },
+            { label: 'Avg reaction', value: s.rts.length ? `${avg} ms` : '–' },
             ...(s.rts.length
               ? [
                   { label: 'Fastest', value: `${Math.round(Math.min(...s.rts))} ms` },
