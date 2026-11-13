@@ -12,4 +12,8 @@ describe('quick-count result stats (review)', () => {
     expect(stat(resultDetails(low), 'Biggest miss')).toBe('3 dots')
     expect(stat(resultDetails(low), 'Exact')).toBe('0 / 10')
   })
+  it('uses the singular for a miss of 1 dot', () => {
+    const one = [{ actual: 20, guess: 21 }, { actual: 30, guess: 30 }]
+    expect(stat(resultDetails(one), 'Biggest miss')).toBe('1 dot')
+  })
 })
