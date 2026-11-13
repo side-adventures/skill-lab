@@ -48,13 +48,13 @@ export const TESTS: TestDefinition[] = [
       'Each level adds one more tile, and the grid grows from 3×3 up to 7×7.',
     ],
     scoring: [
-      'The number of levels you clear.',
+      'The most tiles you remembered in one level: clearing level 1 (3 tiles) scores 3.',
       'One wrong click fails the level: you lose one of your 3 lives and retry with a new pattern. Out of lives ends the test.',
     ],
     durationHint: '~2 min',
-    scoreLabel: 'Levels cleared',
+    scoreLabel: 'Most tiles',
     higherIsBetter: true,
-    formatScore: (s) => count(s, 'level'),
+    formatScore: (s) => count(s, 'tile'),
     start: 'quick',
     layout: 'square',
     Component: lazyTest(() => import('./visual-memory/VisualMemoryTest')),
@@ -334,13 +334,14 @@ export const TESTS: TestDefinition[] = [
     tagline: 'Click on green, hold back on red.',
     skill: 'impulse control',
     howTo: [
-      '30 circles appear one after another.',
-      'Click as fast as you can when a circle is green.',
-      'Do not click when it is red, or before a circle appears.',
+      '30 shapes appear one after another, 1 in 5 of them red.',
+      'Click as fast as you can on a green circle.',
+      'Do not click on a red square, or before a shape appears.',
     ],
     scoring: [
       'Your total reaction time for the green circles.',
-      'A missed green counts as 0.8 s, and a click on red or before a circle appears adds 0.8 s.',
+      'A missed green counts as 0.8 s.',
+      'Each wrong click (on red, or before a shape appears) costs more than the last: 0.6 s, then 0.9 s, 1.2 s, and so on.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Total time',
@@ -348,7 +349,7 @@ export const TESTS: TestDefinition[] = [
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
     start: 'countdown',
     layout: 'full',
-    scoreVersion: 3, // v2: 30 trials (24/6) · v3: 21 green / 9 red
+    scoreVersion: 3, // v2: 30 trials (24/6) · v3: 21 green / 9 red · back to 24/6 in development (no bump)
     Component: lazyTest(() => import('./go-no-go/GoNoGoTest')),
   },
   {

@@ -13,7 +13,8 @@ type Phase = 'pause' | 'show' | 'input' | 'cleared' | 'failed'
 export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
   const [level, setLevel] = useState(1)
   const [lives, setLives] = useState(LIVES)
-  const [cleared, setCleared] = useState(0)
+  const [cleared, setCleared] = useState(0) // last level cleared
+  const score = cleared ? tileCount(cleared) : 0 // most tiles remembered in one level
   const [targets, setTargets] = useState(() => new Set(pickTiles(1)))
   const [found, setFound] = useState<Set<number>>(new Set())
   const [wrong, setWrong] = useState<number | null>(null)
@@ -40,10 +41,10 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
         const times = levelTimes.current
         const size = gridSize(level)
         onFinish({
-          score: cleared,
+          score,
           details: {
             stats: [
-              { label: 'Most tiles', value: String(cleared ? tileCount(cleared) : 0) },
+              { label: 'Levels cleared', value: String(cleared) },
               { label: 'Last grid', value: `${size}×${size}` },
               ...(times.length ? [{ label: 'Avg per level', value: fmtMs(times.reduce((s, t) => s + t.ms, 0) / times.length) }] : []),
             ],
@@ -93,7 +94,7 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
       <GameInfo
         left={<><InfoValue value={`Level ${level}`} /><Lives left={lives} total={LIVES} /></>}
         middle={middle[phase]}
-        right={<InfoValue label="Score" value={cleared} />}
+        right={<InfoValue label="Score" value={score} unit="tiles" />}
         timer={phase === 'show' ? showLeft / SHOW_MS : undefined}
       />
       <SquareLayout>
