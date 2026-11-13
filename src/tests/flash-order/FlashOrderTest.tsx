@@ -9,6 +9,8 @@ export default function FlashOrderTest({ onFinish }: TestComponentProps) {
       tilesFor={() => START_TILES}
       memorizeMsFor={flashOrderMs}
       roundLabel={(r) => `Round ${r + 1}`}
+      roundUnit={(r) => `${flashOrderMs(r)} ms flash`}
+      scoreSoFar={(cleared) => (cleared ? { value: String(flashOrderMs(cleared - 1)), unit: 'ms' } : { value: '–' })}
       result={(cleared, { tileMs }) =>
         cleared
           ? {
