@@ -1,6 +1,7 @@
 # Skill Lab — notes for Claude
 
 Static skill-test website (reaction, memory, focus…). Product spec: `docs/SPEC.md` — keep it in sync when scoring or rules change.
+Ideas and TODOs for later: `docs/BACKLOG.md`.
 
 ## Hard rules
 - **Frontend only.** No backend, no network/API calls. Deployed to GitHub Pages from `dist/`.
