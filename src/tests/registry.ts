@@ -113,7 +113,7 @@ export const TESTS: TestDefinition[] = [
     tagline: 'How many dots did you just see?',
     skill: 'estimating amounts at a glance',
     howTo: [
-      'Between 5 and 60 dots flash for just over half a second.',
+      'Between 5 and 60 dots flash for just over half a second, most often around 15 to 20.',
       'There is no time to count: type how many you think you saw.',
       '10 rounds.',
     ],
