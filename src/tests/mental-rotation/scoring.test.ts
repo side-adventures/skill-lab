@@ -29,3 +29,15 @@ describe('mental rotation', () => {
     }
   })
 })
+
+describe('turn size', () => {
+  it('measures the short way round and splits at 90°', async () => {
+    const { turnOf, isBigTurn } = await import('./scoring')
+    expect(turnOf({ leftAngle: 0, rightAngle: 45 })).toBe(45)
+    expect(turnOf({ leftAngle: 30, rightAngle: 0 })).toBe(30)
+    expect(turnOf({ leftAngle: 300, rightAngle: 30 })).toBe(90) // 90° across 0
+    expect(turnOf({ leftAngle: 0, rightAngle: 270 })).toBe(90)
+    expect(turnOf({ leftAngle: 0, rightAngle: 180 })).toBe(180)
+    expect([90, 105, 180, 255, 270].map((r) => isBigTurn({ leftAngle: 0, rightAngle: r }))).toEqual([false, true, true, true, false])
+  })
+})

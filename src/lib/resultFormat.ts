@@ -20,7 +20,7 @@ export function tendency(meanSigned: number, unit: string, below: string, above:
   return `${sign(meanSigned)}${Math.abs(meanSigned).toFixed(digits)}${unit} ${meanSigned < 0 ? below : above}`
 }
 
-/** One answer in a timed answer test (Stroop, Mental Math, Mental Rotation, Word Memory). */
+/** One answer in a timed answer test (Stroop, Quick Maths, Mental Rotation, Word Memory). */
 export interface TimedAnswer { ms: number; correct: boolean }
 
 /** Correct · Wrong · Accuracy · Avg per answer · Fastest answer — the usual stats of an answer test. */
@@ -37,4 +37,10 @@ export function answerStats(answers: TimedAnswer[]): ResultStat[] {
   )
   if (correct.length) stats.push({ label: 'Fastest answer', value: fmtMs(Math.min(...correct.map((a) => a.ms))) })
   return stats
+}
+
+/** How much slower the harder condition was (Stroop, Mental Rotation): "92 ms slower", "5 ms faster", "No difference". */
+export const slowdown = (ms: number) => {
+  const r = Math.round(ms)
+  return r === 0 ? 'No difference' : `${Math.abs(r)} ms ${r > 0 ? 'slower' : 'faster'}`
 }
