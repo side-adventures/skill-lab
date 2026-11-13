@@ -37,32 +37,11 @@ export function makeBlock(n: number, rand: Rand = Math.random): number[] {
 
 export const isMatch = (seq: number[], i: number, n: number) => i >= n && seq[i] === seq[i - n]
 
-/**
- * Balanced accuracy over scored items (index ≥ n): the average of
- * "matches caught" and "non-matches correctly left alone". Never tapping = 50 %.
- */
-export function blockAccuracy(seq: number[], tapped: boolean[], n: number) {
-  let hits = 0, matches = 0, rejections = 0, nonMatches = 0
-  for (let i = n; i < seq.length; i++) {
-    const tap = Boolean(tapped[i]) // untapped items are missing from the array
-    if (isMatch(seq, i, n)) {
-      matches++
-      if (tap) hits++
-    } else {
-      nonMatches++
-      if (!tap) rejections++
-    }
-  }
-  const hitRate = matches ? hits / matches : 1
-  const rejectRate = nonMatches ? rejections / nonMatches : 1
-  return (hitRate + rejectRate) / 2
-}
-
 /** Counts of one block for the result table: hits (of all matches), wrong clicks, missed matches. */
 export function blockCounts(seq: number[], tapped: boolean[], n: number) {
   let matches = 0, hits = 0, wrong = 0
   seq.forEach((_, i) => {
-    if (i < n) return // the first n items can't be matches and aren't scored (same as blockAccuracy)
+    if (i < n) return // the first n items can't be matches: a click there isn't counted
     const m = isMatch(seq, i, n)
     if (m) matches++
     if (m && tapped[i]) hits++
@@ -70,9 +49,6 @@ export function blockCounts(seq: number[], tapped: boolean[], n: number) {
   })
   return { matches, hits, wrong, missed: matches - hits }
 }
-
-/** Whole percent (accuracy shown and used in the score), rounded down so 79.6 % never shows as 80 % (+ε against float noise). */
-export const accuracyPct = (acc: number) => Math.floor(acc * 100 + 1e-9)
 
 /** A block with at most this many mistakes (missed matches + wrong clicks) is passed: move up a level. */
 export const FREE_MISTAKES = 2
@@ -93,15 +69,20 @@ export function afterBlock(mistakes: number, livesLeft: number) {
 }
 
 /**
- * Score = 100 × the level the run ended at + your accuracy in that last block:
- * ending at 4-back with 65 % gives 465, ending at the first level (2-back) with 65 % gives 265.
- * Accuracy is below 100 %, so reaching a higher level always beats any accuracy on a lower one.
+ * Lives at the end of the run: the lives you had minus everything the blocks cost, so 0 or below
+ * (a 6-mistake crash with 1 life left ends at −3).
  */
-export const runScore = (endN: number, endAcc: number) => endN * 100 + Math.min(99, accuracyPct(endAcc))
+export const livesAtEnd = (blocks: Pick<BlockResult, 'lost'>[]) => LIVES - blocks.reduce((sum, b) => sum + b.lost, 0)
+
+/**
+ * Score = 100 × the level the run ended at + a bonus for how close you were to surviving it:
+ * 80 when you ended at exactly 0 lives, 20 less for every life below 0 (−1 → 60 … −4 or lower → 0).
+ * Ending at 4-back at exactly 0 lives gives 480; the bonus never reaches the next hundred.
+ */
+export const runScore = (endN: number, endLives: number) => endN * 100 + Math.max(0, 80 + 20 * Math.min(0, endLives))
 
 export interface BlockResult extends ReturnType<typeof blockCounts> {
   n: number
-  acc: number
   /** Any MATCH click in the block, also on the first n items. */
   clicked: boolean
   /** Missed matches + wrong clicks. */
@@ -116,7 +97,8 @@ export function runResult(blocks: BlockResult[]): TestResult {
   const details: ResultDetails = {
     stats: [
       { label: 'Highest level passed', value: passed.length ? `${Math.max(...passed.map((b) => b.n))}-back` : 'None' },
-      { label: 'Ended at', value: `${end.n}-back · ${accuracyPct(end.acc)} %` },
+      { label: 'Ended at', value: `${end.n}-back` },
+      { label: 'Lives at the end', value: String(livesAtEnd(blocks)).replace('-', '−') },
     ],
     extra: {
       kind: 'table',
@@ -128,5 +110,5 @@ export function runResult(blocks: BlockResult[]): TestResult {
     },
   }
   if (!blocks.some((b) => b.clicked)) return { score: 0, failed: 'No clicks — try again!', details }
-  return { score: runScore(end.n, end.acc), details }
+  return { score: runScore(end.n, livesAtEnd(blocks)), details }
 }

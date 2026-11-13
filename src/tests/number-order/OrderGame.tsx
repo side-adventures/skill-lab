@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { SquareLayout } from '../../components/game/layouts'
 import { TileGrid } from '../../components/game/TileGrid'
 import { END_MOMENT_MS } from '../../lib/game'
@@ -15,12 +15,16 @@ export interface OrderRunStats {
   memorizeUsed: { round: number; ms: number }[]
   /** Time between consecutive correct clicks (from 2 on), over all rounds. */
   tileMs: number[]
+  /** The round of every wrong tile (each cost a life). */
+  misses: number[]
 }
 
 interface Props {
+  /** Lives for the whole run: a wrong tile costs one, and the same round is played again with a new layout. */
+  lives: number
   tilesFor: (round: number) => number
   memorizeMsFor: (round: number) => number
-  /** Builds the result from the number of cleared rounds when a wrong tile is tapped. */
+  /** Builds the result from the number of cleared rounds when the last life is lost. */
   result: (clearedRounds: number, stats: OrderRunStats) => TestResult
   roundLabel: (round: number) => string
   /** Small text next to the round on the left: "6 tiles", "810 ms flash". */
@@ -32,31 +36,35 @@ interface Props {
 
 /**
  * Shared game for Number Order and Flash Order: numbers 1..N appear on a grid,
- * hide after a timer (or when you tap "1"), then you tap them in order. One mistake ends it.
+ * hide after a timer (or when you tap "1"), then you tap them in order. A mistake costs a life.
  */
-export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, roundUnit, scoreSoFar, onFinish }: Props) {
+export function OrderGame({ lives: startLives, tilesFor, memorizeMsFor, result, roundLabel, roundUnit, scoreSoFar, onFinish }: Props) {
   const [round, setRound] = useState(0)
   const [cells, setCells] = useState(() => placeTiles(tilesFor(0)))
   const [phase, setPhase] = useState<Phase>('show')
   const [next, setNext] = useState(0) // index of the number to tap next
   const [wrongCell, setWrongCell] = useState<number | null>(null)
+  const [lives, setLives] = useState(startLives)
   const memorizeMs = memorizeMsFor(round)
   const showAt = useRef(0)
   const lastTapAt = useRef(0)
-  const stats = useRef<OrderRunStats>({ memorizeUsed: [], tileMs: [] })
+  const stats = useRef<OrderRunStats>({ memorizeUsed: [], tileMs: [], misses: [] })
   const endMemorize = () => stats.current.memorizeUsed.push({ round, ms: performance.now() - showAt.current })
 
   useEffect(() => {
     let t: number | undefined
     if (phase === 'show') showAt.current = performance.now()
-    if (phase === 'success')
-      t = window.setTimeout(() => {
-        setRound(round + 1)
-        setCells(placeTiles(tilesFor(round + 1)))
-        setNext(0)
-        setPhase('show')
-      }, 700)
-    if (phase === 'fail') t = window.setTimeout(() => onFinish(result(round, stats.current)), END_MOMENT_MS)
+    /** Play this round (new layout). */
+    const play = (r: number) => {
+      setRound(r)
+      setCells(placeTiles(tilesFor(r)))
+      setNext(0)
+      setWrongCell(null)
+      setPhase('show')
+    }
+    if (phase === 'success') t = window.setTimeout(() => play(round + 1), 700)
+    if (phase === 'fail')
+      t = window.setTimeout(() => (lives > 0 ? play(round) : onFinish(result(round, stats.current))), END_MOMENT_MS)
     return () => window.clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
@@ -73,7 +81,9 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, roundUn
     if (index === -1) return // empty cell: ignore
     if (phase === 'show' && index !== 0) return // while visible, only "1" starts the answer
     if (index !== next) {
+      stats.current.misses.push(round)
       setWrongCell(cell)
+      setLives(lives - 1)
       return setPhase('fail')
     }
     const now = performance.now()
@@ -91,19 +101,20 @@ export function OrderGame({ tilesFor, memorizeMsFor, result, roundLabel, roundUn
     phase === 'show' ? 'Memorize · click 1 when ready'
     : phase === 'hidden' ? `Click ${next + 1} next`
     : phase === 'success' ? 'Correct'
-    : 'Wrong tile'
+    : lives > 0 ? 'Wrong tile · try this round again'
+    : 'Out of lives'
 
   return (
     <>
       <GameInfo
-        left={<InfoValue value={roundLabel(round)} unit={roundUnit(round, cells.length)} />}
+        left={<><InfoValue value={roundLabel(round)} unit={roundUnit(round, cells.length)} /><Lives left={lives} total={startLives} /></>}
         middle={<span className={phase === 'fail' ? 'text-rose-300' : ''}>{middle}</span>}
         right={<InfoValue label="Score" {...scoreSoFar(round)} />}
         timer={phase === 'show' ? showLeft / memorizeMs : undefined}
       />
       <SquareLayout aspect={COLS / ROWS}>
         <TileGrid
-          key={round}
+          key={`${round}-${lives}`}
           cols={COLS}
           rows={ROWS}
           gap="gap-1.5"
