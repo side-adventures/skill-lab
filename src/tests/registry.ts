@@ -313,9 +313,9 @@ export const TESTS: TestDefinition[] = [
       'Leave it alone when it is not.',
     ],
     scoring: [
-      'Each block needs 80 % accuracy, counting both the matches you caught and the non-matches you left alone.',
-      'Pass a block to move up to 3 steps back, then 4, and so on, until you fail one.',
-      'Your score is 100 × the last level you passed, plus your accuracy in the block you failed: failing 4-back at 65 % gives 365.',
+      'Up to 2 mistakes in a block (a missed match or a wrong click): you move up to 3 steps back, then 4, and so on.',
+      'Every mistake beyond 2 costs one of your 4 lives, and you play the level again. Out of lives ends the test.',
+      'Your score is the level you reached × 100, plus your accuracy there (matches caught and non-matches left alone): ending at 4-back with 65 % gives 465.',
     ],
     durationHint: '~3 min',
     scoreLabel: 'Points (level × 100 + accuracy)',

@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnswerButtons } from '../../components/game/AnswerButtons'
-import { GameInfo, InfoValue } from '../../components/game/GameInfo'
+import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { TileGrid } from '../../components/game/TileGrid'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { GRID, ITEM_MS, LIT_MS, PASS_ACCURACY, START_N, accuracyPct, blockAccuracy, blockCounts, isMatch, makeBlock, runResult, type BlockResult } from './scoring'
+import { GRID, ITEM_MS, LIT_MS, LIVES, START_N, afterBlock, blockAccuracy, blockCounts, isMatch, makeBlock, runResult, type BlockResult } from './scoring'
 
-type Phase = 'brief' | 'running' | 'passed'
+/** 'between': the round result after a block (passed → next level, or lives lost → same level again). */
+type Phase = 'running' | 'between'
 
 export default function NBackTest({ onFinish }: TestComponentProps) {
   const [n, setN] = useState(START_N)
+  const [lives, setLives] = useState(LIVES)
   const [phase, setPhase] = useState<Phase>('running')
   const [seq, setSeq] = useState<number[]>(() => makeBlock(START_N))
   const [index, setIndex] = useState(-1)
@@ -39,10 +41,14 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
       timers.push(window.setTimeout(() => setLit(false), i * ITEM_MS + 600 + LIT_MS))
     })
     timers.push(window.setTimeout(() => {
-      const acc = blockAccuracy(seq, tapped.current, n)
-      results.current.push({ n, acc, clicked: tapped.current.some(Boolean), ...blockCounts(seq, tapped.current, n) })
-      if (acc >= PASS_ACCURACY) return setPhase('passed')
-      onFinish(runResult(results.current))
+      const counts = blockCounts(seq, tapped.current, n)
+      const mistakes = counts.missed + counts.wrong
+      const step = afterBlock(mistakes, lives)
+      results.current.push({ n, acc: blockAccuracy(seq, tapped.current, n), clicked: tapped.current.some(Boolean), mistakes, lost: step.lost, ...counts })
+      if (step.over) return onFinish(runResult(results.current))
+      setFeedback(null) // the last item's message doesn't belong to the round result
+      setLives(step.livesLeft)
+      setPhase('between')
     }, seq.length * ITEM_MS + 600))
     return () => timers.forEach((t) => window.clearTimeout(t))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,7 +77,7 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={phase === 'running' && <InfoValue value={`Item ${Math.max(1, index + 1)}`} of={seq.length} />}
+        left={<>{phase === 'running' && <InfoValue value={`Item ${Math.max(1, index + 1)}`} of={seq.length} />}<Lives left={lives} total={LIVES} /></>}
         middle={feedback ? <span className={feedback === 'hit' ? 'text-emerald-300' : 'text-rose-300'}>{fb[feedback]}</span> : ''}
       />
       <SquarePanelLayout
@@ -83,13 +89,19 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
           />
         }
         panel={
-          phase === 'passed' && last ? (
+          phase === 'between' && last ? (
             <div className="grid flex-1 place-items-center">
               <RoundResult
-                value={accuracyPct(last.acc)}
-                unit="%"
-                line={`${last.n}-back passed · next: ${last.n + 1}-back`}
-                onContinue={() => startBlock(n + 1)}
+                value={last.mistakes}
+                unit={last.mistakes === 1 ? 'mistake' : 'mistakes'}
+                line={
+                  last.lost === 0 ? (
+                    `${last.n}-back passed · next: ${last.n + 1}-back`
+                  ) : (
+                    <span className="text-rose-300">−{last.lost} {last.lost === 1 ? 'life' : 'lives'} · {last.n}-back again</span>
+                  )
+                }
+                onContinue={() => startBlock(last.lost === 0 ? n + 1 : n)}
               />
             </div>
           ) : (
