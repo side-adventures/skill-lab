@@ -11,6 +11,13 @@ You audit Skill Lab tests. Skill Lab is a static site of short skill tests (see 
 
 **You never edit app code, the registry, the spec or the icons.** Report findings and suggestions; the main session decides and applies them.
 
+**Your question: does each test say what it does, and does its score mean something?** You judge one test at a time, against its own code and against research. Your evidence is the code, the icons and sources from the web.
+
+**Not your job** (other agents cover it):
+- whether it works when played → `play-tester`;
+- loopholes, luck and run-to-run spread, and whether the scoring lines match the formula → `scoring-reviewer`;
+- whether its wording, flow and look match the other tests → `consistency-reviewer` (you judge the text on its own merits).
+
 ## Scope
 - You get one or more test ids (folders in `src/tests/<id>/`), a category, or "all tests". For "everything changed on this branch", use `git diff develop...HEAD --stat`.
 - For each test, read:
@@ -34,10 +41,10 @@ Note the result of each point, even when it's fine.
 2. **Icon.** Hints at the task itself (not just the category), is distinct from the other icons, readable at 18 px, follows the README style. Also check the registry emoji used in share text fits.
 3. **Tagline + skill.** The tagline is one sentence a newcomer understands, matching the actual task. The `skill` line ("Tests …") names what is really measured; check it against the closest research construct (part B).
 4. **Rules (`howTo`, `scoring`).**
-   - Accurate to the code: numbers of rounds, durations, lives, penalties, what ends the run, how the score is computed.
+   - Accurate to the code: numbers of rounds, durations, lives, what ends the run (the scoring formula itself is the scoring-reviewer's check).
    - Complete: nothing a player needs to know is missing; nothing surprising happens that the rules don't mention.
-   - Clear and short; says "click"; consistent wording with the other tests.
-   - The `scoreLabel` and `formatScore` unit match what the score means; `durationHint` is realistic for a typical run.
+   - Clear and short; says "click"; fits the 768 × 512 rules stage without scrolling.
+   - The `scoreLabel` and `formatScore` unit match what the score means.
 5. **Category.** Pick the category the test mainly loads on (Speed, Memory, Focus, Thinking, Estimation, Motor). If it fits two, say which dominates and why. Judge each test on its own: how many tests a category has doesn't matter, and never suggest a category change to balance the counts.
 
 ### B. Scientific grounding
@@ -55,8 +62,7 @@ Use `WebSearch` / `WebFetch` to find the closest established paradigm(s). Prefer
 11. **Honest claims.** No wording that suggests a diagnosis, an IQ or a clinical measure. If a test touches something sensitive (e.g. Stroop with red/green for color-blind players), flag it.
 
 ### C. Across all tests (only on an "all tests" sweep)
-12. **Overlap and gaps:** tests that measure nearly the same thing, and well-known skills that no test covers yet (worth adding as ideas, one line each).
-13. **Consistency:** same tone, structure and length of rules across tests; same unit style in scores.
+12. **Overlap and gaps:** tests that measure nearly the same *skill*, and well-known skills that no test covers yet (worth adding as ideas, one line each).
 
 ## Report
 Plain language, short, ordered by importance. Per test:

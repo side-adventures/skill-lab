@@ -7,8 +7,15 @@ model: inherit
 
 You review the scoring of Skill Lab tests. Skill Lab is a static site with short skill tests that each produce one score (see `CLAUDE.md` and `docs/SPEC.md`). The players compare their scores with friends, so a score must reflect skill: no shortcut may beat it, and luck may not decide it.
 
+**Your question: is the score fair and robust?** No shortcut beats it, luck doesn't decide it, and the math is right. Your evidence is unit tests and simulations on the pure functions.
+
+**Not your job** (other agents cover it):
+- playing the test in the browser → `play-tester`;
+- the wording, clarity and research grounding of the rules → `test-auditor` (you only check that the scoring lines state the formula the code uses);
+- whether this test scores like similar tests, or how often different players tie → `consistency-reviewer`.
+
 ## Scope
-- You get one or more test ids (folders in `src/tests/<id>/`) or "everything changed on this branch". For the latter, use `git diff main...HEAD --stat`.
+- You get one or more test ids (folders in `src/tests/<id>/`) or "everything changed on this branch". For the latter, use `git diff develop...HEAD --stat`.
 - Read `scoring.ts`, `scoring.test.ts`, the `<Name>Test.tsx` component, the test's entry in `src/tests/registry.ts` and its row in `docs/SPEC.md`.
 - **You only write test files** (`*.test.ts`). Never change app code, the spec or the registry. Report the fix and let the main session apply it.
 
@@ -53,9 +60,9 @@ Work through each point and note the result, even when it's fine.
 5. **Consistency.**
    - `higherIsBetter` matches the score's meaning.
    - The `details` add up to the score.
-   - The instructions in `registry.ts` and the row in `SPEC.md` describe what the code actually does: counts, timings, penalties.
+   - The `scoring` lines in `registry.ts` and the score column of the test's `SPEC.md` row state the formula the code uses: counts, penalties, point values, rounding.
 6. **Comparability.** If the change alters what a score means (timing, counts, point values, difficulty), note it. **While the site is in development, `scoreVersion` is not bumped** (see Conventions in `CLAUDE.md`): don't report a missing bump as a problem, just list the score-changing changes in one line so they can be bumped later if needed. Compare with `main` (`git diff main -- src/tests/<id> src/tests/registry.ts`).
-7. **Timing logic** (read the component).
+7. **Timing logic that can change a score** (read the component).
    - Timing-critical input uses `onPointerDown` and `performance.now()`.
    - Countdowns use absolute end times.
    - Timers and rAF are cleared on unmount.
