@@ -60,6 +60,9 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 - `test-auditor` — after adding or reworking a test, or as a sweep over all tests: checks that name, icon, tagline,
   rules and category fit what the test really does, and compares setup and score with research paradigms (sources,
   reference values, reliability); never edits app code.
+- `consistency-reviewer` — after adding or changing a test or shared screen, or as a site sweep: checks that familiar
+  elements look and work the same (rules wording, scoring, run flow, results, Space / Enter, components, colors), tests
+  stay short and scores don't tie; deliberate, test-defining differences are fine; never edits app code.
 - All report back; the main session decides and applies fixes. They can run in parallel.
 
 ## Conventions
