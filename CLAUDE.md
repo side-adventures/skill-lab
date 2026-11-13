@@ -54,7 +54,7 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 
 ## Subagents (`.claude/agents/`)
 - `scoring-reviewer` — after adding a test or changing scoring / rules / round generation: hunts loopholes,
-  unfair random setups and score-changing edits (no `scoreVersion` bumps while in development); proves findings with unit tests, never edits app code.
+  unfair random setups, luck vs. skill (does the same player score about the same every run) and score-changing edits (no `scoreVersion` bumps while in development); proves findings with unit tests, never edits app code.
 - `play-tester` — after building or changing a test and before merging into `main`: plays it on localhost
   (desktop, dark theme) and reports bugs; never edits files.
 - `test-auditor` — after adding or reworking a test, or as a sweep over all tests: checks that name, icon, tagline,

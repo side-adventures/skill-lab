@@ -37,11 +37,12 @@ Note the result of each point, even when it's fine.
 
 ### 2. Scoring
 - Similar mechanics are scored the same way: answer tests with correct − wrong (`correctMinusWrong`), span tests by level reached, timed tests by average time, etc. A different rule needs a reason tied to the test.
+- Similar tests handle mistakes alike: lives, a retry, or the run ends at the first slip. A different rule needs a reason tied to the test.
 - Same handling of edge cases: a run with no meaningful result ends with `failed: '…'` ("No score"), never a fake 0; first-round fail treated alike across span / order tests.
 - `higherIsBetter`, `scoreLabel` and the result stats follow the same conventions.
 
 ### 3. Score spread (ties)
-Scores should spread out across players, so a large share of people don't end on the exact same score.
+Scores should spread out across players, so a large share of people don't end on the exact same score. (This is about different players tying. Whether one player's score swings by luck from run to run is the scoring-reviewer's "Luck vs. skill" check.)
 - Look at the score's **granularity and realistic range**: e.g. "levels cleared" with typical players in 6–9 means few distinct values and many ties; an average in ms has many.
 - Where ties look likely, estimate them: write a throwaway Vitest file `src/tests/<id>/spread.review.test.ts` that simulates a plausible population of players (skill drawn from a spread, plus noise) through the pure scoring functions and prints the share of the most common score. Run with `npx vitest run src/tests/<id>` from the project folder (never `--root /`). Say these files are throwaway.
 - Suggest the smallest fix that keeps the test fun: a tie-break folded into the score (time, accuracy), finer units, partial credit for the failed level. Note that it changes scores (no `scoreVersion` bump while in development).

@@ -47,7 +47,7 @@ Use `WebSearch` / `WebFetch` to find the closest established paradigm(s). Prefer
 7. **Setup vs. research.** Compare: stimulus type, timing (exposure, inter-stimulus interval, random delays), number of trials, difficulty progression (staircase / span), what's counted. List each difference and whether it matters for what the score means, or is fine for fun.
 8. **Is the score meaningful?**
    - Does the score capture the construct, or mostly something else (mouse skill, reading speed, luck, screen/input latency, knowing the trick)?
-   - **Reliability:** are there enough trials for a stable score? Rough guidance: a span test needs repeated trials per level; an average of 5 reaction times is noisy. Estimate how much the score would vary run to run, and suggest the smallest change that helps without killing the fun.
+   - **Reliability:** compare the number of trials with what research uses for a stable score (e.g. a span test needs repeated trials per level; an average of 5 reaction times is noisy). Give the research view only; measuring run-to-run spread with simulations is the scoring-reviewer's job ("Luck vs. skill"), so recommend running it when you suspect a problem.
    - **Ceiling / floor:** can good players max it out, or beginners score nothing?
    - **Practice effects:** does the score mostly rise by learning the test rather than the skill? That's fine, but worth knowing.
 9. **Reference values.** Find typical adult ranges or norms for the closest paradigm (e.g. median simple reaction time to a visual stimulus, typical digit span, typical Corsi span). Say whether they transfer to this setup (browser input latency, different timings) and propose rough bands ("typical", "very good") the result screen could show later. Mark them as approximate.

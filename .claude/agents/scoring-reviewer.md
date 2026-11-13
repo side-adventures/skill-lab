@@ -1,6 +1,6 @@
 ---
 name: scoring-reviewer
-description: Reviews a Skill Lab test's scoring and round generation for loopholes, unfair random setups and score-changing edits, and proves every finding with a unit test. Use after adding a test or changing scoring, rules or round generation (e.g. "have the scoring-reviewer check Go / No-Go").
+description: Reviews a Skill Lab test's scoring and round generation for loopholes, unfair random setups, luck vs. skill (same player, similar score every run) and score-changing edits, and proves every finding with a unit test. Use after adding a test or changing scoring, rules or round generation (e.g. "have the scoring-reviewer check Go / No-Go").
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 ---
@@ -31,17 +31,31 @@ Work through each point and note the result, even when it's fine.
    - Shapes or elements outside the visible area: mirrored shapes in Mental Rotation were once drawn off-center.
 
    Values are meant to be *semi-random*: spread over the range (see `spreadInts` in `src/lib/random.ts`), not purely random.
-3. **Edge cases.**
+3. **Luck vs. skill.** The same player should score about the same every run; skill, not luck, should decide the score.
+   - **Measure it:** simulate one fixed player 1000 times through the pure functions (a fixed skill level plus human-like noise: reaction spread, an occasional slip, a guess error that grows with difficulty) with a seeded `rand`. Report the spread as a range, e.g. "most runs (10th–90th percentile) between 340 and 380", and as a share of the gap between a weak and a strong player.
+   - **Name the sources** of the spread:
+     - random setup: easy vs. hard draws, lucky positions, short or long random delays;
+     - sudden death: one slip ends the run, so a single early mistake decides the score;
+     - too few rounds or trials to average out noise;
+     - timing luck: random waits or speeds that favour some runs.
+   - **Suggest the smallest fix** per source:
+     - semi-random values or fixed sets (`spreadInts`, overlapping groups like Quick Count's `DOT_GROUPS`);
+     - balanced draws, so every run gets the same mix of easy and hard;
+     - lives or one retry instead of sudden death;
+     - a few more rounds.
+     Keep runs short and fun: don't propose doubling the length for a small gain.
+   - When asked about several tests, rank them from luckiest to most stable.
+4. **Edge cases.**
    - Zero input, the first round failed, the maximum level reached.
    - Division by zero and NaN.
    - Rounding, and whether `formatScore` matches the stored number.
    - A run that can't produce a meaningful score must return `failed: '…'` (shown, never saved), not a fake 0.
-4. **Consistency.**
+5. **Consistency.**
    - `higherIsBetter` matches the score's meaning.
    - The `details` add up to the score.
    - The instructions in `registry.ts` and the row in `SPEC.md` describe what the code actually does: counts, timings, penalties.
-5. **Comparability.** If the change alters what a score means (timing, counts, point values, difficulty), note it. **While the site is in development, `scoreVersion` is not bumped** (see Conventions in `CLAUDE.md`): don't report a missing bump as a problem, just list the score-changing changes in one line so they can be bumped later if needed. Compare with `main` (`git diff main -- src/tests/<id> src/tests/registry.ts`).
-6. **Timing logic** (read the component).
+6. **Comparability.** If the change alters what a score means (timing, counts, point values, difficulty), note it. **While the site is in development, `scoreVersion` is not bumped** (see Conventions in `CLAUDE.md`): don't report a missing bump as a problem, just list the score-changing changes in one line so they can be bumped later if needed. Compare with `main` (`git diff main -- src/tests/<id> src/tests/registry.ts`).
+7. **Timing logic** (read the component).
    - Timing-critical input uses `onPointerDown` and `performance.now()`.
    - Countdowns use absolute end times.
    - Timers and rAF are cleared on unmount.
