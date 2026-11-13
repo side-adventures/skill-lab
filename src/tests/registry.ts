@@ -119,6 +119,7 @@ export const TESTS: TestDefinition[] = [
     ],
     scoring: [
       'Your average accuracy: how close your guesses were, in percent.',
+      'Too high and too low count the same: guessing half or double the real number both score about 31 %.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Average accuracy',
@@ -154,11 +155,11 @@ export const TESTS: TestDefinition[] = [
   },
   {
     id: 'steady-hand',
-    name: 'Steady Hand',
+    name: 'Circle Chase',
     icon: '🎯',
     category: 'Motor',
     tagline: 'Stay inside the drifting circle.',
-    skill: 'fine motor control',
+    skill: 'hand–eye tracking',
     howTo: [
       'Move your pointer into the circle to start.',
       'The circle drifts around, speeds up and shrinks. Keep your pointer inside it.',
@@ -211,7 +212,7 @@ export const TESTS: TestDefinition[] = [
     howTo: [
       'Tiles on a 3×3 grid light up one after another.',
       'Click them in the same order.',
-      'Every round, the sequence gets one step longer.',
+      'Every round, the sequence gets one step longer. From 8 steps on, it plays a bit faster.',
     ],
     scoring: [
       'The longest sequence you repeated correctly.',
@@ -328,7 +329,7 @@ export const TESTS: TestDefinition[] = [
     name: 'Go / No-Go',
     icon: '🚦',
     category: 'Focus',
-    tagline: 'Tap on green. Hold back on red.',
+    tagline: 'Click on green, hold back on red.',
     skill: 'impulse control',
     howTo: [
       '30 circles appear one after another.',
@@ -399,7 +400,7 @@ export const TESTS: TestDefinition[] = [
     id: 'stop-the-bar',
     name: 'Stop the Bar',
     icon: '🛑',
-    category: 'Speed',
+    category: 'Motor',
     tagline: 'Stop the moving bar right on the line.',
     skill: 'timing',
     howTo: [
@@ -478,11 +479,11 @@ export const TESTS: TestDefinition[] = [
       'After each task you see the exact solution.',
     ],
     scoring: [
-      'Each task gives up to 100 points, depending on how close you got.',
-      'Your score is the average over all 10 tasks.',
+      'Each task scores up to 100 %, depending on how close you got.',
+      'Your score is your average accuracy over all 10 tasks.',
     ],
     durationHint: '~3 min',
-    scoreLabel: 'Accuracy',
+    scoreLabel: 'Average accuracy',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
     start: 'quick',

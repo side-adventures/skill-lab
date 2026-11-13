@@ -3,7 +3,8 @@ import type { ResultDetails, TestResult } from '../types'
 
 export const GRID = 3
 export const START_N = 2
-export const ITEMS_BASE = 20
+/** Block length = 16 + N items (≈ 45 s at 2-back), keeping a strong player's run under ~3.5 min. */
+export const ITEMS_BASE = 16
 export const MATCH_RATE = 0.3
 export const PASS_ACCURACY = 0.8
 export const ITEM_MS = 2500

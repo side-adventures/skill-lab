@@ -29,6 +29,7 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
     const longest = all.length ? all.reduce((m, a) => (a.ms > m.ms ? a : m)) : undefined
     onFinish({
       score: correct,
+      ...(all.length === 0 && { failed: 'No answers — try again!' }), // idle run: shown, not saved
       details: {
         stats: [
           // Correct is the score itself, Fastest gets the problem below.

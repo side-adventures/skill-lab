@@ -43,6 +43,7 @@ export default function MentalRotationTest({ onFinish }: TestComponentProps) {
   const remaining = useCountdown(DURATION_MS, true, () =>
     onFinish({
       score: correctMinusWrong(correct, wrong),
+      ...(correct + wrong === 0 && { failed: 'No answers — try again!' }), // idle run: shown, not saved
       details: {
         stats: answerStats(answers.current),
         extra: {

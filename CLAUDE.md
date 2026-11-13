@@ -36,7 +36,8 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
    - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`;
      `details` is a `ResultDetails`: stats row, optional special block, optional chips — pick what's interesting for this test).
      Only the play phase: intro, countdown, result, best score, sharing are handled by `TestRunner` / `GameFrame`.
-     A run that can't produce a score calls `onFinish({ score: 0, failed: 'why' })` — shown, never saved.
+     A run without real play (no answers / clicks at all) calls `onFinish({ score: 0, failed: 'why' })` — shown, never saved;
+     a run that was played but failed early saves its honest result (e.g. 0). See "When a run gets no score" in the spec.
      Build it from the shared pieces in `components/game/`: pick one layout (`FullLayout`, `PromptLayout`,
      `SquareLayout`, `SquarePanelLayout`), render exactly one `<GameInfo left middle right timer>` for the info
      row, and use `AnswerButtons`, `TileGrid`, `RoundResult`, `Lives`, `useAnswerFlash`, `useLater`,

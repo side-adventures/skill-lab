@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { SquareLayout } from '../../components/game/layouts'
 import { TileGrid } from '../../components/game/TileGrid'
@@ -85,12 +85,12 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
   }
 
   const size = gridSize(level)
-  const middle: Record<Phase, string> = {
+  const middle: Record<Phase, ReactNode> = {
     pause: 'Watch',
     show: 'Memorize',
     input: `Your turn · ${targets.size - found.size} left`,
     cleared: 'Level cleared',
-    failed: lives > 0 ? 'Missed · try again' : 'Game over',
+    failed: lives > 0 ? 'Missed · try again' : <span className="text-rose-300">Out of lives</span>,
   }
 
   return (
