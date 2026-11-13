@@ -21,7 +21,8 @@ export const TESTS: TestDefinition[] = [
     howTo: [
       'Click to start a round. The box turns red: wait.',
       'After a random delay it turns green. Click as fast as you can.',
-      'Clicking while it is still red is too early and restarts the round.',
+      'Clicking while it is still red, or within 0.1 s of green (faster than anyone can react), is too early and restarts the round.',
+      'More than 5 early clicks end the test without a score.',
     ],
     scoring: [
       'Your median reaction time over 5 rounds: the middle one of your 5 times, so one slow round does not spoil it.',
@@ -475,7 +476,7 @@ export const TESTS: TestDefinition[] = [
     skill: 'judging shapes and angles by eye',
     howTo: [
       '10 short tasks, such as finding the middle of a line, setting an angle or completing a square.',
-      'Drag or click on the board, then confirm with Done.',
+      'Drag or click on the board, then confirm with Done. To name an angle, type it and confirm with OK.',
       'After each task you see the exact solution.',
     ],
     scoring: [
