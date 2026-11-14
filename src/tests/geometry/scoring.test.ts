@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  NEW_TASK_MAKERS, SIZE_SHAPES, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
+  NEW_TASK_MAKERS, PARALLEL_MIN_GAP, SIZE_SHAPES, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
   completeSquare, copyLength, dirOf, equalDistance, clampToRange, makeParallel, makeTasks, matchSize, middleOfLine,
   mirrorPoint, pathMiddle, closestOnPath, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
 } from './scoring'
@@ -185,5 +185,22 @@ describe('new and changed tasks (2026-11-14)', () => {
     }
     expect(matchSize(r).evaluate({ length: 10 }).label).toMatch(/% too (big|small)/)
     expect(copyLength(r).evaluate({ length: 10 }).label).toMatch(/^(short|long) by/)
+  })
+  it('Make it parallel never sets up two lines that are almost one straight line', () => {
+    for (let i = 0; i < 500; i++) {
+      const t = makeParallel(r)
+      const ref = t.shapes[0]
+      if (ref.t !== 'seg') throw new Error('expected the upper line')
+      const d = { x: ref.b.x - ref.a.x, y: ref.b.y - ref.a.y }, len = Math.hypot(d.x, d.y)
+      const gap = Math.abs((t.pivot!.x - ref.a.x) * d.y - (t.pivot!.y - ref.a.y) * d.x) / len
+      expect(gap).toBeGreaterThanOrEqual(PARALLEL_MIN_GAP - 1e-9)
+    }
+  })
+
+  it('Match the size draws both shapes solid, without a border', () => {
+    const t = matchSize(r)
+    const ref = t.shapes[0], mine = t.drawAnswer!({ length: 10 })[0]
+    expect(ref.t === 'poly' && ref.solid).toBe(true)
+    expect(mine.t === 'poly' && mine.solid).toBe(true)
   })
 })

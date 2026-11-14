@@ -8,7 +8,7 @@ export type Shape =
   | { t: 'seg'; a: Pt; b: Pt; solid?: boolean } // solid: never dashed, even in the solution (end bars)
   | { t: 'circle'; c: Pt; r: number }
   | { t: 'dot'; p: Pt }
-  | { t: 'poly'; pts: Pt[] }
+  | { t: 'poly'; pts: Pt[]; solid?: boolean } // solid: filled, no border (Match the size)
   | { t: 'polyline'; pts: Pt[] } // open path (the zigzag line)
   | { t: 'arcline'; c: Pt; r: number; from: number; span: number } // part of a circle's outline: from `from`, CCW by `span`
   | { t: 'ray'; from: Pt; angle: number; len: number; faint?: boolean } // faint: drawn see-through (the angle's start side)
@@ -267,13 +267,27 @@ export function anglePercent(rand: Rand): Task {
   }
 }
 
+/** Distance from p to the infinite line through `through` at `angle` (deg). */
+const distToLine = (p: Pt, through: Pt, angle: number) => {
+  const d = dirOf(angle)
+  return Math.abs((p.x - through.x) * d.y - (p.y - through.y) * d.x)
+}
+
+/** Lines closer than this to each other's extension look like one straight line when parallel: redrawn. */
+export const PARALLEL_MIN_GAP = 20
+
 export function makeParallel(rand: Rand): Task {
-  const L = between(rand, 24, 30), refAng = between(rand, 0, 180)
-  // Reference line in one top corner, the movable one starts in the opposite bottom corner.
+  const L = between(rand, 24, 30)
+  // Reference line in one top corner, the movable one starts in the opposite bottom corner. The pivot is never
+  // close to the reference line's extension, so the answer is never "the same line, continued".
   const left = rand() < 0.5
-  const refMid = { x: left ? between(rand, 28, 36) : between(rand, 64, 72), y: between(rand, 26, 34) }
+  let refAng: number, refMid: Pt, pivot: Pt
+  do {
+    refAng = between(rand, 0, 180)
+    refMid = { x: left ? between(rand, 28, 36) : between(rand, 64, 72), y: between(rand, 26, 34) }
+    pivot = { x: left ? between(rand, 58, 66) : between(rand, 34, 42), y: between(rand, 62, 68) }
+  } while (distToLine(pivot, refMid, refAng) < PARALLEL_MIN_GAP)
   const a = add(refMid, dirOf(refAng), -L / 2), b = add(refMid, dirOf(refAng), L / 2)
-  const pivot = { x: left ? between(rand, 58, 66) : between(rand, 34, 42), y: between(rand, 62, 68) }
   const start = refAng + (rand() < 0.5 ? -1 : 1) * between(rand, 30, 70)
   return {
     kind: 'parallel', title: 'Make it parallel', prompt: 'Rotate the lower line until it is exactly parallel to the upper one.', input: 'ray',
@@ -420,7 +434,7 @@ export function mirrorPoint(rand: Rand): Task {
     const D = add(base, n, h), M = add(base, n, -h)
     if (!onBoard(D) || !onBoard(M)) continue
     return {
-      kind: 'mirror', title: 'Mirror point', prompt: 'Place the point where the dot would be in a mirror along the line.', input: 'point',
+      kind: 'mirror', title: 'Mirror point', prompt: "Imagine the line is a mirror. Place the point where the dot's reflection would be, straight across the line.", input: 'point',
       shapes: [{ t: 'line', through: L0, angle }, { t: 'dot', p: D }],
       evaluate: ({ point }) => {
         const e = dist(point!, M) / (2 * Math.abs(h))
@@ -455,9 +469,9 @@ export function matchSize(rand: Rand): Task {
   const start = Math.min(25, Math.max(4, goal * (rand() < 0.5 ? between(rand, 0.55, 0.75) : between(rand, 1.3, 1.6))))
   return {
     kind: 'size', title: 'Match the size', prompt: 'Drag to resize the right shape until it has the same area as the left one.', input: 'length',
-    shapes: [{ t: 'poly', pts: placeShape(refKind, refC, refR) }],
+    shapes: [{ t: 'poly', pts: placeShape(refKind, refC, refR), solid: true }],
     pivot: adjC, dir: { x: 1, y: 0 }, lengthRange: [3, 25], initial: { length: start },
-    drawAnswer: ({ length }) => (length === undefined ? [] : [{ t: 'poly', pts: placeShape(adjKind, adjC, length) }]),
+    drawAnswer: ({ length }) => (length === undefined ? [] : [{ t: 'poly', pts: placeShape(adjKind, adjC, length), solid: true }]),
     evaluate: ({ length }) => {
       const ratio = shapeArea(adjKind, length!) / target
       const e = Math.abs(Math.log(ratio))
