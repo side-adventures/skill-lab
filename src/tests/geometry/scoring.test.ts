@@ -208,4 +208,21 @@ describe('new and changed tasks (2026-11-14)', () => {
     expect(ref.t === 'poly' && ref.solid).toBe(true)
     expect(mine.t === 'poly' && mine.solid).toBe(true)
   })
+  it('Make X° targets 25–155°, so both 0 % lines are shown; Copy the length varies from short to long', () => {
+    const lengths: number[] = []
+    for (let i = 0; i < 500; i++) {
+      const t = setAngle(r)
+      const target = Number(t.title.match(/\d+/)![0])
+      expect(target).toBeGreaterThanOrEqual(25)
+      expect(target).toBeLessThanOrEqual(155)
+      expect(t.evaluate({ angle: 0 }).zone).toHaveLength(2)
+      const c = copyLength(r)
+      const ref = c.shapes[0]
+      if (ref.t !== 'seg') throw new Error('expected the upper line')
+      expect(Math.min(ref.a.y, ref.b.y)).toBeGreaterThanOrEqual(5)
+      lengths.push(Math.hypot(ref.b.x - ref.a.x, ref.b.y - ref.a.y))
+    }
+    expect(Math.min(...lengths)).toBeLessThan(15)
+    expect(Math.max(...lengths)).toBeGreaterThan(45)
+  })
 })
