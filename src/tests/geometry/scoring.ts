@@ -1,5 +1,5 @@
 import type { ResultDetails } from '../types'
-import { mean, round1, shuffle, type Rand } from '../../lib/random'
+import { mean, randInt, round1, shuffle, type Rand } from '../../lib/random'
 
 /** Board is a 100 × 100 viewBox. Angles are in degrees, counter-clockwise on screen. */
 export interface Pt { x: number; y: number }
@@ -9,6 +9,8 @@ export type Shape =
   | { t: 'circle'; c: Pt; r: number }
   | { t: 'dot'; p: Pt }
   | { t: 'poly'; pts: Pt[] }
+  | { t: 'polyline'; pts: Pt[] } // open path (the zigzag line)
+  | { t: 'arcline'; c: Pt; r: number; from: number; span: number } // part of a circle's outline: from `from`, CCW by `span`
   | { t: 'ray'; from: Pt; angle: number; len: number }
   | { t: 'line'; through: Pt; angle: number } // infinite line (clipped by the board)
   | { t: 'arc'; c: Pt; r: number; from: number; span: number } // marks an angle: from `from`, CCW by `span`
@@ -35,6 +37,10 @@ export interface Task {
   dir?: Pt
   /** starting value shown before the player moves anything */
   initial?: Answer
+  /** length input: the smallest and largest length the handle allows */
+  lengthRange?: [number, number]
+  /** draws the current answer when a plain dot / arm / segment isn't enough (Match the size: the resized shape) */
+  drawAnswer?: (a: Answer) => Shape[]
   evaluate: (a: Answer) => Evaluation
 }
 
@@ -92,29 +98,67 @@ export function clipHalf(pts: Pt[], origin: Pt, n: Pt, offset: number): Pt[] {
 // ---------- the tasks ----------
 const C: Pt = { x: 50, y: 50 }
 
+/** True if segments ab and cd cross (touching at a shared end doesn't count). */
+function segmentsCross(a: Pt, b: Pt, c: Pt, d: Pt) {
+  const o = (p: Pt, q: Pt, r: Pt) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x))
+  return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0
+}
+const onBoard = (p: Pt, m = 8) => p.x >= m && p.x <= 100 - m && p.y >= m && p.y <= 100 - m
+
+/** The point halfway along a path (by length). */
+export function pathMiddle(pts: Pt[]) {
+  const lens = pts.slice(1).map((p, i) => dist(pts[i], p))
+  const total = lens.reduce((x, y) => x + y, 0)
+  let left = total / 2
+  for (let i = 0; i < lens.length; i++) {
+    if (left <= lens[i]) return { mid: add(pts[i], { x: pts[i + 1].x - pts[i].x, y: pts[i + 1].y - pts[i].y }, left / lens[i]), total }
+    left -= lens[i]
+  }
+  return { mid: pts[pts.length - 1], total }
+}
+
+/** Middle of a zigzag line with 2–4 bends: the point halfway along the line, not the middle of its outline. */
 export function middleOfLine(rand: Rand): Task {
-  const len = between(rand, 55, 85), ang = between(rand, 0, 180)
-  const mid = { x: between(rand, 45, 55), y: between(rand, 45, 55) }
-  const a = add(mid, dirOf(ang), -len / 2), b = add(mid, dirOf(ang), len / 2)
-  return {
-    kind: 'middle', title: 'Middle of the line', prompt: 'Place the point exactly in the middle of the line.', input: 'point',
-    shapes: [{ t: 'seg', a, b }],
-    evaluate: ({ point }) => {
-      const e = dist(point!, mid) / len
-      return { points: pointsFor(e, 0.08), label: pct(e), solution: [{ t: 'dot', p: mid }] }
-    },
+  for (;;) {
+    const segments = randInt(3, 5, rand)
+    let p = { x: between(rand, 15, 85), y: between(rand, 15, 85) }, ang = between(rand, 0, 360)
+    const pts = [p]
+    for (let i = 0; i < segments; i++) {
+      if (i > 0) ang += (rand() < 0.5 ? -1 : 1) * between(rand, 35, 120)
+      p = add(p, dirOf(ang), between(rand, 14, 32))
+      pts.push(p)
+    }
+    if (!pts.every((q) => onBoard(q))) continue
+    const crosses = pts.slice(1).some((q, i) => pts.slice(1).some((r, j) => j > i + 1 && segmentsCross(pts[i], q, pts[j], r)))
+    if (crosses) continue
+    const { mid, total } = pathMiddle(pts)
+    if (total < 60) continue
+    return {
+      kind: 'middle', title: 'Middle of the line', prompt: 'Place the point halfway along the line, measured along its bends.', input: 'point',
+      shapes: [{ t: 'polyline', pts }],
+      evaluate: ({ point }) => {
+        const e = dist(point!, mid) / total
+        return { points: pointsFor(e, 0.08), label: pct(e), solution: [{ t: 'dot', p: mid }] }
+      },
+    }
   }
 }
 
+/** Center of a circle of which only an arc (90–180°) is shown. */
 export function centerOfCircle(rand: Rand): Task {
-  const r = between(rand, 18, 34), c = { x: between(rand, 38, 62), y: between(rand, 38, 62) }
-  return {
-    kind: 'center', title: 'Center of the circle', prompt: 'Place the point at the exact center of the circle.', input: 'point',
-    shapes: [{ t: 'circle', c, r }],
-    evaluate: ({ point }) => {
-      const e = dist(point!, c) / r
-      return { points: pointsFor(e, 0.25), label: pct(e), solution: [{ t: 'dot', p: c }] }
-    },
+  for (;;) {
+    const r = between(rand, 24, 40), span = between(rand, 90, 180), from = between(rand, 0, 360)
+    const c = { x: between(rand, 22, 78), y: between(rand, 22, 78) }
+    const arc = Array.from({ length: 13 }, (_, i) => add(c, dirOf(from + (span * i) / 12), r))
+    if (!arc.every((q) => onBoard(q, 5))) continue
+    return {
+      kind: 'center', title: 'Center of the circle', prompt: 'Only part of a circle is shown. Place the point at its center.', input: 'point',
+      shapes: [{ t: 'arcline', c, r, from, span }],
+      evaluate: ({ point }) => {
+        const e = dist(point!, c) / r
+        return { points: pointsFor(e, 0.3), label: pct(e), solution: [{ t: 'dot', p: c }, { t: 'circle', c, r }] }
+      },
+    }
   }
 }
 
@@ -128,22 +172,6 @@ export function setAngle(rand: Rand): Task {
       const e = Math.abs(made - target)
       const right = angleDiff(angle!, base + target) < angleDiff(angle!, base - target) ? base + target : base - target
       return { points: pointsFor(e, 25), label: `${made.toFixed(1)}° made · ${deg(e)}`, solution: [{ t: 'ray', from: C, angle: right, len: 42 }] }
-    },
-  }
-}
-
-export function guessAngle(rand: Rand): Task {
-  const base = between(rand, 0, 360), target = Math.round(between(rand, 10, 170))
-  return {
-    kind: 'guess-angle', title: 'Name the angle', prompt: 'How many degrees is the marked angle? Type your guess.', input: 'number',
-    shapes: [
-      { t: 'arc', c: C, r: 10, from: base, span: target },
-      { t: 'ray', from: C, angle: base, len: 42 },
-      { t: 'ray', from: C, angle: base + target, len: 42 },
-    ],
-    evaluate: ({ number }) => {
-      const e = Math.abs(number! - target)
-      return { points: pointsFor(e, 25), label: `It was ${target}° · ${deg(e)}`, solution: [] }
     },
   }
 }
@@ -235,19 +263,136 @@ export function equalDistance(rand: Rand): Task {
   }
 }
 
-export const TASK_MAKERS = [
-  middleOfLine, centerOfCircle, setAngle, guessAngle, bisectAngle,
-  makeParallel, completeSquare, copyLength, equalDistance,
-]
+/** Smallest corner angle (degrees) of a triangle. */
+function minCorner(t: Pt[]) {
+  return Math.min(...t.map((p, i) => {
+    const a = t[(i + 1) % 3], b = t[(i + 2) % 3]
+    return angleDiff(angleTo(p, a), angleTo(p, b))
+  }))
+}
 
-/** One round of every task type, in random order. */
-export const makeTasks = (rand: Rand = Math.random) => shuffle(TASK_MAKERS, rand).map((make) => make(rand))
+/** Balance point: the centroid (center of mass) of a random triangle. */
+export function balancePoint(rand: Rand): Task {
+  for (;;) {
+    const a0 = between(rand, 0, 360)
+    const pts = [0, 1, 2].map((i) => add(C, dirOf(a0 + i * 120 + between(rand, -45, 45)), between(rand, 22, 42)))
+    if (!pts.every((q) => onBoard(q, 6)) || minCorner(pts) < 20) continue
+    const g = { x: mean(pts.map((p) => p.x)), y: mean(pts.map((p) => p.y)) }
+    const longest = Math.max(...pts.map((p, i) => dist(p, pts[(i + 1) % 3])))
+    const medians: Shape[] = pts.map((p, i) => {
+      const q = pts[(i + 1) % 3], r = pts[(i + 2) % 3]
+      return { t: 'seg', a: p, b: { x: (q.x + r.x) / 2, y: (q.y + r.y) / 2 } }
+    })
+    return {
+      kind: 'balance', title: 'Balance point', prompt: 'Place the point where the triangle would balance on a pin.', input: 'point',
+      shapes: [{ t: 'poly', pts }],
+      evaluate: ({ point }) => {
+        const e = dist(point!, g) / longest
+        return { points: pointsFor(e, 0.12), label: pct(e), solution: [...medians, { t: 'dot', p: g }] }
+      },
+    }
+  }
+}
+
+/** Where they meet: two line pieces point toward a hidden crossing point; place it. */
+export function whereTheyMeet(rand: Rand): Task {
+  for (;;) {
+    const P = { x: between(rand, 25, 75), y: between(rand, 25, 75) }
+    const a1 = between(rand, 0, 360), a2 = a1 + (rand() < 0.5 ? -1 : 1) * between(rand, 30, 80)
+    const pieces = [a1, a2].map((a) => {
+      const far = between(rand, 45, 70), near = between(rand, 18, 30)
+      return { from: add(P, dirOf(a), far), to: add(P, dirOf(a), near), near }
+    })
+    if (!pieces.every((s) => onBoard(s.from, 5) && onBoard(s.to, 5))) continue
+    const gap = mean(pieces.map((s) => s.near))
+    return {
+      kind: 'meet', title: 'Where they meet', prompt: 'Both lines go on beyond their ends. Place the point where they would cross.', input: 'point',
+      shapes: pieces.map((s) => ({ t: 'seg', a: s.from, b: s.to }) as Shape),
+      evaluate: ({ point }) => {
+        const e = dist(point!, P) / gap
+        return {
+          points: pointsFor(e, 0.5),
+          label: pct(e),
+          solution: [...pieces.map((s) => ({ t: 'seg', a: s.to, b: P }) as Shape), { t: 'dot', p: P }],
+        }
+      },
+    }
+  }
+}
+
+/** Mirror point: place the mirror image of a dot across a slanted line. */
+export function mirrorPoint(rand: Rand): Task {
+  for (;;) {
+    const angle = between(rand, 15, 75) + (rand() < 0.5 ? 0 : 90) // never (nearly) level or upright
+    const L0 = { x: between(rand, 35, 65), y: between(rand, 35, 65) }
+    const n = dirOf(angle + 90), h = between(rand, 10, 28) * (rand() < 0.5 ? -1 : 1)
+    const base = add(L0, dirOf(angle), between(rand, -18, 18))
+    const D = add(base, n, h), M = add(base, n, -h)
+    if (!onBoard(D) || !onBoard(M)) continue
+    return {
+      kind: 'mirror', title: 'Mirror point', prompt: 'Place the point where the dot would be in a mirror along the line.', input: 'point',
+      shapes: [{ t: 'line', through: L0, angle }, { t: 'dot', p: D }],
+      evaluate: ({ point }) => {
+        const e = dist(point!, M) / (2 * Math.abs(h))
+        return { points: pointsFor(e, 0.35), label: pct(e), solution: [{ t: 'seg', a: D, b: M }, { t: 'dot', p: M }] }
+      },
+    }
+  }
+}
+
+/** The shapes of Match the size, as unit outlines (circumradius 1, centered on 0, 0). */
+const UNIT_SHAPES: Record<string, Pt[]> = {
+  square: [45, 135, 225, 315].map((a) => dirOf(a)),
+  circle: Array.from({ length: 48 }, (_, i) => dirOf(i * 7.5)),
+  triangle: [90, 210, 330].map((a) => dirOf(a)),
+  star: Array.from({ length: 10 }, (_, i) => ({ ...dirOf(90 + i * 36), r: i % 2 ? 0.45 : 1 })).map(({ x, y, r }) => ({ x: x * r, y: y * r })),
+}
+export const SIZE_SHAPES = Object.keys(UNIT_SHAPES)
+const placeShape = (kind: string, c: Pt, r: number): Pt[] => UNIT_SHAPES[kind].map((p) => add(c, p, r))
+/** Area of a shape of this kind at circumradius r. */
+export const shapeArea = (kind: string, r: number) => polygonArea(UNIT_SHAPES[kind]) * r * r
+
+/** Match the size: resize one shape until it has the same area as another, different shape. */
+export function matchSize(rand: Rand): Task {
+  const [refKind, adjKind] = shuffle(SIZE_SHAPES, rand)
+  const refC = { x: 26, y: 50 }, adjC = { x: 70, y: 50 }
+  const refR = between(rand, 11, 16)
+  const target = shapeArea(refKind, refR)
+  const goal = Math.sqrt(target / shapeArea(adjKind, 1)) // the right circumradius for the adjustable shape
+  const start = Math.min(25, Math.max(4, goal * (rand() < 0.5 ? between(rand, 0.55, 0.75) : between(rand, 1.3, 1.6))))
+  return {
+    kind: 'size', title: 'Match the size', prompt: 'Drag to resize the right shape until it has the same area as the left one.', input: 'length',
+    shapes: [{ t: 'poly', pts: placeShape(refKind, refC, refR) }],
+    pivot: adjC, dir: { x: 1, y: 0 }, lengthRange: [3, 25], initial: { length: start },
+    drawAnswer: ({ length }) => (length === undefined ? [] : [{ t: 'poly', pts: placeShape(adjKind, adjC, length) }]),
+    evaluate: ({ length }) => {
+      const ratio = shapeArea(adjKind, length!) / target
+      const e = Math.abs(Math.log(ratio))
+      return {
+        points: pointsFor(e, 0.35),
+        label: `${Math.abs(ratio * 100 - 100).toFixed(0)} % ${ratio < 1 ? 'too small' : 'too big'}`,
+        solution: [{ t: 'poly', pts: placeShape(adjKind, adjC, goal) }],
+      }
+    },
+  }
+}
+
+export const TASK_MAKERS = [
+  middleOfLine, centerOfCircle, setAngle, bisectAngle, makeParallel, completeSquare, copyLength, equalDistance,
+  balancePoint, whereTheyMeet, mirrorPoint, matchSize,
+]
+/** The tasks added or changed on 2026-11-14, for the test link `#/test/geometry?tasks=new` (dev server only). */
+export const NEW_TASK_MAKERS = [middleOfLine, centerOfCircle, balancePoint, whereTheyMeet, mirrorPoint, matchSize]
+
+/** One round of every task type, in random order (`makers`: a subset, for testing). */
+export const makeTasks = (rand: Rand = Math.random, makers = TASK_MAKERS) => shuffle(makers, rand).map((make) => make(rand))
 
 export const totalScore = (points: number[]) => round1(mean(points))
 
 /** Short task names for the result chips (all tasks must fit in two rows). */
 const SHORT: Record<string, string> = {
-  middle: 'Middle', center: 'Center', 'guess-angle': 'Name angle', bisect: 'Half angle', parallel: 'Parallel',
+  middle: 'Middle', center: 'Center', bisect: 'Half angle', parallel: 'Parallel', balance: 'Balance',
+  meet: 'Meet', mirror: 'Mirror', size: 'Size',
   square: 'Square', 'copy-length': 'Length', equidistant: 'Equal dist.',
 }
 const shortName = (t: Task) => SHORT[t.kind] ?? t.title
