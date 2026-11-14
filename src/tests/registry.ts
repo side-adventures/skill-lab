@@ -477,7 +477,7 @@ export const TESTS: TestDefinition[] = [
     tagline: 'Middles, angles, centers — by eye.',
     skill: 'judging shapes and angles by eye',
     howTo: [
-      '8 short tasks, picked at random from 12 kinds, such as finding the middle of a zigzag line, the balance point of a triangle or matching two sizes.',
+      '8 short tasks, 2 each of centers, constructions, angles and lengths, such as the balance point of a triangle, the middle of a zigzag line or matching two sizes.',
       'Drag or click on the board, then confirm with Done.',
       'After each task you see the exact solution.',
     ],

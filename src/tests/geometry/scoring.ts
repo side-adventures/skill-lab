@@ -229,10 +229,9 @@ export function setAngle(rand: Rand): Task {
       const right = angleDiff(angle!, base + target) < angleDiff(angle!, base - target) ? base + target : base - target
       return {
         points: pointsFor(e, 25), label: `${made.toFixed(1)}° made · ${deg(e)}`, solution: [{ t: 'ray', from: C, angle: right, len: 42 }],
-        // the limits at target ± 25°, on the side of the right answer. Past 180° (or below 0°) an angle shrinks
-        // again, so that side never reaches 0 % and gets no line (e.g. 165°: even a straight line is only 15° off).
-        zone: [target - 25, target + 25].filter((t) => t >= 0 && t <= 180)
-          .map((t) => ({ t: 'ray', from: C, angle: right === base + target ? base + t : base - t, len: 42 }) as Shape),
+        // the limits at target ± 25°, on the side of the right answer, always both. (Past 180° an angle shrinks
+        // again, so an arm placed exactly on a line beyond 180° would still score a little; it just marks the limit.)
+        zone: [target - 25, target + 25].map((t) => ({ t: 'ray', from: C, angle: right === base + target ? base + t : base - t, len: 42 }) as Shape),
       }
     },
   }
@@ -327,14 +326,21 @@ const endBar = (origin: Pt, dir: Pt, k: number): Shape & { t: 'seg' } => {
   return { t: 'seg', a: add(end, n, -3), b: add(end, n, 3) }
 }
 
+/** Copy the length: the smallest difference in direction between the two lines (degrees). */
+export const COPY_MIN_TURN = 30
+
 export function copyLength(rand: Rand): Task {
   // lengths 18–56; the upper line is tilted so it stays on the board (y ≥ 5): the longest ones lie fairly flat
+  // The two lines are always at least COPY_MIN_TURN apart in direction: lines that point the same way are much
+  // easier to compare. (They never cross: the upper line stays above y 48, the lower one below y 60.)
   const L = between(rand, 18, 56), refMid = { x: 50, y: 27 }
-  let refAng: number
-  do refAng = between(rand, 35, 145)
-  while ((Math.abs(Math.sin((refAng * Math.PI) / 180)) * L) / 2 > 21)
+  let refAng: number, dirAng: number
+  do {
+    refAng = between(rand, 35, 145)
+    dirAng = between(rand, -15, 20)
+  } while ((Math.abs(Math.sin((refAng * Math.PI) / 180)) * L) / 2 > 21 || angleDiff(refAng, dirAng, 180) < COPY_MIN_TURN)
   const a = add(refMid, dirOf(refAng), -L / 2), b = add(refMid, dirOf(refAng), L / 2)
-  const origin = { x: 14, y: between(rand, 66, 80) }, dirAng = between(rand, -15, 20), dir = dirOf(dirAng)
+  const origin = { x: 14, y: between(rand, 66, 80) }, dir = dirOf(dirAng)
   return {
     kind: 'copy-length', title: 'Copy the length', prompt: 'Drag the lower line so it is exactly as long as the upper one.', input: 'length',
     shapes: [{ t: 'seg', a, b }, { t: 'dot', p: origin }], pivot: origin, dir, initial: { length: 8 }, hideHandle: true,
@@ -492,22 +498,29 @@ export function matchSize(rand: Rand): Task {
   }
 }
 
-export const TASK_MAKERS = [
-  middleOfLine, centerOfCircle, setAngle, anglePercent, makeParallel, completeSquare, copyLength, equalDistance,
-  balancePoint, whereTheyMeet, mirrorPoint, matchSize,
-]
+/** The 12 tasks in 4 groups of similar ones; every run takes 2 from each group (8 tasks). */
+export const TASK_GROUPS = {
+  centres: [centerOfCircle, equalDistance, balancePoint],
+  constructions: [whereTheyMeet, completeSquare, mirrorPoint],
+  angles: [setAngle, anglePercent, makeParallel],
+  lengths: [copyLength, middleOfLine, matchSize],
+}
+export const TASKS_PER_GROUP = 2
+export const TASK_MAKERS = Object.values(TASK_GROUPS).flat()
 /** The tasks added or changed on 2026-11-14, for the test link `#/test/geometry?tasks=new` (dev server only). */
 export const NEW_TASK_MAKERS = [middleOfLine, centerOfCircle, anglePercent, balancePoint, whereTheyMeet, mirrorPoint, matchSize]
 
-/** Tasks per run: 8 of the 12 kinds, so runs differ and stay about 3 minutes. */
-export const TASKS_PER_RUN = 8
+/** Tasks per run: 2 from each of the 4 groups, so runs differ but always have the same mix, about 3 minutes. */
+export const TASKS_PER_RUN = Object.keys(TASK_GROUPS).length * TASKS_PER_GROUP
 
 /**
- * A run: TASKS_PER_RUN different task kinds picked at random, in random order. `makers` given (the test link):
+ * A run: TASKS_PER_GROUP random tasks from every group, all in random order. `makers` given (the test link):
  * all of those, no picking.
  */
-export const makeTasks = (rand: Rand = Math.random, makers?: typeof TASK_MAKERS) =>
-  (makers ? shuffle(makers, rand) : shuffle(TASK_MAKERS, rand).slice(0, TASKS_PER_RUN)).map((make) => make(rand))
+export const makeTasks = (rand: Rand = Math.random, makers?: typeof TASK_MAKERS) => {
+  const picked = makers ?? Object.values(TASK_GROUPS).flatMap((group) => shuffle(group, rand).slice(0, TASKS_PER_GROUP))
+  return shuffle(picked, rand).map((make) => make(rand))
+}
 
 export const totalScore = (points: number[]) => round1(mean(points))
 

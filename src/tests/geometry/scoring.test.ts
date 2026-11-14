@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  NEW_TASK_MAKERS, PARALLEL_MIN_GAP, SIZE_SHAPES, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
+  COPY_MIN_TURN, NEW_TASK_MAKERS, PARALLEL_MIN_GAP, SIZE_SHAPES, TASK_GROUPS, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
   completeSquare, copyLength, dirOf, equalDistance, clampToRange, makeParallel, makeTasks, matchSize, middleOfLine,
   mirrorPoint, pathMiddle, closestOnPath, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
 } from './scoring'
@@ -63,12 +63,16 @@ describe('geometry tasks', () => {
       expect(t.title).toMatch(/^(1|2|3|4|5|6|7|8|9)[05] % of the angle$/) // 10–90 % in steps of 5
     }
   })
-  it('a run has 8 different tasks out of the 12; over many runs every task shows up; the test link has only the 7 new / changed ones', () => {
+  it('a run has 8 different tasks, 2 from each group; over many runs every task shows up; the test link has only the 7 new / changed ones', () => {
+    const groupOf = new Map(Object.entries(TASK_GROUPS).flatMap(([g, makers]) => makers.map((m) => [m(r).kind, g] as const)))
     const seen = new Set<string>()
     for (let i = 0; i < 200; i++) {
       const tasks = makeTasks()
       expect(tasks).toHaveLength(8)
       expect(new Set(tasks.map((t) => t.kind)).size).toBe(8)
+      const perGroup: Record<string, number> = {}
+      tasks.forEach((t) => (perGroup[groupOf.get(t.kind)!] = (perGroup[groupOf.get(t.kind)!] ?? 0) + 1))
+      expect(Object.values(perGroup)).toEqual([2, 2, 2, 2])
       tasks.forEach((t) => seen.add(t.kind))
     }
     expect(seen.size).toBe(12)
@@ -160,7 +164,9 @@ describe('new and changed tasks (2026-11-14)', () => {
           expect(t.evaluate({ point: { x: z.c.x + z.r * 1.01, y: z.c.y } }).points, t.kind).toBe(0)
           expect(t.evaluate({ point: { x: z.c.x + z.r * 0.9, y: z.c.y } }).points, t.kind).toBeGreaterThan(0)
         }
-        if (t.input === 'ray' && z.t === 'ray') {
+        // (Make X° also draws a limit past 180° or below 0°, which only marks the limit; skip those here)
+        const target = Number(t.title.match(/\d+/)?.[0])
+        if (t.input === 'ray' && z.t === 'ray' && !(t.kind === 'set-angle' && target < 25)) {
           expect(t.evaluate({ angle: z.angle }).points, t.kind).toBe(0)
         }
       }
@@ -208,19 +214,21 @@ describe('new and changed tasks (2026-11-14)', () => {
     expect(ref.t === 'poly' && ref.solid).toBe(true)
     expect(mine.t === 'poly' && mine.solid).toBe(true)
   })
-  it('Make X° targets 10–170°; a 0 % line is shown only where it exists; Copy the length is 18–56 long', () => {
+  it('Make X° targets 10–170° and always shows both 0 % lines; Copy the length is 18–56 long and never parallel', () => {
     const targets: number[] = [], lengths: number[] = []
     for (let i = 0; i < 1000; i++) {
       const t = setAngle(r)
       const target = Number(t.title.match(/\d+/)![0])
       targets.push(target)
-      const lines = t.evaluate({ angle: 0 }).zone!.length
-      expect(lines).toBe(target + 25 > 180 || target - 25 < 0 ? 1 : 2)
+      expect(t.evaluate({ angle: 0 }).zone).toHaveLength(2)
       const c = copyLength(r)
       const ref = c.shapes[0]
       if (ref.t !== 'seg') throw new Error('expected the upper line')
       expect(Math.min(ref.a.y, ref.b.y)).toBeGreaterThanOrEqual(5)
       lengths.push(Math.hypot(ref.b.x - ref.a.x, ref.b.y - ref.a.y))
+      // the lower line (direction c.dir) and the upper line are at least 30° apart
+      const upper = angleTo(ref.a, ref.b), lower = angleTo({ x: 0, y: 0 }, c.dir!)
+      expect(angleDiff(upper, lower, 180)).toBeGreaterThanOrEqual(COPY_MIN_TURN - 1e-9)
     }
     expect(Math.min(...targets)).toBeLessThan(15)
     expect(Math.max(...targets)).toBeGreaterThan(165)
