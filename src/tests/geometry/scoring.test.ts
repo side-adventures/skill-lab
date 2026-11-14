@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   NEW_TASK_MAKERS, SIZE_SHAPES, TASK_MAKERS, angleDiff, angleTo, balancePoint, bisectAngle, centerOfCircle, clipHalf,
   completeSquare, copyLength, dirOf, equalDistance, clampToRange, makeParallel, makeTasks, matchSize, middleOfLine,
-  mirrorPoint, pathMiddle, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
+  mirrorPoint, pathMiddle, closestOnPath, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
 } from './scoring'
 
 describe('geometry helpers', () => {
@@ -98,6 +98,14 @@ describe('new and changed tasks (2026-11-14)', () => {
       expect(line.pts.length).toBeGreaterThanOrEqual(4) // 2–4 bends
       expect(line.pts.length).toBeLessThanOrEqual(6)
       expect(line.pts.every(onBoard)).toBe(true)
+      const lens = line.pts.slice(1).map((p, j) => Math.hypot(p.x - line.pts[j].x, p.y - line.pts[j].y))
+      expect(Math.max(...lens)).toBeGreaterThanOrEqual(2.5 * Math.min(...lens)) // very different section lengths
+      const xs = line.pts.map((p) => p.x), ys = line.pts.map((p) => p.y)
+      expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(50) // centered
+      expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(50)
+      // the point snaps onto the line
+      const snapped = t.snap!({ x: 0, y: 0 })
+      expect(closestOnPath(line.pts, snapped).d).toBeLessThan(1e-9)
     }
   })
 
@@ -107,6 +115,11 @@ describe('new and changed tasks (2026-11-14)', () => {
       if (s.t !== 'arcline') throw new Error('expected an arc')
       expect(s.span).toBeGreaterThanOrEqual(90)
       expect(s.span).toBeLessThanOrEqual(180)
+      // the full circle fits on the board
+      expect(s.c.x - s.r).toBeGreaterThanOrEqual(5)
+      expect(s.c.x + s.r).toBeLessThanOrEqual(95)
+      expect(s.c.y - s.r).toBeGreaterThanOrEqual(5)
+      expect(s.c.y + s.r).toBeLessThanOrEqual(95)
     }
   })
 
