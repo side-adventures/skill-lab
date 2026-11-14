@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  NEW_TASK_MAKERS, SIZE_SHAPES, TASK_MAKERS, angleDiff, angleTo, balancePoint, bisectAngle, centerOfCircle, clipHalf,
+  NEW_TASK_MAKERS, SIZE_SHAPES, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
   completeSquare, copyLength, dirOf, equalDistance, clampToRange, makeParallel, makeTasks, matchSize, middleOfLine,
   mirrorPoint, pathMiddle, closestOnPath, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
 } from './scoring'
@@ -35,7 +35,7 @@ describe('geometry tasks', () => {
     if (s2.t === 'dot') expect(t2.evaluate({ point: s2.p }).points).toBe(100)
     const t3 = setAngle(r); const s3 = t3.evaluate({ angle: 0 }).solution[0]
     if (s3.t === 'ray') expect(t3.evaluate({ angle: s3.angle }).points).toBe(100)
-    const t4 = bisectAngle(r); const s4 = t4.evaluate({ angle: 0 }).solution[0]
+    const t4 = anglePercent(r); const s4 = t4.evaluate({ angle: 0 }).solution[0]
     if (s4.t === 'ray') expect(t4.evaluate({ angle: s4.angle }).points).toBe(100)
     const t5 = makeParallel(r); const s5 = t5.evaluate({ angle: 0 }).solution[0]
     if (s5.t === 'ray') {
@@ -50,24 +50,25 @@ describe('geometry tasks', () => {
     const t8 = equalDistance(r); const s8 = t8.evaluate({ point: { x: 0, y: 0 } }).solution[0]
     if (s8.t === 'dot') expect(t8.evaluate({ point: s8.p }).points).toBe(100)
   })
-  it('keeps the bisect arm inside the angle', () => {
+  it('keeps the arm of X % of the angle inside the angle', () => {
     const range = { from: 350, span: 60 } // 350° … 50°
     expect(clampToRange(20, range)).toBeCloseTo(380)
     expect(clampToRange(150, range)).toBeCloseTo(410) // nearer to the 50° arm
     expect(clampToRange(250, range)).toBeCloseTo(350) // nearer to the 350° arm
     for (let i = 0; i < 50; i++) {
-      const t = bisectAngle(r)
+      const t = anglePercent(r)
       const a = clampToRange(t.initial!.angle!, t.range!)
-      expect(a).toBeCloseTo(t.initial!.angle!) // starts inside
+      expect(a).toBeCloseTo(t.initial!.angle!) // starts inside, on the faint side (100 %)
       expect(t.evaluate({ angle: a }).points).toBeLessThan(100)
+      expect(t.title).toMatch(/^(1|2|3|4|5|6|7|8|9)[05] % of the angle$/) // 10–90 % in steps of 5
     }
   })
-  it('makes one round of each of the 12 tasks; the test link has only the 6 new / changed ones', () => {
+  it('makes one round of each of the 12 tasks; the test link has only the 7 new / changed ones', () => {
     const tasks = makeTasks()
     expect(tasks).toHaveLength(12)
     expect(new Set(tasks.map((t) => t.kind)).size).toBe(12)
     expect(TASK_MAKERS).toHaveLength(12)
-    expect(makeTasks(Math.random, NEW_TASK_MAKERS).map((t) => t.kind).sort()).toEqual(['balance', 'center', 'meet', 'middle', 'mirror', 'size'])
+    expect(makeTasks(Math.random, NEW_TASK_MAKERS).map((t) => t.kind).sort()).toEqual(['angle-pct', 'balance', 'center', 'meet', 'middle', 'mirror', 'size'])
   })})
 
 describe('new and changed tasks (2026-11-14)', () => {

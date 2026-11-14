@@ -50,10 +50,15 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
         />
       )
     }
+    case 'wedge': {
+      // the full angle as a reference: a light fill, no outline
+      const p1 = add(shape.c, dirOf(shape.from), shape.r), p2 = add(shape.c, dirOf(shape.from + shape.span), shape.r)
+      return <path d={`M ${shape.c.x} ${shape.c.y} L ${p1.x} ${p1.y} A ${shape.r} ${shape.r} 0 ${shape.span > 180 ? 1 : 0} 0 ${p2.x} ${p2.y} Z`} className="fill-zinc-200/10" />
+    }
     case 'ray': {
       const end = add(shape.from, dirOf(shape.angle), shape.len)
       return (
-        <g>
+        <g opacity={shape.faint ? 0.35 : undefined}>
           <line x1={shape.from.x} y1={shape.from.y} x2={end.x} y2={end.y} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashedOpen(shape.len)} className={color} />
           <circle cx={shape.from.x} cy={shape.from.y} r={1.2} className={fill} />
         </g>
