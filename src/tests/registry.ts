@@ -521,8 +521,8 @@ export const TESTS: TestDefinition[] = [
 ]
 
 /**
- * Prototypes: new tests being tried out. Shown in their own section at the bottom of the home page,
- * left out of the test count, "Next test" and the stats page. Rules and scoring may still change.
+ * Prototypes: new tests being tried out (see the new-test skill). When there are any, they get their own section
+ * at the bottom of the home page and are left out of the test count, "Next test", stats and sharing. Empty for now.
  */
 export const PROTOTYPES: TestDefinition[] = []
 
