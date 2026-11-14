@@ -173,7 +173,7 @@ describe('split in half — review: score and details', () => {
       { name: 'd', points: 75, left: 0.55 }, { name: 'e', points: 0, left: 0.2 },
     ])
     console.log('details', JSON.stringify(d.stats))
-    expect(d.stats![0].value).toBe('50.0 / 50.0')
+    expect(d.stats![1].value).toBe('50.0 / 50.0') // Closest cut (Average miss comes first)
   })
 })
 

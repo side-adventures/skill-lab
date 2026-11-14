@@ -120,3 +120,20 @@ describe('split in half', () => {
     expect(counts[6] / 700).toBeLessThan(0.18) // L, not over-picked
   })
 })
+
+describe('result details', () => {
+  it('shows the average, closest and furthest miss as a split, bigger side first', async () => {
+    const { resultDetails } = await import('./scoring')
+    const d = resultDetails([
+      { name: 'a', points: 100, left: 0.5 }, // 0 % off
+      { name: 'b', points: 80, left: 0.46 }, // 4 % off
+      { name: 'c', points: 60, left: 0.58 }, // 8 % off
+    ])
+    expect(d.stats).toEqual([
+      { label: 'Average miss', value: '54.0 / 46.0' },
+      { label: 'Closest cut', value: '50.0 / 50.0' },
+      { label: 'Furthest off', value: '58.0 / 42.0' },
+    ])
+    expect(d.chips?.items.map((c) => c.label)).toEqual(['Round 1', 'Round 2', 'Round 3'])
+  })
+})
