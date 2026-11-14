@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { Button } from '../../components/Button'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
@@ -7,7 +6,7 @@ import { RoundResult } from '../../components/game/RoundResult'
 import { NumberPad } from '../../components/NumberPad'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { NEW_TASK_MAKERS, add, angleTo, clampToRange, dirOf, makeTasks, resultDetails, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
+import { add, angleTo, clampToRange, dirOf, makeTasks, resultDetails, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
 
 const STROKE = 0.9
 /** Line widths: your answer a bit bolder, the solution thinner, so both stay visible where they overlap. */
@@ -114,10 +113,7 @@ function handleAt(task: Task, a: Answer): Pt | undefined {
 }
 
 export default function GeometryTest({ onFinish }: TestComponentProps) {
-  // Test link (dev server only): #/test/geometry?tasks=new runs just the new / changed tasks and saves nothing.
-  const [params] = useSearchParams()
-  const testMode = import.meta.env.DEV && params.get('tasks') === 'new'
-  const [tasks] = useState(() => makeTasks(Math.random, testMode ? NEW_TASK_MAKERS : undefined))
+  const [tasks] = useState(() => makeTasks())
   const [index, setIndex] = useState(0)
   const task = tasks[index]
   const [answer, setAnswer] = useState<Answer>(() => task.initial ?? {})
@@ -158,7 +154,6 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
     if (index + 1 >= tasks.length) {
       return onFinish({
         score: totalScore(results.map((r) => r.ev.points)),
-        ...(testMode && { failed: 'Test run with only the new tasks: not saved' }),
         details: resultDetails(results),
       })
     }
