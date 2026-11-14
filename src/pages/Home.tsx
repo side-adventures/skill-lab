@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import { CategoryChips } from '../components/CategoryChips'
 import { TestIcon } from '../components/TestIcon'
-import { testsWithBest } from '../lib/allScores'
+import { prototypesWithBest, testsWithBest } from '../lib/allScores'
 import { scoreParts } from '../lib/scoreParts'
 import type { ResultEntry } from '../lib/storage'
 import { CATEGORY_COLORS, categoryFromParam, type Category, type TestDefinition } from '../tests/types'
@@ -25,6 +25,7 @@ export function Home() {
     )
 
   const tests = testsWithBest().sort((a, b) => a.test.name.localeCompare(b.test.name))
+  const prototypes = prototypesWithBest()
   const playedCount = tests.filter((t) => t.best).length
   const visible = tests.filter(
     ({ test, best }) => (!category || test.category === category) && (show === 'all' || !best),
@@ -61,6 +62,20 @@ export function Home() {
           category={category}
           onShowAll={() => update('show', null)}
         />
+      )}
+
+      {prototypes.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-lg font-semibold text-zinc-100">Prototypes</h2>
+          <p className="mt-1 mb-4 text-sm text-zinc-400">New tests being tried out. Rules and scoring may still change.</p>
+          <ul className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {prototypes.map(({ test, best }) => (
+              <li key={test.id}>
+                <TestCard test={test} best={best} />
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </>
   )

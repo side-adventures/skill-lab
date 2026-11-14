@@ -496,4 +496,34 @@ export const TESTS: TestDefinition[] = [
   },
 ]
 
-export const getTest = (id: string) => TESTS.find((t) => t.id === id)
+/**
+ * Prototypes: new tests being tried out. Shown in their own section at the bottom of the home page,
+ * left out of the test count, "Next test" and the stats page. Rules and scoring may still change.
+ */
+export const PROTOTYPES: TestDefinition[] = [
+  {
+    id: 'split-half',
+    name: 'Split in Half',
+    icon: '✂️',
+    category: 'Estimation',
+    tagline: 'Cut the shape into two equal halves.',
+    skill: 'judging area',
+    howTo: [
+      'Drag the line left or right, or click where it should go.',
+      'Place it so both sides of the shape have the same area, then click Done.',
+      '5 rounds, a different kind of shape each time.',
+    ],
+    scoring: [
+      'Your average accuracy: 100 % for a perfect 50 / 50 cut, 0 % at 40 / 60 or worse.',
+    ],
+    durationHint: '~1 min',
+    scoreLabel: 'Average accuracy',
+    higherIsBetter: true,
+    formatScore: (s) => `${s.toFixed(1)} %`,
+    start: 'quick',
+    layout: 'panel',
+    Component: lazyTest(() => import('./split-half/SplitHalfTest')),
+  },
+]
+
+export const getTest = (id: string) => TESTS.find((t) => t.id === id) ?? PROTOTYPES.find((t) => t.id === id)
