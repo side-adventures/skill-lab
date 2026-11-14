@@ -9,6 +9,8 @@ import type { Pt } from '../geometry/scoring'
 import { ROUNDS, START_X, evaluate, leftPart, makeRounds, resultDetails, rightPart, totalScore } from './scoring'
 
 const STROKE = 0.9
+/** The white cut line: thin, so it doesn't hide the shape's edge it crosses. */
+const CUT_LINE = 0.45
 const toPoints = (pts: Pt[]) => pts.map((p) => `${p.x},${p.y}`).join(' ')
 type Result = { name: string; points: number; left: number }
 
@@ -96,7 +98,7 @@ export default function SplitHalfTest({ onFinish }: TestComponentProps) {
             ) : (
               <polygon points={toPoints(round.pts)} className="fill-violet-800" />
             )}
-            <line x1={x} y1={0} x2={x} y2={100} strokeWidth={STROKE} className="stroke-white" />
+            <line x1={x} y1={0} x2={x} y2={100} strokeWidth={CUT_LINE} className="stroke-white" />
             {!result && <circle cx={x} cy={50} r={2.6} className="fill-white/25 stroke-white" strokeWidth={0.5} />}
           </svg>
         }
