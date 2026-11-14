@@ -231,8 +231,8 @@ export function resultDetails(results: { name: string; points: number; left: num
       { label: 'Furthest off', value: `${(50 + Math.max(...off)).toFixed(1)} / ${(50 - Math.max(...off)).toFixed(1)}` },
     ],
     chips: {
-      title: 'Points per shape',
-      items: results.map((r) => ({ label: r.name, value: `${r.points} pts` })),
+      title: 'Points per round',
+      items: results.map((r, i) => ({ label: `Round ${i + 1}`, value: `${r.points} pts` })),
     },
   }
 }
