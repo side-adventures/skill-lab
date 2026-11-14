@@ -30,7 +30,7 @@ describe('split in half', () => {
 
   it('every familiar shape stays a clean outline after stretching, mirroring and turning', () => {
     const rand = seeded(5)
-    expect(FAMILIAR_NAMES).toEqual(['L', 'T', 'U', 'Arrow', 'Boot', 'Flag', 'Lightning', 'Key', 'Trophy', 'Tree', 'Fish'])
+    expect(FAMILIAR_NAMES).toEqual(['L', 'T', 'U', 'Arrow', 'Boot', 'Flag', 'Lightning', 'Key', 'Fish'])
     for (let i = 0; i < 2000; i++) expect(isSimple(familiar(rand))).toBe(true)
   })
 
@@ -102,15 +102,15 @@ describe('split in half', () => {
   it('every familiar shape shows up about equally often', () => {
     const rand = seeded(6)
     const counts: Record<string, number> = {}
-    // which familiar shape a round used: by its number of corners (all differ except where noted)
-    for (let i = 0; i < 1100; i++) {
+    // which familiar shape a round used, by its number of corners
+    for (let i = 0; i < 900; i++) {
       const r = makeRound('familiar', rand)
       counts[r.pts.length] = (counts[r.pts.length] ?? 0) + 1
     }
-    // corners: L 6, T 8 / U 8, Arrow 7 / Boot 7, Flag 5, Lightning 7, Key 18, Trophy 18, Tree 7, Fish 10
-    expect(counts[5] / 1100).toBeGreaterThan(0.06) // flag ≈ 1 / 11
-    expect(counts[10] / 1100).toBeGreaterThan(0.06) // fish ≈ 1 / 11
-    expect(counts[7] / 1100).toBeGreaterThan(0.3) // arrow, boot, lightning, tree ≈ 4 / 11
-    expect(counts[6] / 1100).toBeLessThan(0.13) // L ≈ 1 / 11, no longer over-picked
+    // corners: L 6, T 8 / U 8, Arrow 7 / Boot 7 / Lightning 7, Flag 5, Key 18, Fish 10 → 1 / 9 each
+    expect(counts[5] / 900).toBeGreaterThan(0.07) // flag
+    expect(counts[18] / 900).toBeGreaterThan(0.07) // key
+    expect(counts[7] / 900).toBeGreaterThan(0.25) // arrow, boot, lightning ≈ 3 / 9
+    expect(counts[6] / 900).toBeLessThan(0.16) // L, no longer over-picked
   })
 })
