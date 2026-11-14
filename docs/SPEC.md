@@ -68,6 +68,16 @@ screen then shows why, and nothing is saved.
 | `line-tracing` | Line Tracing | Motor | Random smooth path (7 alternating turns) on a 1000×667 (3:2) board, corridor 60 units wide. Moving onto GO arms the run; the timer starts when you leave GO along the path (leaving it off the path just resets to waiting). Finish on the flag. Leaving the corridor (or lifting the finger) ends the run with no score. | Time | Lower |
 | `geometry` | Eye for Geometry | Estimation | 10 tasks, one of each kind in random order: middle of a line, center of a circle, make an angle, name the marked angle (typed), halve the marked angle (the arm can't leave the angle), make a line parallel to another (rotate around a fixed end; either direction counts), complete a square, copy a length, point equally far from 3 dots, slide a fixed-angle cut to halve an irregular shape. Each task scores 0–100 %, falling linearly with error (tolerances: 8 % of length, 25 % of radius, 25°, 25°, 15°, 10°, 25 % of side, 25 % of length, 30 % of radius, 10 % of area). Result lists every task's accuracy. | Average accuracy % | Higher |
 
+### Prototypes
+
+New tests being tried out live in `PROTOTYPES` in `src/tests/registry.ts`. They have their own section ("Prototypes")
+at the bottom of the home page, and are left out of the "X of N played" count, "Next test", the stats page and
+"Share scores". Rules and scoring are rough until a prototype becomes a real test (then it moves into `TESTS`).
+
+| id | Name | Category | How it works | Score | Better |
+|---|---|---|---|---|---|
+| `split-half` | Split in Half | Estimation | 5 rounds, one shape of each kind in random order: triangle, four corners, blocks (L / T / U / steps, mirrored and turned), star (4–7 spikes), jagged (7–11 corners). Each is 55–80 units across at a random spot on the board. A vertical line starts 10–18 units off the answer; drag or click to move it (← / → nudge, Shift for bigger steps), then Done. The answer is never within 2.5 units of the middle of the shape's width. | Average accuracy: per round 100 % at 50 / 50, falling to 0 % at 40 / 60 | Higher |
+
 ## Share format
 
 `I scored 243 ms on Reaction Time at Skill Lab — can you beat it? <url>#/test/reaction`
