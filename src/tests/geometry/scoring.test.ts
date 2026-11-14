@@ -160,4 +160,29 @@ describe('new and changed tasks (2026-11-14)', () => {
       }
     }
   })
+  it('Make an angle starts 15–30° off the line; Make it parallel shows longer lines; Copy the length draws end bars', () => {
+    for (let i = 0; i < 100; i++) {
+      const t = setAngle(r)
+      const base = t.shapes[0]
+      if (base.t !== 'ray') throw new Error('expected the fixed line')
+      const off = angleDiff(t.initial!.angle!, base.angle)
+      expect(off).toBeGreaterThanOrEqual(15)
+      expect(off).toBeLessThanOrEqual(30)
+    }
+    const p = makeParallel(r)
+    expect(p.resultArmLen).toBeCloseTo(2.2 * p.armLen!)
+    const c = copyLength(r)
+    expect(c.hideHandle).toBe(true)
+    expect(c.drawAnswer!({ length: 20 }).map((s) => s.t)).toEqual(['seg', 'seg']) // line + end bar
+    const sol = c.evaluate({ length: 20 }).solution
+    expect(sol.some((s) => s.t === 'seg' && s.solid)).toBe(true) // solid bar at the right end
+  })
+
+  it('point tasks show no "% off" line; Match the size and Copy the length keep theirs', () => {
+    for (const make of [middleOfLine, centerOfCircle, completeSquare, equalDistance, balancePoint, whereTheyMeet, mirrorPoint]) {
+      expect(make(r).evaluate({ point: { x: 50, y: 50 } }).label).toBe('')
+    }
+    expect(matchSize(r).evaluate({ length: 10 }).label).toMatch(/% too (big|small)/)
+    expect(copyLength(r).evaluate({ length: 10 }).label).toMatch(/^(short|long) by/)
+  })
 })
