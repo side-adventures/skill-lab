@@ -66,8 +66,9 @@ const FAMILIAR: Familiar[] = [
     return P([[0, 0.5 - sw], [1 - hl, 0.5 - sw], [1 - hl, 0.5 - hw], [1, 0.5], [1 - hl, 0.5 + hw], [1 - hl, 0.5 + sw], [0, 0.5 + sw]])
   } },
   { name: 'Boot', turn: 'none', make: (rand) => {
-    const leg = between(rand, 0.3, 0.5), ankle = between(rand, 0.45, 0.65)
-    return P([[0, 0], [leg, 0], [leg, ankle], [0.85, ankle + 0.08], [1, 0.85], [1, 1], [0, 1]])
+    // the foot is up to 20 % longer than the leg is tall (on top of the usual stretching)
+    const leg = between(rand, 0.3, 0.5), ankle = between(rand, 0.45, 0.65), foot = between(rand, 1, 1.2)
+    return P([[0, 0], [leg, 0], [leg, ankle], [foot - 0.15, ankle + 0.08], [foot, 0.85], [foot, 1], [0, 1]])
   } },
   { name: 'Key', turn: 'half', make: (rand) => {
     // a cut-corner head on the left, a shaft, two teeth hanging down near the end
