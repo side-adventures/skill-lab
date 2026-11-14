@@ -66,7 +66,7 @@ export const pointsFor = (error: number, tolerance: number) => Math.round(100 * 
 const pct = (e: number) => `${(e * 100).toFixed(1)} % off`
 const deg = (e: number) => `${e.toFixed(1)}° off`
 
-// ---------- polygon area (for "Split it") ----------
+// ---------- polygon area (used by Split in Half) ----------
 export const polygonArea = (pts: Pt[]) =>
   Math.abs(pts.reduce((s, p, i) => {
     const q = pts[(i + 1) % pts.length]
@@ -88,23 +88,6 @@ export function clipHalf(pts: Pt[], origin: Pt, n: Pt, offset: number): Pt[] {
   })
   return out
 }
-
-export const areaFraction = (pts: Pt[], origin: Pt, n: Pt, offset: number) =>
-  polygonArea(clipHalf(pts, origin, n, offset)) / polygonArea(pts)
-
-/** Offset where the cut gives two equal halves (binary search). */
-export function halvingOffset(pts: Pt[], origin: Pt, n: Pt) {
-  let lo = -60, hi = 60
-  for (let i = 0; i < 60; i++) {
-    const mid = (lo + hi) / 2
-    if (areaFraction(pts, origin, n, mid) > 0.5) lo = mid
-    else hi = mid
-  }
-  return (lo + hi) / 2
-}
-
-// ---------- the ten tasks ----------
-const C: Pt = { x: 50, y: 50 }
 
 export function middleOfLine(rand: Rand): Task {
   const len = between(rand, 55, 85), ang = between(rand, 0, 180)
@@ -249,32 +232,9 @@ export function equalDistance(rand: Rand): Task {
   }
 }
 
-export function splitShape(rand: Rand): Task {
-  const n = 11
-  const radii = Array.from({ length: n }, () => between(rand, 20, 37))
-  const smooth = radii.map((r, i) => (r * 2 + radii[(i + 1) % n] + radii[(i + n - 1) % n]) / 4)
-  const pts = smooth.map((r, i) => add(C, dirOf((360 / n) * i + between(rand, -8, 8)), r))
-  const lineAng = between(rand, 0, 180)
-  const normal = dirOf(lineAng + 90)
-  const best = halvingOffset(pts, C, normal)
-  return {
-    kind: 'split', title: 'Split it in half', prompt: 'Slide the line so it cuts the shape into two parts of equal area.', input: 'offset',
-    shapes: [{ t: 'poly', pts }], pivot: C, dir: normal, initial: { offset: best + (rand() < 0.5 ? -1 : 1) * between(rand, 10, 16) },
-    evaluate: ({ offset }) => {
-      const f = areaFraction(pts, C, normal, offset!)
-      const e = Math.abs(f - 0.5)
-      return {
-        points: pointsFor(e, 0.1),
-        label: `${(f * 100).toFixed(1)} / ${(100 - f * 100).toFixed(1)} split`,
-        solution: [{ t: 'line', through: add(C, normal, best), angle: lineAng }],
-      }
-    },
-  }
-}
-
 export const TASK_MAKERS = [
   middleOfLine, centerOfCircle, setAngle, guessAngle, bisectAngle,
-  makeParallel, completeSquare, copyLength, equalDistance, splitShape,
+  makeParallel, completeSquare, copyLength, equalDistance,
 ]
 
 /** One round of every task type, in random order. */
@@ -282,10 +242,10 @@ export const makeTasks = (rand: Rand = Math.random) => shuffle(TASK_MAKERS, rand
 
 export const totalScore = (points: number[]) => round1(mean(points))
 
-/** Short task names for the result chips (10 must fit in two rows). */
+/** Short task names for the result chips (all tasks must fit in two rows). */
 const SHORT: Record<string, string> = {
   middle: 'Middle', center: 'Center', 'guess-angle': 'Name angle', bisect: 'Half angle', parallel: 'Parallel',
-  square: 'Square', 'copy-length': 'Length', equidistant: 'Equal dist.', split: 'Split',
+  square: 'Square', 'copy-length': 'Length', equidistant: 'Equal dist.',
 }
 const shortName = (t: Task) => SHORT[t.kind] ?? t.title
 

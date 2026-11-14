@@ -477,13 +477,13 @@ export const TESTS: TestDefinition[] = [
     tagline: 'Middles, angles, centers — by eye.',
     skill: 'judging shapes and angles by eye',
     howTo: [
-      '10 short tasks, such as finding the middle of a line, setting an angle or completing a square.',
+      '9 short tasks, such as finding the middle of a line, setting an angle or completing a square.',
       'Drag or click on the board, then confirm with Done. To name an angle, type it and confirm with OK.',
       'After each task you see the exact solution.',
     ],
     scoring: [
       'Each task scores up to 100 %, depending on how close you got.',
-      'Your score is your average accuracy over all 10 tasks.',
+      'Your score is your average accuracy over all 9 tasks.',
     ],
     durationHint: '~3 min',
     scoreLabel: 'Average accuracy',
