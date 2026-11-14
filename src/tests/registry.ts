@@ -489,7 +489,7 @@ export const TESTS: TestDefinition[] = [
     scoreLabel: 'Average accuracy',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} %`,
-    start: 'quick',
+    start: 'none',
     layout: 'panel',
     scoreVersion: 2, // "Make it level" replaced by "Make it parallel"
     Component: lazyTest(() => import('./geometry/GeometryTest')),

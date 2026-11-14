@@ -32,7 +32,7 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
   const width = WIDTH[tone]
   switch (shape.t) {
     case 'seg':
-      return <line x1={shape.a.x} y1={shape.a.y} x2={shape.b.x} y2={shape.b.y} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashedOpen(Math.hypot(shape.b.x - shape.a.x, shape.b.y - shape.a.y))} className={color} />
+      return <line x1={shape.a.x} y1={shape.a.y} x2={shape.b.x} y2={shape.b.y} strokeWidth={shape.solid ? Math.max(width, STROKE) : width} strokeLinecap="round" strokeDasharray={shape.solid ? undefined : dashedOpen(Math.hypot(shape.b.x - shape.a.x, shape.b.y - shape.a.y))} className={color} />
     case 'circle':
       return <circle cx={shape.c.x} cy={shape.c.y} r={shape.r} fill="none" strokeWidth={width} strokeDasharray={dashed} className={color} />
     case 'dot':
@@ -79,11 +79,14 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
 }
 
 /** Turns the current answer into something drawable. */
-function answerShapes(task: Task, a: Answer): Shape[] {
+function answerShapes(task: Task, a: Answer, shown: boolean): Shape[] {
   if (task.drawAnswer) return task.drawAnswer(a)
   switch (task.input) {
     case 'point': return a.point ? [{ t: 'dot', p: a.point }] : []
-    case 'ray': return a.angle === undefined ? [] : [{ t: 'ray', from: task.pivot!, angle: a.angle, len: task.armLen ?? 42 }]
+    case 'ray': {
+      const len = shown && task.resultArmLen ? task.resultArmLen : task.armLen ?? 42
+      return a.angle === undefined ? [] : [{ t: 'ray', from: task.pivot!, angle: a.angle, len }]
+    }
     case 'length': return a.length === undefined ? [] : [{ t: 'seg', a: task.pivot!, b: add(task.pivot!, task.dir!, a.length) }]
     case 'offset':
       return a.offset === undefined ? [] : [{ t: 'line', through: add(task.pivot!, task.dir!, a.offset), angle: angleTo({ x: 0, y: 0 }, task.dir!) - 90 }]
@@ -93,6 +96,7 @@ function answerShapes(task: Task, a: Answer): Shape[] {
 
 /** Where the drag handle sits (if any). */
 function handleAt(task: Task, a: Answer): Pt | undefined {
+  if (task.hideHandle) return undefined
   if (task.input === 'ray' && a.angle !== undefined) return add(task.pivot!, dirOf(a.angle), task.armLen ?? 42)
   if (task.input === 'length' && a.length !== undefined) return add(task.pivot!, task.dir!, a.length)
   if (task.input === 'offset' && a.offset !== undefined) return add(task.pivot!, task.dir!, a.offset)
@@ -186,7 +190,7 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
             onPointerCancel={() => (dragging.current = false)}
           >
             {task.shapes.map((s, i) => <Draw key={`b${i}`} shape={s} tone="base" />)}
-            {answerShapes(task, answer).map((s, i) => <Draw key={`a${i}`} shape={s} tone="answer" />)}
+            {answerShapes(task, answer, !!evaluation).map((s, i) => <Draw key={`a${i}`} shape={s} tone="answer" />)}
             {handle && !evaluation && <circle cx={handle.x} cy={handle.y} r={2.6} className="fill-violet-500/30 stroke-violet-500" strokeWidth={0.5} />}
             {evaluation?.zone?.map((s, i) => <Draw key={`z${i}`} shape={s} tone="zone" />)}
             {evaluation?.solution.map((s, i) => <Draw key={`s${i}`} shape={s} tone="solution" />)}
