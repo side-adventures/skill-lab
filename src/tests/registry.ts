@@ -514,7 +514,7 @@ export const PROTOTYPES: TestDefinition[] = [
       '5 rounds, a different kind of shape each time.',
     ],
     scoring: [
-      'Each round gives 0–100 points: 100 for a perfect 50 / 50 cut, 0 at 40 / 60 or worse. Your score is the average.',
+      'Each round gives 0–100 points: 100 for a perfect 50 / 50 cut, 0 at 30 / 70 or worse. Your score is the average.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Score',
