@@ -218,8 +218,7 @@ export function centerOfCircle(rand: Rand): Task {
 }
 
 export function setAngle(rand: Rand): Task {
-  // 25–155°: both 0 % limits (target ± 25°) are real angles between 0° and 180°, so both are shown
-  const base = between(rand, 0, 360), target = Math.round(between(rand, 25, 155))
+  const base = between(rand, 0, 360), target = Math.round(between(rand, 10, 170))
   return {
     kind: 'set-angle', title: `Make ${target}°`, prompt: `Rotate the arm to make a ${target}° angle with the fixed line.`, input: 'ray',
     // the arm starts 15–30° away from the fixed line, not on top of it
@@ -230,8 +229,10 @@ export function setAngle(rand: Rand): Task {
       const right = angleDiff(angle!, base + target) < angleDiff(angle!, base - target) ? base + target : base - target
       return {
         points: pointsFor(e, 25), label: `${made.toFixed(1)}° made · ${deg(e)}`, solution: [{ t: 'ray', from: C, angle: right, len: 42 }],
-        // the limits at target ± 25°, on the side of the right answer
-        zone: [target - 25, target + 25].map((t) => ({ t: 'ray', from: C, angle: right === base + target ? base + t : base - t, len: 42 }) as Shape),
+        // the limits at target ± 25°, on the side of the right answer. Past 180° (or below 0°) an angle shrinks
+        // again, so that side never reaches 0 % and gets no line (e.g. 165°: even a straight line is only 15° off).
+        zone: [target - 25, target + 25].filter((t) => t >= 0 && t <= 180)
+          .map((t) => ({ t: 'ray', from: C, angle: right === base + target ? base + t : base - t, len: 42 }) as Shape),
       }
     },
   }
@@ -327,8 +328,8 @@ const endBar = (origin: Pt, dir: Pt, k: number): Shape & { t: 'seg' } => {
 }
 
 export function copyLength(rand: Rand): Task {
-  // lengths from short to long (12–48); the upper line is tilted so it stays on the board (y ≥ 5)
-  const L = between(rand, 12, 48), refMid = { x: 50, y: 27 }
+  // lengths 18–56; the upper line is tilted so it stays on the board (y ≥ 5): the longest ones lie fairly flat
+  const L = between(rand, 18, 56), refMid = { x: 50, y: 27 }
   let refAng: number
   do refAng = between(rand, 35, 145)
   while ((Math.abs(Math.sin((refAng * Math.PI) / 180)) * L) / 2 > 21)
