@@ -5,9 +5,13 @@ import { clipHalf, polygonArea, pointsFor, type Pt } from '../geometry/scoring'
 /** Board is a 100 × 100 viewBox; the cut is a vertical line at x. */
 export const ROUNDS = 5
 
-export type ShapeKind = 'triangle' | 'familiar' | 'pointy' | 'bite' | 'spikes'
-/** One round of each kind per run (in random order): a triangle, a familiar shape and three irregular ones. */
-export const KINDS: ShapeKind[] = ['triangle', 'familiar', 'pointy', 'bite', 'spikes']
+export type ShapeKind = 'familiar' | 'pointy' | 'bite' | 'spikes'
+export const KINDS: ShapeKind[] = ['familiar', 'pointy', 'bite', 'spikes']
+/**
+ * The rounds of one run, in random order: two familiar shapes (always two different ones, the triangle is one
+ * of them) and the three irregular kinds.
+ */
+export const RUN_KINDS: ShapeKind[] = ['familiar', 'familiar', 'pointy', 'bite', 'spikes']
 /** The line always starts here (the middle of the board). */
 export const START_X = 50
 
@@ -44,6 +48,13 @@ function minAngle(pts: Pt[]) {
 /** `turn`: 'quarter' = any quarter turn; 'half' = upside down or not (stays lying, like the key); 'none' = upright. */
 type Familiar = { name: string; turn: 'quarter' | 'half' | 'none'; make: (rand: Rand) => Pt[] }
 const FAMILIAR: Familiar[] = [
+  { name: 'Triangle', turn: 'none', make: (rand) => {
+    // three random corners, no needle-thin triangles
+    for (;;) {
+      const pts = Array.from({ length: 3 }, () => ({ x: rand(), y: rand() }))
+      if (minAngle(pts) >= 18 && polygonArea(pts) > 0.12) return pts
+    }
+  } },
   { name: 'L', turn: 'quarter', make: (rand) => {
     const a = between(rand, 0.25, 0.45), b = between(rand, 0.25, 0.45)
     return P([[0, 0], [a, 0], [a, 1 - b], [1, 1 - b], [1, 1], [0, 1]])
@@ -150,11 +161,6 @@ function spikes(rand: Rand): Pt[] {
 /** A raw shape of this kind (any size and position; `scale` and `makeRound` fit it on the board). */
 export function rawShape(kind: ShapeKind, rand: Rand, which?: Familiar): Pt[] {
   switch (kind) {
-    case 'triangle':
-      for (;;) {
-        const pts = Array.from({ length: 3 }, () => ({ x: rand(), y: rand() }))
-        if (minAngle(pts) >= 18 && polygonArea(pts) > 0.12) return pts
-      }
     case 'familiar':
       return familiar(rand, which)
     case 'pointy':
@@ -201,6 +207,8 @@ export function halvingX(pts: Pt[]) {
 
 export interface Round {
   kind: ShapeKind
+  /** What to call it on the result screen: the familiar shape's name ("Key"), otherwise the kind ("Bite"). */
+  name: string
   pts: Pt[]
   /** Correct cut. */
   half: number
@@ -211,10 +219,10 @@ export interface Round {
  * correct cut is 6–20 units to the left or right of it. The answer is also never the middle of the shape's
  * width (≥ 2.5 units off), so "cut in the middle of the box" isn't a shortcut.
  */
-export function makeRound(kind: ShapeKind, rand: Rand = Math.random): Round {
+export function makeRound(kind: ShapeKind, rand: Rand = Math.random, which = kind === 'familiar' ? pickFamiliar(rand) : undefined): Round {
   // A familiar shape is picked once: a retry only changes its proportions and turn, so shapes that often
-  // land near the middle (lightning, tree) aren't quietly replaced by ones that never do (L, boot).
-  const which = kind === 'familiar' ? pickFamiliar(rand) : undefined
+  // land near the middle (arrow) aren't quietly replaced by ones that never do (L, boot).
+  const name = which?.name ?? kind[0].toUpperCase() + kind.slice(1)
   for (let tries = 0; ; tries++) {
     const raw = scale(rawShape(kind, rand, which), rand)
     const b = bounds(raw)
@@ -230,11 +238,16 @@ export function makeRound(kind: ShapeKind, rand: Rand = Math.random): Round {
     if (!sides.length) continue
     const [a, z] = sides[Math.floor(rand() * sides.length)]
     const pts = shiftX(raw, between(rand, a, z) - rawHalf)
-    return { kind, pts, half: halvingX(pts) }
+    return { kind, name, pts, half: halvingX(pts) }
   }
 }
 
-export const makeRounds = (rand: Rand = Math.random) => shuffle(KINDS, rand).map((k) => makeRound(k, rand))
+export function makeRounds(rand: Rand = Math.random): Round[] {
+  // the familiar rounds get different shapes: no two L's in one run
+  const familiars = shuffle(FAMILIAR, rand)
+  let next = 0
+  return shuffle(RUN_KINDS, rand).map((k) => makeRound(k, rand, k === 'familiar' ? familiars[next++] : undefined))
+}
 
 /** Points for a cut: 100 for a perfect 50 / 50, down to 0 at 30 / 70. */
 export function evaluate(round: Round, x: number) {
@@ -245,7 +258,7 @@ export function evaluate(round: Round, x: number) {
 
 export const totalScore = (points: number[]) => round1(mean(points))
 
-export function resultDetails(results: { kind: ShapeKind; points: number; left: number }[]): ResultDetails {
+export function resultDetails(results: { name: string; points: number; left: number }[]): ResultDetails {
   const off = results.map((r) => Math.abs(r.left - 0.5) * 100)
   return {
     stats: [
@@ -254,7 +267,7 @@ export function resultDetails(results: { kind: ShapeKind; points: number; left: 
     ],
     chips: {
       title: 'Points per shape',
-      items: results.map((r) => ({ label: r.kind[0].toUpperCase() + r.kind.slice(1), value: `${r.points} pts` })),
+      items: results.map((r) => ({ label: r.name, value: `${r.points} pts` })),
     },
   }
 }

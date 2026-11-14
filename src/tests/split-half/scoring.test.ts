@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { polygonArea } from '../geometry/scoring'
-import { FAMILIAR_NAMES, KINDS, ROUNDS, START_X, evaluate, familiar, halvingX, makeRound, makeRounds, rawShape, rightShare, totalScore } from './scoring'
+import { FAMILIAR_NAMES, KINDS, ROUNDS, RUN_KINDS, START_X, evaluate, familiar, halvingX, makeRound, makeRounds, rawShape, rightShare, totalScore } from './scoring'
 
 // mulberry32, seeded
 const seeded = (seed: number) => () => {
@@ -22,15 +22,21 @@ const isSimple = (pts: { x: number; y: number }[]) =>
   }))
 
 describe('split in half', () => {
-  it('a run has one shape of every kind', () => {
-    const rounds = makeRounds(seeded(1))
-    expect(rounds).toHaveLength(ROUNDS)
-    expect(new Set(rounds.map((r) => r.kind))).toEqual(new Set(KINDS))
+  it('a run has two different familiar shapes and the three irregular kinds', () => {
+    const rand = seeded(1)
+    for (let i = 0; i < 300; i++) {
+      const rounds = makeRounds(rand)
+      expect(rounds).toHaveLength(ROUNDS)
+      expect(rounds.map((r) => r.kind).sort()).toEqual([...RUN_KINDS].sort())
+      const fam = rounds.filter((r) => r.kind === 'familiar').map((r) => r.name)
+      expect(new Set(fam).size).toBe(2)
+      for (const n of fam) expect(FAMILIAR_NAMES).toContain(n)
+    }
   })
 
   it('every familiar shape stays a clean outline after stretching, mirroring and turning', () => {
     const rand = seeded(5)
-    expect(FAMILIAR_NAMES).toEqual(['L', 'T', 'U', 'Arrow', 'Boot', 'Key', 'Fish'])
+    expect(FAMILIAR_NAMES).toEqual(['Triangle', 'L', 'T', 'U', 'Arrow', 'Boot', 'Key', 'Fish'])
     for (let i = 0; i < 2000; i++) expect(isSimple(familiar(rand))).toBe(true)
   })
 
@@ -60,7 +66,7 @@ describe('split in half', () => {
     // L shape: 10 × 40 bar + 10 × 10 foot = 500; half (250) is 6.25 into the 40-high bar
     const l = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 30 }, { x: 20, y: 30 }, { x: 20, y: 40 }, { x: 0, y: 40 }]
     expect(halvingX(l)).toBeCloseTo(6.25, 5)
-    const round = { kind: 'triangle' as const, pts: square, half: 20 }
+    const round = { kind: 'familiar' as const, name: 'Square', pts: square, half: 20 }
     expect(evaluate(round, 20).points).toBe(100)
     expect(evaluate(round, 16).points).toBe(0) // 30 / 70
     expect(evaluate(round, 18).points).toBe(50) // 40 / 60
@@ -107,9 +113,10 @@ describe('split in half', () => {
       const r = makeRound('familiar', rand)
       counts[r.pts.length] = (counts[r.pts.length] ?? 0) + 1
     }
-    // corners: L 6, T 8 / U 8, Arrow 7 / Boot 7, Key 18, Fish 10 → 1 / 7 each
-    expect(counts[18] / 700).toBeGreaterThan(0.1) // key
-    expect(counts[10] / 700).toBeGreaterThan(0.1) // fish
-    expect(counts[6] / 700).toBeLessThan(0.2) // L, not over-picked
+    // corners: Triangle 3, L 6, T 8 / U 8, Arrow 7 / Boot 7, Key 18, Fish 10 → 1 / 8 each
+    expect(counts[3] / 700).toBeGreaterThan(0.08) // triangle
+    expect(counts[18] / 700).toBeGreaterThan(0.08) // key
+    expect(counts[10] / 700).toBeGreaterThan(0.08) // fish
+    expect(counts[6] / 700).toBeLessThan(0.18) // L, not over-picked
   })
 })
