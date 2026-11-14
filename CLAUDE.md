@@ -32,6 +32,8 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 - `npm test` · `npm run lint` · `npm run build` — all three must pass before committing.
 
 ## Adding a test
+New tests follow the process in the `new-test` skill (`.claude/skills/new-test/SKILL.md`): idea → design sketch →
+prototype → play and tune → review → promote, with the user's OK between steps. The technical rules:
 1. Create `src/tests/<id>/` with:
    - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`;
      `details` is a `ResultDetails`: stats row, optional special block, optional chips — pick what's interesting for this test).
