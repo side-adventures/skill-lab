@@ -76,7 +76,7 @@ at the bottom of the home page, and are left out of the "X of N played" count, "
 
 | id | Name | Category | How it works | Score | Better |
 |---|---|---|---|---|---|
-| `split-half` | Split in Half | Estimation | 5 rounds, one shape of each kind in random order: triangle, four corners, blocks (L / T / U / steps, mirrored and turned), star (4–7 spikes), jagged (7–11 corners). Each is 55–80 units across at a random spot on the board. A vertical line starts 10–18 units off the answer; drag or click to move it (← / → nudge, Shift for bigger steps), then Done. The answer is never within 2.5 units of the middle of the shape's width. | Average accuracy: per round 100 % at 50 / 50, falling to 0 % at 40 / 60 | Higher |
+| `split-half` | Split in Half | Estimation | Starts at once (no Ready). 5 rounds. Shape kinds: triangle, four corners, blocks (L / T / U / steps, mirrored and turned), star (4–7 spikes), jagged (5–14 corners at uneven angles, spikes and deep notches, never two notches in a row). Normally one of each kind per run; **for testing now only jagged**. Each shape is 55–80 units across. The vertical line always starts in the middle of the board; the shape is shifted so the answer is 6–20 units left or right of it, and never within 2.5 units of the middle of the shape's width. Drag or click to move the line (← / → nudge, Shift for bigger steps), then Done. | Points 0–100: per round 100 at 50 / 50, falling to 0 at 40 / 60; the score is the average | Higher |
 
 ## Share format
 
