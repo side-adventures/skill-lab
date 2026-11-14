@@ -85,19 +85,19 @@ export default function SplitHalfTest({ onFinish }: TestComponentProps) {
             onPointerUp={() => (dragging.current = false)}
             onPointerCancel={() => (dragging.current = false)}
           >
+            {/* The shape is one solid color, no border: you judge one area, not a fill plus an outline. */}
             {result ? (
               <>
-                {/* the two parts in different shades, then the correct cut dashed */}
-                <polygon points={toPoints(leftPart(round.pts, x))} className="fill-violet-500/35" />
-                <polygon points={toPoints(rightPart(round.pts, x))} className="fill-violet-500/10" />
-                <polygon points={toPoints(round.pts)} fill="none" strokeWidth={STROKE} strokeLinejoin="round" className="stroke-zinc-200" />
-                <line x1={round.half} y1={0} x2={round.half} y2={100} strokeWidth={STROKE} strokeDasharray="2 1.5" className="stroke-emerald-500" />
+                {/* after Done: your left part in the full color, the right part lighter, the correct cut dashed */}
+                <polygon points={toPoints(leftPart(round.pts, x))} className="fill-violet-800" />
+                <polygon points={toPoints(rightPart(round.pts, x))} className="fill-violet-500" />
+                <line x1={round.half} y1={0} x2={round.half} y2={100} strokeWidth={STROKE} strokeDasharray="2 1.5" className="stroke-emerald-400" />
               </>
             ) : (
-              <polygon points={toPoints(round.pts)} strokeWidth={STROKE} strokeLinejoin="round" className="fill-violet-500/10 stroke-zinc-200" />
+              <polygon points={toPoints(round.pts)} className="fill-violet-800" />
             )}
-            <line x1={x} y1={0} x2={x} y2={100} strokeWidth={STROKE} className="stroke-violet-500" />
-            {!result && <circle cx={x} cy={50} r={2.6} className="fill-violet-500/30 stroke-violet-500" strokeWidth={0.5} />}
+            <line x1={x} y1={0} x2={x} y2={100} strokeWidth={STROKE} className="stroke-white" />
+            {!result && <circle cx={x} cy={50} r={2.6} className="fill-white/25 stroke-white" strokeWidth={0.5} />}
           </svg>
         }
         panel={
