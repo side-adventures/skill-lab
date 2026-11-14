@@ -208,21 +208,25 @@ describe('new and changed tasks (2026-11-14)', () => {
     expect(ref.t === 'poly' && ref.solid).toBe(true)
     expect(mine.t === 'poly' && mine.solid).toBe(true)
   })
-  it('Make X° targets 25–155°, so both 0 % lines are shown; Copy the length varies from short to long', () => {
-    const lengths: number[] = []
-    for (let i = 0; i < 500; i++) {
+  it('Make X° targets 10–170°; a 0 % line is shown only where it exists; Copy the length is 18–56 long', () => {
+    const targets: number[] = [], lengths: number[] = []
+    for (let i = 0; i < 1000; i++) {
       const t = setAngle(r)
       const target = Number(t.title.match(/\d+/)![0])
-      expect(target).toBeGreaterThanOrEqual(25)
-      expect(target).toBeLessThanOrEqual(155)
-      expect(t.evaluate({ angle: 0 }).zone).toHaveLength(2)
+      targets.push(target)
+      const lines = t.evaluate({ angle: 0 }).zone!.length
+      expect(lines).toBe(target + 25 > 180 || target - 25 < 0 ? 1 : 2)
       const c = copyLength(r)
       const ref = c.shapes[0]
       if (ref.t !== 'seg') throw new Error('expected the upper line')
       expect(Math.min(ref.a.y, ref.b.y)).toBeGreaterThanOrEqual(5)
       lengths.push(Math.hypot(ref.b.x - ref.a.x, ref.b.y - ref.a.y))
     }
-    expect(Math.min(...lengths)).toBeLessThan(15)
-    expect(Math.max(...lengths)).toBeGreaterThan(45)
+    expect(Math.min(...targets)).toBeLessThan(15)
+    expect(Math.max(...targets)).toBeGreaterThan(165)
+    expect(Math.min(...lengths)).toBeGreaterThanOrEqual(18)
+    expect(Math.min(...lengths)).toBeLessThan(21)
+    expect(Math.max(...lengths)).toBeGreaterThan(53)
+    expect(Math.max(...lengths)).toBeLessThanOrEqual(56)
   })
 })
