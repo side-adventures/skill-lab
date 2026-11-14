@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  angleDiff, angleTo, areaFraction, bisectAngle, centerOfCircle, completeSquare, copyLength, dirOf, equalDistance,
-  clampToRange, halvingOffset, makeParallel, makeTasks, middleOfLine, pointsFor, polygonArea, setAngle, splitShape, totalScore,
+  angleDiff, angleTo, bisectAngle, centerOfCircle, clipHalf, completeSquare, copyLength, dirOf, equalDistance,
+  clampToRange, makeParallel, makeTasks, middleOfLine, pointsFor, polygonArea, setAngle, totalScore,
 } from './scoring'
 
 describe('geometry helpers', () => {
@@ -17,12 +17,10 @@ describe('geometry helpers', () => {
     expect(pointsFor(20, 10)).toBe(0)
     expect(totalScore([100, 50])).toBe(75)
   })
-  it('finds the halving cut of a polygon', () => {
+  it('measures and clips polygons (used by Split in Half)', () => {
     const square = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]
     expect(polygonArea(square)).toBe(100)
-    const n = { x: 1, y: 0 }
-    expect(areaFraction(square, { x: 0, y: 0 }, n, 7)).toBeCloseTo(0.3)
-    expect(halvingOffset(square, { x: 0, y: 0 }, n)).toBeCloseTo(5)
+    expect(polygonArea(clipHalf(square, { x: 0, y: 0 }, { x: 1, y: 0 }, 7))).toBeCloseTo(30)
   })
 })
 
@@ -63,15 +61,9 @@ describe('geometry tasks', () => {
       expect(t.evaluate({ angle: a }).points).toBeLessThan(100)
     }
   })
-  it('splits shapes fairly and reports the split', () => {
-    for (let i = 0; i < 50; i++) {
-      const t = splitShape(r)
-      expect(t.evaluate({ offset: t.initial!.offset! }).points).toBeLessThan(100)
-    }
-  })
-  it('makes one round of each of the 10 tasks', () => {
+  it('makes one round of each of the 9 tasks', () => {
     const tasks = makeTasks()
-    expect(tasks).toHaveLength(10)
-    expect(new Set(tasks.map((t) => t.kind)).size).toBe(10)
+    expect(tasks).toHaveLength(9)
+    expect(new Set(tasks.map((t) => t.kind)).size).toBe(9)
   })
 })
