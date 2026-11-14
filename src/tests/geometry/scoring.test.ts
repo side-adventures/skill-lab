@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  COPY_MIN_TURN, NEW_TASK_MAKERS, PARALLEL_MIN_GAP, SIZE_SHAPES, TASK_GROUPS, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
+  COPY_MIN_TURN, NEW_TASK_MAKERS, PARALLEL_MIN_GAP, SHORT, SIZE_SHAPES, TASK_GROUPS, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
   completeSquare, copyLength, dirOf, equalDistance, clampToRange, makeParallel, makeTasks, matchSize, middleOfLine,
   mirrorPoint, pathMiddle, closestOnPath, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
 } from './scoring'
@@ -60,7 +60,7 @@ describe('geometry tasks', () => {
       const a = clampToRange(t.initial!.angle!, t.range!)
       expect(a).toBeCloseTo(t.initial!.angle!) // starts inside, on the faint side (100 %)
       expect(t.evaluate({ angle: a }).points).toBeLessThan(100)
-      expect(t.title).toMatch(/^(1|2|3|4|5|6|7|8|9)[05] % of the angle$/) // 10–90 % in steps of 5
+      expect(t.title).toMatch(/^Make (1|2|3|4|5|6|7|8|9)[05] % of the angle$/) // 10–90 % in steps of 5
     }
   })
   it('a run has 8 different tasks, 2 from each group; over many runs every task shows up; the test link has only the 7 new / changed ones', () => {
@@ -236,5 +236,14 @@ describe('new and changed tasks (2026-11-14)', () => {
     expect(Math.min(...lengths)).toBeLessThan(21)
     expect(Math.max(...lengths)).toBeGreaterThan(53)
     expect(Math.max(...lengths)).toBeLessThanOrEqual(56)
+  })
+  it('every task has a short, number-free name that fits a chip', () => {
+    const kinds = TASK_MAKERS.map((m) => m(r).kind)
+    expect(Object.keys(SHORT).sort()).toEqual([...kinds].sort())
+    for (const name of Object.values(SHORT)) {
+      expect(name.length).toBeLessThanOrEqual(11)
+      expect(name).not.toMatch(/\d/)
+    }
+    expect(new Set(Object.values(SHORT)).size).toBe(12)
   })
 })
