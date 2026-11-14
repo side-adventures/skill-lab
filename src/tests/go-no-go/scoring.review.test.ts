@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { WINDOW_MS, makeTrials, totalMs, type Stats } from './scoring'
+import { GREENS, REDS, WINDOW_MS, makeTrials, totalMs, type Stats } from './scoring'
 
 // mulberry32, seeded
 const seeded = (seed: number) => () => {
@@ -30,21 +30,25 @@ function play(p: Player, r: () => number) {
   return totalMs(s)
 }
 
-describe('go / no-go 0.8 s wrong-click cost (review 2026-11-13)', () => {
+describe('go / no-go rising wrong-click cost 0.6 s + 0.3 s (review 2026-11-13)', () => {
   it('blind clicking on every circle loses to an average weak player (passes)', () => {
-    const blind = totalMs({ rts: Array(21).fill(260), misses: 0, falseTaps: 9 }) // 12.66 s
+    const blind = totalMs({ rts: Array(GREENS).fill(260), misses: 0, falseTaps: REDS })
     const r = seeded(1)
     const weak = Array.from({ length: 1000 }, () => play(WEAK, r))
-    expect(blind).toBeGreaterThan(mean(weak)) // weak ≈ 11.6 s
+    const strong = Array.from({ length: 1000 }, () => play(STRONG, r))
+    console.info('blind', blind, 'weak mean', mean(weak).toFixed(0), 'weak p10', pctl(weak, 0.1).toFixed(0), 'strong mean', mean(strong).toFixed(0))
+    expect(blind).toBeGreaterThan(mean(weak)) // blind ≈ 14.3 s, weak ≈ 12.7 s (flat 0.8 s: blind 11.0 s beat 89 % of weak runs)
+    expect(weak.filter((w) => w > blind).length / weak.length).toBeLessThan(0.2)
     // only clicking the first green and then idling: 16+ s, never better than honest
-    expect(totalMs({ rts: [300], misses: 20, falseTaps: 0 })).toBeGreaterThan(pctl(weak, 0.99))
+    expect(totalMs({ rts: [300], misses: GREENS - 1, falseTaps: 0 })).toBeGreaterThan(pctl(weak, 0.99))
   })
 
   it('luck: one strong player spreads ±0.8 s, well under the strong–weak gap (passes)', () => {
     const r = seeded(2)
     const strong = Array.from({ length: 1000 }, () => play(STRONG, r))
     const weak = Array.from({ length: 1000 }, () => play(WEAK, r))
-    const spread = pctl(strong, 0.9) - pctl(strong, 0.1) // measured ≈ 6.7–8.3 s
-    expect(spread / (mean(weak) - mean(strong))).toBeLessThan(0.5) // gap ≈ 4.1 s
+    const spread = pctl(strong, 0.9) - pctl(strong, 0.1)
+    console.info('strong p10–p90', pctl(strong, 0.1).toFixed(0), pctl(strong, 0.9).toFixed(0), 'gap', (mean(weak) - mean(strong)).toFixed(0), 'ratio', (spread / (mean(weak) - mean(strong))).toFixed(2))
+    expect(spread / (mean(weak) - mean(strong))).toBeLessThan(0.4) // ≈ 0.30
   })
 })

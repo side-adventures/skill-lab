@@ -3,13 +3,19 @@
 Ideas and TODOs for later. Not planned yet; move an item into the work when it's picked up.
 
 ## TODO
-- **Tap Speed icon** (`src/icons/tap-speed.svg`) is a placeholder and looks too close to Aim Trainer's. Draw a real one
-  (style rules in `src/icons/README.md`).
+- **Quick Maths: more varied problems.** More variety in the equations; at higher levels maybe answers over 100,
+  negative numbers, or a third number in the problem (e.g. 7 × 4 − 9).
+- **Line Tracing: consider a rework.** More levels; lives and failing instead of just allowing another try; keep the
+  tracks about equally long (path length now varies about ±9 % between runs, which is layout luck).
+- **Eye for Geometry: fairer scoring across the challenges.** The tasks are scored on different scales; consider a method
+  that weighs them more equally. Its "Split it in half" task now duplicates the Split in Half test (same skill, a
+  different scale, a clashing name): drop it, maybe for a "Balance point" task (mark a shape's centre of mass), see
+  `docs/reviews/2026-11-14-split-half.md`. Changes live Geometry scores.
 
 ## Later
-- **A finer score for every test.** Span tests (Number Memory, Number Order, Sequence Memory, Visual Memory) score whole
-  levels, so many players tie (7 digits: ~25 % of simulated players). N-Back adds the failed block's accuracy
-  (365 = passed 3-back, 65 % at 4-back). Decided 2026-11-13 to keep whole levels for now, because the score matches the
+- **A finer score for every test.** Span tests (Number Memory, Number Order, Sequence Memory, Pattern Memory) score whole
+  levels, so many players tie (7 digits: ~25 % of simulated players). N-Back adds a lives bonus in steps of 20
+  (480 = ended at 4-back with exactly 0 lives). Decided 2026-11-13 to keep whole levels for now, because the score matches the
   goal you had; revisit with one approach for all tests.
 - **"Typical / very good" ranges on the result screen**, from research values (approximate, for a browser with a mouse):
 

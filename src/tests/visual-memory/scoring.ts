@@ -1,7 +1,7 @@
 import { shuffle, type Rand } from '../../lib/random'
 
+/** Lives for the whole run: a wrong click fails the level and costs one. */
 export const LIVES = 3
-export const MISSES_PER_LEVEL = 3
 export const SHOW_MS = 1000
 
 export function gridSize(level: number) {

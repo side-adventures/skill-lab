@@ -2,7 +2,7 @@ import { correctMinusWrong } from '../../lib/scoring'
 import type { Rand } from '../../lib/random'
 
 export const DURATION_MS = 45_000
-export const CONGRUENT_CHANCE = 0.25
+export const CONGRUENT_CHANCE = 0.5
 
 export const COLORS = [
   { name: 'red', label: 'RED', hex: '#ef4444' },
@@ -16,7 +16,7 @@ export interface Trial {
   ink: number
 }
 
-/** New trial, never identical to the previous one. Mostly word ≠ ink. */
+/** New trial, never identical to the previous one. Half the time word = ink (a bigger, clearer Stroop effect). */
 export function nextTrial(prev: Trial | undefined, rand: Rand = Math.random): Trial {
   const n = COLORS.length
   for (;;) {

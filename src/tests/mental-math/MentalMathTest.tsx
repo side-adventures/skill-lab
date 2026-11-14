@@ -6,7 +6,7 @@ import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { answerStats, fmtMs, type TimedAnswer } from '../../lib/resultFormat'
-import { DURATION_MS, levelFor, makeProblem } from './scoring'
+import { DURATION_MS, levelFor, makeProblem, operationTable, type Op } from './scoring'
 
 export default function MentalMathTest({ onFinish }: TestComponentProps) {
   const [problem, setProblem] = useState(() => makeProblem(0))
@@ -18,7 +18,7 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
   useEffect(() => {
     shownAt.current = performance.now()
   }, [])
-  const answers = useRef<(TimedAnswer & { task: string })[]>([])
+  const answers = useRef<(TimedAnswer & { task: string; op: Op })[]>([])
 
   const remaining = useCountdown(DURATION_MS, true, () => {
     // Fastest (correct) and longest answer, with their problem: "7 × 8 = 56 · 1.2 s".
@@ -37,6 +37,7 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
           ...(fastest ? [{ label: 'Fastest answer', value: show(fastest) }] : []),
           ...(longest ? [{ label: 'Longest answer', value: show(longest) }] : []),
         ],
+        ...(all.length > 0 && { extra: operationTable(all) }),
       },
     })
   })
@@ -45,7 +46,7 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
     if (remaining <= 0) return
     const ok = Number(value) === problem.answer
     const now = performance.now()
-    answers.current.push({ ms: now - shownAt.current, correct: ok, task: `${problem.a} ${problem.op} ${problem.b} = ${problem.answer}` })
+    answers.current.push({ ms: now - shownAt.current, correct: ok, op: problem.op, task: `${problem.a} ${problem.op} ${problem.b} = ${problem.answer}` })
     shownAt.current = now
     const nextCorrect = ok ? correct + 1 : correct
     if (ok) setCorrect(nextCorrect)

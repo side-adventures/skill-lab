@@ -13,7 +13,7 @@ export default function StopTheBarTest({ onFinish }: TestComponentProps) {
   const [errors, setErrors] = useState<number[]>([])
   const [phase, setPhase] = useState<Phase>('ready')
   const [stopPos, setStopPos] = useState(0)
-  const marker = useRef<HTMLDivElement>(null)
+  const bar = useRef<HTMLDivElement>(null)
   const startAt = useRef(0)
 
   const roundIndex = phase === 'shown' ? errors.length - 1 : errors.length
@@ -26,13 +26,13 @@ export default function StopTheBarTest({ onFinish }: TestComponentProps) {
     setPhase('shown')
   }
 
-  // Animate the marker; position is computed from time, so the stop is frame-rate independent.
+  // Animate the bar; position is computed from time, so the stop is frame-rate independent.
   useEffect(() => {
     if (phase !== 'moving') return
     let raf = 0
     const tick = () => {
       const pos = ((performance.now() - startAt.current) / 1000) * round.speed
-      if (marker.current) marker.current.style.left = `${Math.max(0, Math.min(1, pos)) * 100}%`
+      if (bar.current) bar.current.style.left = `${Math.max(0, Math.min(1, pos)) * 100}%`
       if (pos >= 1) return stop(1) // ran off the end: counts as late
       raf = requestAnimationFrame(tick)
     }
@@ -76,13 +76,13 @@ export default function StopTheBarTest({ onFinish }: TestComponentProps) {
         <div className="relative h-16 w-full rounded-xl bg-zinc-800">
           <div className="absolute -inset-y-2 w-1 -translate-x-1/2 rounded bg-emerald-500" style={{ left: `${round.target * 100}%` }} />
           <div
-            ref={marker}
+            ref={bar}
             className={`absolute inset-y-1 w-2 -translate-x-1/2 rounded ${phase === 'shown' ? 'bg-white' : 'bg-violet-500'}`}
             style={{ left: phase === 'shown' ? `${stopPos * 100}%` : phase === 'ready' ? '0%' : undefined }}
           />
         </div>
         <div className="grid h-44 place-items-center text-center">
-          {phase === 'ready' && <p className="text-2xl font-semibold">Click to start, then click again to stop on the green line</p>}
+          {phase === 'ready' && <p className="text-2xl font-semibold">Click to start, then click again to stop the bar on the green line</p>}
           {phase === 'moving' && <p className="text-3xl font-semibold">Click to stop!</p>}
           {phase === 'shown' && last !== undefined && (
             <RoundResult

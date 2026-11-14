@@ -37,24 +37,24 @@ export const TESTS: TestDefinition[] = [
   },
   {
     id: 'visual-memory',
-    name: 'Visual Memory',
+    name: 'Pattern Memory',
     icon: '🧩',
     category: 'Memory',
     tagline: 'Remember which tiles lit up.',
     skill: 'short-term visual memory',
     howTo: [
-      'A few tiles light up for a second, then go dark.',
+      '3 tiles light up for a second, then go dark.',
       'Click all the tiles that lit up, in any order.',
       'Each level adds one more tile, and the grid grows from 3×3 up to 7×7.',
     ],
     scoring: [
-      'The number of levels you clear.',
-      '3 wrong clicks fail a level and you retry it with a new pattern. After 3 failed levels the test ends.',
+      'The most tiles you remembered in one level: clearing level 1 (3 tiles) scores 3.',
+      'One wrong click fails the level: you lose one of your 3 lives and retry with a new pattern. Out of lives ends the test.',
     ],
     durationHint: '~2 min',
-    scoreLabel: 'Levels cleared',
+    scoreLabel: 'Most tiles',
     higherIsBetter: true,
-    formatScore: (s) => count(s, 'level'),
+    formatScore: (s) => count(s, 'tile'),
     start: 'quick',
     layout: 'square',
     Component: lazyTest(() => import('./visual-memory/VisualMemoryTest')),
@@ -67,7 +67,7 @@ export const TESTS: TestDefinition[] = [
     tagline: 'Pick the ink color, not the word.',
     skill: 'selective attention',
     howTo: [
-      'A color word appears, written in an ink color that is often different, like RED written in blue.',
+      'A color word appears, written in an ink color that is the same or different, like RED written in blue.',
       'Click the button for the ink color, not for the word.',
       'You have 45 seconds: answer as many as you can.',
     ],
@@ -89,7 +89,7 @@ export const TESTS: TestDefinition[] = [
     icon: '⏱️',
     category: 'Estimation',
     tagline: 'Feel the seconds without a clock.',
-    skill: 'your sense of time',
+    skill: 'keeping time in your head',
     howTo: [
       'You get a target time between 3 and 10 seconds.',
       'Click to start a hidden timer, then click again when you think the time is up.',
@@ -132,14 +132,14 @@ export const TESTS: TestDefinition[] = [
   },
   {
     id: 'mental-math',
-    name: 'Mental Math Sprint',
+    name: 'Quick Maths',
     icon: '➗',
     category: 'Thinking',
-    tagline: 'Solve as many sums as you can.',
+    tagline: 'Solve as many + − × ÷ problems as you can.',
     skill: 'mental arithmetic',
     howTo: [
       'Solve simple + − × ÷ problems. Every answer is a whole number.',
-      'Type your answer with the keypad or your keyboard and confirm it.',
+      'Type the answer on your keyboard, or click it on the keypad, then press Enter or OK.',
       'The numbers get a little bigger every 5 correct answers.',
     ],
     scoring: [
@@ -193,7 +193,7 @@ export const TESTS: TestDefinition[] = [
     ],
     scoring: [
       'The longest number you typed back correctly.',
-      'One mistake ends the test.',
+      'You have 2 lives: a mistake costs one, and you get a new number of the same length.',
     ],
     durationHint: '~2 min',
     scoreLabel: 'Longest number',
@@ -209,11 +209,11 @@ export const TESTS: TestDefinition[] = [
     icon: '🔁',
     category: 'Memory',
     tagline: 'Repeat the pattern of flashing tiles.',
-    skill: 'memory for order',
+    skill: 'remembering a growing sequence of positions',
     howTo: [
-      'Tiles on a 3×3 grid light up one after another.',
+      'Tiles on a 3×3 grid light up one after another. A tile can light up more than once, even twice in a row.',
       'Click them in the same order.',
-      'Every round, the sequence gets one step longer. From 8 steps on, it plays a bit faster.',
+      'Every round the same sequence plays again, one step longer.',
     ],
     scoring: [
       'The longest sequence you repeated correctly.',
@@ -242,7 +242,7 @@ export const TESTS: TestDefinition[] = [
     ],
     scoring: [
       'The most numbers you got right in one round.',
-      'One wrong tile ends the test.',
+      'You have 2 lives: a wrong tile costs one, and you play that round again with new positions.',
     ],
     durationHint: '~3 min',
     scoreLabel: 'Most tiles',
@@ -257,16 +257,17 @@ export const TESTS: TestDefinition[] = [
     name: 'Flash Order',
     icon: '📸',
     category: 'Memory',
-    tagline: '5 numbers, less time every round.',
-    skill: 'memory under time pressure',
+    tagline: 'Glimpse 5 numbers, then click them in order.',
+    skill: 'how much you take in at a glance',
     howTo: [
       '5 numbers flash on a grid, at first for 1 second.',
       'Click the hidden tiles in order, from 1 to 5.',
       'Every round you clear, the flash gets 10 % shorter.',
+      'Fun fact: in a 2007 study, a chimp named Ayumu still got most of these right with a 0.2 s flash. The people tested did much worse.',
     ],
     scoring: [
       'The shortest flash you still cleared.',
-      'One wrong tile ends the test.',
+      'You have 5 lives: a wrong tile costs one, and you try the same flash again with new positions.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Shortest flash',
@@ -304,21 +305,21 @@ export const TESTS: TestDefinition[] = [
     id: 'n-back',
     name: 'N-Back',
     icon: '🧠',
-    category: 'Focus',
-    tagline: 'Keep track of what happened N steps ago.',
+    category: 'Memory',
+    tagline: 'Was the square here N steps ago?',
     skill: 'working memory',
     howTo: [
       'A square lights up on a 3×3 grid, in a new spot every 2.5 seconds.',
       'Click MATCH when it is in the same spot as 2 steps before.',
-      'Leave it alone when it is not.',
+      'Leave it alone when it is not. Each level is a block of about 20 squares.',
     ],
     scoring: [
       'Up to 2 mistakes in a block (a missed match or a wrong click): you move up to 3 steps back, then 4, and so on.',
       'Every mistake beyond 2 costs one of your 4 lives, and you play the level again. Out of lives ends the test.',
-      'Your score is the level you reached × 100, plus your accuracy there (matches caught and non-matches left alone): ending at 4-back with 65 % gives 465.',
+      'Your score is the level you ended at × 100, plus 80 if you ran out at exactly 0 lives, 20 less for every life below 0: ending at 4-back at 0 lives gives 480, at −1 gives 460.',
     ],
     durationHint: '~3 min',
-    scoreLabel: 'Points (level × 100 + accuracy)',
+    scoreLabel: 'Points (level × 100 + lives bonus)',
     higherIsBetter: true,
     formatScore: (s) => `${Math.round(s)} pts`,
     start: 'countdown',
@@ -333,13 +334,14 @@ export const TESTS: TestDefinition[] = [
     tagline: 'Click on green, hold back on red.',
     skill: 'impulse control',
     howTo: [
-      '30 circles appear one after another.',
-      'Click as fast as you can when a circle is green.',
-      'Do not click when it is red, or before a circle appears.',
+      '30 shapes appear one after another, 1 in 5 of them red.',
+      'Click as fast as you can on a green circle.',
+      'Do not click on a red square, or before a shape appears.',
     ],
     scoring: [
       'Your total reaction time for the green circles.',
-      'A missed green counts as 0.8 s, and a click on red or before a circle appears adds 0.8 s.',
+      'A missed green counts as 0.8 s.',
+      'Each wrong click (on red, or before a shape appears) costs more than the last: 0.6 s, then 0.9 s, 1.2 s, and so on.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Total time',
@@ -347,7 +349,7 @@ export const TESTS: TestDefinition[] = [
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
     start: 'countdown',
     layout: 'full',
-    scoreVersion: 3, // v2: 30 trials (24/6) · v3: 21 green / 9 red
+    scoreVersion: 3, // v2: 30 trials (24/6) · v3: 21 green / 9 red · back to 24/6 in development (no bump)
     Component: lazyTest(() => import('./go-no-go/GoNoGoTest')),
   },
   {
@@ -399,14 +401,14 @@ export const TESTS: TestDefinition[] = [
   },
   {
     id: 'stop-the-bar',
-    name: 'Stop the Bar',
+    name: 'Hit the Line',
     icon: '🛑',
     category: 'Motor',
     tagline: 'Stop the moving bar right on the line.',
-    skill: 'timing',
+    skill: 'timing a moving target',
     howTo: [
-      'Click to start: a marker slides along a track.',
-      'Click again to stop it exactly on the green line.',
+      'Click to start: the bar slides along a track.',
+      'Click again to stop the bar exactly on the green line.',
       '5 rounds, each at a different speed.',
     ],
     scoring: [
@@ -492,6 +494,36 @@ export const TESTS: TestDefinition[] = [
     scoreVersion: 2, // "Make it level" replaced by "Make it parallel"
     Component: lazyTest(() => import('./geometry/GeometryTest')),
   },
+  {
+    id: 'split-half',
+    name: 'Split in Half',
+    icon: '✂️',
+    category: 'Estimation',
+    tagline: 'Slide a line to cut a shape into two equal halves.',
+    skill: 'judging area by eye',
+    howTo: [
+      'Drag the line left or right, or click where it should go. The ← / → keys also move it.',
+      'Place it so both sides of the shape have the same area, then click Done.',
+      '5 rounds, a new shape each time. After each round you see the exact cut.',
+    ],
+    scoring: [
+      'Each round: 100 points for a perfect 50 / 50 cut, 5 points less for every 1 % off (0 at 30 / 70 or worse).',
+      'Your score is the average of the 5 rounds.',
+    ],
+    durationHint: '~1 min',
+    scoreLabel: 'Average points',
+    higherIsBetter: true,
+    formatScore: (s) => `${s.toFixed(1)} pts`,
+    start: 'none',
+    layout: 'panel',
+    Component: lazyTest(() => import('./split-half/SplitHalfTest')),
+  },
 ]
 
-export const getTest = (id: string) => TESTS.find((t) => t.id === id)
+/**
+ * Prototypes: new tests being tried out (see the new-test skill). When there are any, they get their own section
+ * at the bottom of the home page and are left out of the test count, "Next test", stats and sharing. Empty for now.
+ */
+export const PROTOTYPES: TestDefinition[] = []
+
+export const getTest = (id: string) => TESTS.find((t) => t.id === id) ?? PROTOTYPES.find((t) => t.id === id)

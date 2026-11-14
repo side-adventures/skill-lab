@@ -2,6 +2,9 @@ import { round1, type Rand } from '../../lib/random'
 
 export const DURATION_MS = 30_000
 export const RAMP_IN_MS = 2_000
+/** The run in three parts for the result chips (the circle is fastest and smallest in the last one). */
+export const PARTS = ['First 10 s', 'Middle 10 s', 'Last 10 s']
+export const PART_MS = DURATION_MS / PARTS.length
 export const START_RADIUS = 0.14 // fraction of the smaller side of the play area
 export const END_RADIUS = 0.055
 

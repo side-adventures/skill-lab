@@ -10,7 +10,8 @@ import { WORDS } from './words'
 
 export default function WordMemoryTest({ onFinish }: TestComponentProps) {
   const seen = useRef<string[]>([])
-  const [current, setCurrent] = useState(() => nextWord(WORDS, [], undefined))
+  const recent = useRef<string[]>([]) // shown words, most recent first
+  const [current, setCurrent] = useState(() => nextWord(WORDS, [], []))
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(LIVES)
   const [flash, signal] = useAnswerFlash()
@@ -31,6 +32,7 @@ export default function WordMemoryTest({ onFinish }: TestComponentProps) {
     shownAt.current = now
     if (!ok) wrongOn.current[current.isSeen ? 'seen' : 'fresh']++
     if (!current.isSeen) seen.current.push(current.word)
+    recent.current = [current.word, ...recent.current.slice(0, 9)]
     const nextScore = ok ? score + 1 : score
     const nextLives = ok ? lives : lives - 1
     setScore(nextScore)
@@ -53,7 +55,7 @@ export default function WordMemoryTest({ onFinish }: TestComponentProps) {
       )
       return
     }
-    setCurrent(nextWord(WORDS, seen.current, current.word))
+    setCurrent(nextWord(WORDS, seen.current, recent.current))
   }
 
   return (

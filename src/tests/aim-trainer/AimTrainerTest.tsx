@@ -33,6 +33,7 @@ export default function AimTrainerTest({ onFinish }: TestComponentProps) {
         stats: [
           { label: 'Center hits', value: String(centers) },
           { label: 'Edge hits', value: String(edges) },
+          { label: 'Center rate', value: hits ? `${Math.round((centers / hits) * 100)} %` : '–' },
           { label: 'Misses', value: String(misses) },
           { label: 'Accuracy', value: hits + misses ? `${Math.round((hits / (hits + misses)) * 100)} %` : '–' },
           { label: 'Avg per target', value: hits ? `${Math.round(DURATION_MS / hits)} ms` : '–' },

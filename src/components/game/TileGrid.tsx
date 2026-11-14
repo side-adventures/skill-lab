@@ -19,16 +19,18 @@ const TONE: Record<TileTone, string> = {
 export type BoardState = 'success' | 'fail' | null
 
 /**
- * A grid of tiles that fills its parent (Visual / Sequence Memory, N-Back, Number / Flash Order).
+ * A grid of tiles that fills its parent (Pattern / Sequence Memory, N-Back, Number / Flash Order).
  * `tile(i)` gives each tile's tone and optional content; `frame` puts a green / red ring around the board.
+ * `instant` turns off the color fade, so a tile that goes dark and lights again right away shows two clear flashes.
  */
-export function TileGrid({ cols, rows = cols, tile, onTap, frame = null, gap = 'gap-2' }: {
+export function TileGrid({ cols, rows = cols, tile, onTap, frame = null, gap = 'gap-2', instant = false }: {
   cols: number
   rows?: number
   tile: (i: number) => { tone: TileTone; content?: ReactNode; label?: string }
   onTap?: (i: number) => void
   frame?: BoardState
   gap?: string
+  instant?: boolean
 }) {
   return (
     <div
@@ -46,7 +48,7 @@ export function TileGrid({ cols, rows = cols, tile, onTap, frame = null, gap = '
               if (e.button !== 0) return
               onTap?.(i)
             }}
-            className={`grid min-h-0 place-items-center overflow-hidden rounded-lg text-2xl leading-none font-bold transition-colors duration-150 ${TONE[t.tone]} ${onTap ? 'cursor-pointer' : 'cursor-default'}`}
+            className={`grid min-h-0 place-items-center overflow-hidden rounded-lg text-2xl leading-none font-bold ${instant ? '' : 'transition-colors duration-150'} ${TONE[t.tone]} ${onTap ? 'cursor-pointer' : 'cursor-default'}`}
           >
             {t.content}
           </button>

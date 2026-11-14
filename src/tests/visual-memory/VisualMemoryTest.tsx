@@ -6,28 +6,28 @@ import { END_MOMENT_MS } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
-import { LIVES, MISSES_PER_LEVEL, SHOW_MS, gridSize, pickTiles } from './scoring'
+import { LIVES, SHOW_MS, gridSize, pickTiles, tileCount } from './scoring'
 
 type Phase = 'pause' | 'show' | 'input' | 'cleared' | 'failed'
 
 export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
   const [level, setLevel] = useState(1)
   const [lives, setLives] = useState(LIVES)
-  const [cleared, setCleared] = useState(0)
+  const [cleared, setCleared] = useState(0) // last level cleared
+  const score = cleared ? tileCount(cleared) : 0 // most tiles remembered in one level
   const [targets, setTargets] = useState(() => new Set(pickTiles(1)))
   const [found, setFound] = useState<Set<number>>(new Set())
-  const [wrong, setWrong] = useState<Set<number>>(new Set())
+  const [wrong, setWrong] = useState<number | null>(null)
   const [phase, setPhase] = useState<Phase>('pause')
-  // For the result stats: when the current input phase began, time to clear each level, wrong clicks.
+  // For the result stats: when the current input phase began, time to clear each level.
   const inputAt = useRef(0)
   const levelTimes = useRef<{ level: number; ms: number }[]>([])
-  const mistakes = useRef(0)
 
   const startLevel = (lvl: number) => {
     setLevel(lvl)
     setTargets(new Set(pickTiles(lvl)))
     setFound(new Set())
-    setWrong(new Set())
+    setWrong(null)
     setPhase('pause')
   }
 
@@ -41,12 +41,11 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
         const times = levelTimes.current
         const size = gridSize(level)
         onFinish({
-          score: cleared,
+          score,
           details: {
             stats: [
+              { label: 'Levels cleared', value: String(cleared) },
               { label: 'Last grid', value: `${size}×${size}` },
-              { label: 'Tiles at the end', value: String(targets.size) },
-              { label: 'Mistakes', value: String(mistakes.current) },
               ...(times.length ? [{ label: 'Avg per level', value: fmtMs(times.reduce((s, t) => s + t.ms, 0) / times.length) }] : []),
             ],
             chips: { title: 'Time to clear', items: times.map((t) => ({ label: `Level ${t.level}`, value: fmtMs(t.ms) })) },
@@ -64,7 +63,7 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
   })
 
   const tap = (cell: number) => {
-    if (phase !== 'input' || found.has(cell) || wrong.has(cell)) return
+    if (phase !== 'input' || found.has(cell)) return
     if (targets.has(cell)) {
       const next = new Set(found).add(cell)
       setFound(next)
@@ -74,13 +73,10 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
         setPhase('cleared')
       }
     } else {
-      const next = new Set(wrong).add(cell)
-      mistakes.current++
-      setWrong(next)
-      if (next.size >= MISSES_PER_LEVEL) {
-        setLives((l) => l - 1)
-        setPhase('failed')
-      }
+      // One wrong click fails the level: the board then shows the tiles you missed.
+      setWrong(cell)
+      setLives((l) => l - 1)
+      setPhase('failed')
     }
   }
 
@@ -90,7 +86,7 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
     show: 'Memorize',
     input: `Your turn · ${targets.size - found.size} left`,
     cleared: 'Level cleared',
-    failed: lives > 0 ? 'Missed · try again' : <span className="text-rose-300">Out of lives</span>,
+    failed: lives > 0 ? 'Wrong tile · new pattern' : <span className="text-rose-300">Out of lives</span>,
   }
 
   return (
@@ -98,7 +94,7 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
       <GameInfo
         left={<><InfoValue value={`Level ${level}`} /><Lives left={lives} total={LIVES} /></>}
         middle={middle[phase]}
-        right={<InfoValue label="Score" value={cleared} />}
+        right={<InfoValue label="Score" value={score} unit="tiles" />}
         timer={phase === 'show' ? showLeft / SHOW_MS : undefined}
       />
       <SquareLayout>
@@ -112,7 +108,7 @@ export default function VisualMemoryTest({ onFinish }: TestComponentProps) {
             const isTarget = targets.has(i)
             if (phase === 'show' && isTarget) return { tone: 'lit' }
             if (found.has(i)) return { tone: 'found' }
-            if (wrong.has(i)) return { tone: 'wrong' }
+            if (wrong === i) return { tone: 'wrong' }
             if (phase === 'failed' && isTarget) return { tone: 'hint' }
             return { tone: 'idle' }
           }}

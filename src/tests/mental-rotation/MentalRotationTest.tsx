@@ -4,10 +4,10 @@ import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
-import { answerStats, fmtPct, type TimedAnswer } from '../../lib/resultFormat'
+import { answerStats, fmtMs, fmtPct, slowdown, type TimedAnswer } from '../../lib/resultFormat'
 import { correctMinusWrong } from '../../lib/scoring'
 import type { TestComponentProps } from '../types'
-import { DURATION_MS, makeTrial, mirror, type Shape } from './scoring'
+import { DURATION_MS, isBigTurn, makeTrial, mirror, type Shape } from './scoring'
 
 function ShapeView({ shape, angle }: { shape: Shape; angle: number }) {
   // Rotate around the center of the bounding box (works for any offset), which keeps every
@@ -27,6 +27,11 @@ function ShapeView({ shape, angle }: { shape: Shape; angle: number }) {
 }
 
 const accuracyOf = (xs: TimedAnswer[]) => (xs.length ? fmtPct(xs.filter((a) => a.correct).length / xs.length) : '–')
+/** Average time of the correct answers (research compares response times of correct answers only). */
+const avgCorrectMs = (xs: TimedAnswer[]) => {
+  const ok = xs.filter((a) => a.correct)
+  return ok.length ? ok.reduce((s, a) => s + a.ms, 0) / ok.length : undefined
+}
 
 export default function MentalRotationTest({ onFinish }: TestComponentProps) {
   const [trial, setTrial] = useState(makeTrial)
@@ -38,28 +43,36 @@ export default function MentalRotationTest({ onFinish }: TestComponentProps) {
   useEffect(() => {
     shownAt.current = performance.now()
   }, [])
-  const answers = useRef<(TimedAnswer & { mirrored: boolean })[]>([])
+  const answers = useRef<(TimedAnswer & { mirrored: boolean; big: boolean })[]>([])
 
-  const remaining = useCountdown(DURATION_MS, true, () =>
+  const remaining = useCountdown(DURATION_MS, true, () => {
+    const all = answers.current
+    const small = avgCorrectMs(all.filter((a) => !a.big)), big = avgCorrectMs(all.filter((a) => a.big))
     onFinish({
       score: correctMinusWrong(correct, wrong),
       ...(correct + wrong === 0 && { failed: 'No answers — try again!' }), // idle run: shown, not saved
       details: {
-        stats: answerStats(answers.current),
+        stats: [
+          ...answerStats(all),
+          { label: 'Accuracy · same', value: accuracyOf(all.filter((a) => !a.mirrored)) },
+          { label: 'Accuracy · mirrored', value: accuracyOf(all.filter((a) => a.mirrored)) },
+        ],
+        // The classic mental rotation result: bigger turns take longer (avg time of correct answers).
         extra: {
           kind: 'pair',
-          a: { label: 'Accuracy · same', value: accuracyOf(answers.current.filter((a) => !a.mirrored)) },
-          b: { label: 'Accuracy · mirrored', value: accuracyOf(answers.current.filter((a) => a.mirrored)) },
+          a: { label: 'Small turn (≤ 90°)', value: small === undefined ? '–' : fmtMs(small) },
+          b: { label: 'Big turn (> 90°)', value: big === undefined ? '–' : fmtMs(big) },
+          ...(small !== undefined && big !== undefined && { diff: { label: 'Difference', value: slowdown(big - small) } }),
         },
       },
-    }),
-  )
+    })
+  })
 
   const answer = (saysMirrored: boolean) => {
     if (remaining <= 0) return
     const ok = saysMirrored === trial.mirrored
     const now = performance.now()
-    answers.current.push({ ms: now - shownAt.current, correct: ok, mirrored: trial.mirrored })
+    answers.current.push({ ms: now - shownAt.current, correct: ok, mirrored: trial.mirrored, big: isBigTurn(trial) })
     shownAt.current = now
     if (ok) setCorrect((c) => c + 1)
     else setWrong((w) => w + 1)

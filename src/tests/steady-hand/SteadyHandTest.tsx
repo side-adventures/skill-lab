@@ -3,7 +3,7 @@ import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
 import { useLatest } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { DURATION_MS, RAMP_IN_MS, pathAt, radiusAt, randomPhases, scoreInside, speedAt } from './scoring'
+import { DURATION_MS, PARTS, PART_MS, RAMP_IN_MS, pathAt, radiusAt, randomPhases, scoreInside, speedAt } from './scoring'
 
 export default function SteadyHandTest({ onFinish }: TestComponentProps) {
   const [playing, setPlaying] = useState(false)
@@ -48,6 +48,8 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
     let last = start, t = 0, insideMs = 0, lastHud = 0, raf = 0
     // For the result stats: how often you left the circle, and the longest stretch inside.
     let wasInside = true, exits = 0, stretch = 0, longest = 0
+    // Time inside per 10 s part (first, middle, last): shows how you cope as it speeds up and shrinks.
+    const partInside = PARTS.map(() => 0)
     const tick = (now: number) => {
       const elapsed = Math.min(now - start, DURATION_MS)
       const dt = Math.min(now - last, 100) // ignore big gaps (tab switch)
@@ -59,6 +61,7 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
       const inside = draw(pos.x * amp, pos.y * amp, radiusAt(progress))
       if (inside) {
         insideMs += dt
+        partInside[Math.min(PARTS.length - 1, Math.floor(elapsed / PART_MS))] += dt
         stretch += dt
         longest = Math.max(longest, stretch)
       } else {
@@ -81,6 +84,10 @@ export default function SteadyHandTest({ onFinish }: TestComponentProps) {
               { label: 'Times you left', value: String(exits) },
               { label: 'Longest stretch inside', value: `${(longest / 1000).toFixed(1)} s` },
             ],
+            chips: {
+              title: 'Inside, per 10 seconds',
+              items: PARTS.map((label, i) => ({ label, value: `${scoreInside(partInside[i], PART_MS).toFixed(0)} %` })),
+            },
           },
         })
       }

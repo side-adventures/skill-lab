@@ -5,7 +5,7 @@ import { useInfoWidthOf } from '../../lib/game'
  * The four layouts every test is built from. They all fill the fixed stage (768 × 512).
  *
  * - FullLayout: one area fills the whole stage, no padding (Reaction, Aim Trainer, Line Tracing …).
- * - PromptLayout: a box with a large display on top and an answer strip at the bottom (Stroop, Mental Math …).
+ * - PromptLayout: a box with a large display on top and an answer strip at the bottom (Stroop, Quick Maths …).
  * - SquareLayout: one square (or other fixed-ratio) board at full height, no box; the info row matches its width.
  * - SquarePanelLayout: a box with the square board on the left and a panel on the right (N-Back, Quick Count …).
  */

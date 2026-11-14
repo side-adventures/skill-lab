@@ -32,6 +32,8 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 - `npm test` · `npm run lint` · `npm run build` — all three must pass before committing.
 
 ## Adding a test
+New tests follow the process in the `new-test` skill (`.claude/skills/new-test/SKILL.md`): idea → design sketch →
+prototype → play and tune → review → promote, with the user's OK between steps. The technical rules:
 1. Create `src/tests/<id>/` with:
    - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`;
      `details` is a `ResultDetails`: stats row, optional special block, optional chips — pick what's interesting for this test).
@@ -54,6 +56,16 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
    for timing-sensitive input; clear timers / rAF in effect cleanups.
 5. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
 
+Design rules for every test:
+- **Never use color as the only cue**: add a shape, text or position (Go / No-Go: green circle vs red square). Stroop
+  is the exception, because color is the task itself.
+- **Lives work the same everywhere**: a lost life replays the same level / round with a new layout, `<Lives>` in the
+  info row, "Out of lives" ends the run, and the score is still the best level reached.
+- **Rules mention options, not tips**: say what is possible ("type it on your keyboard, or click the keypad"), never
+  which way is faster or how to play well.
+- **The main score is in units a player can read on their own** ("9 tiles", "312 ms"), not internal counters
+  ("level 7").
+
 ## Subagents (`.claude/agents/`)
 Four reviewers, each answering one question with its own kind of evidence. They report back and never edit app code;
 the main session decides and applies fixes. They can run in parallel.
@@ -73,4 +85,8 @@ the main session decides and applies fixes. They can run in parallel.
   Later (once there are real users), a change that makes old scores incomparable bumps that test's
   `scoreVersion` in the registry (stores results under a new key, see `storageId` in `types.ts`).
 - Keep components small; shared UI goes in `src/components/` (game frame + layouts + AnswerButtons / TileGrid / RoundResult / GameInfo in `components/game/`, NumberPad, Button, ShareButton, TestIcon, CategoryChips, AttemptGraph, ComingSoonButton)
-  and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `useLater`, `useAnswerFlash`, `correctMinusWrong`, `spreadInts`, `shuffle` …).
+  and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `useLater`, `useAnswerFlash`, `correctMinusWrong`, `spreadInts`, `shuffle`,
+  `slowdown` for "X ms slower" pairs …). TileGrid's `instant` turns off the tile fade (a tile flashing twice in a row);
+  `OrderGame` takes `lives`.
+- **Past reviews** (test audits and other agent reports) are kept in `docs/reviews/<date>-<topic>.md`. Check them
+  before reworking a test, so earlier findings and decisions aren't redone.

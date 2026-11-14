@@ -31,15 +31,21 @@ Work through each point and note the result, even when it's fine.
    - quitting early.
 
    Known past bug: N-Back plain accuracy let "never tap" pass at 80 %. It was fixed with balanced accuracy.
+
+   **Recheck these whenever a test's mix changes, not only its formula** (how many rounds, how many of each kind of
+   trial, penalties). A penalty has to be weighed against how many chances a cheater gets to collect it. Known case:
+   Go / No-Go went from 9 reds to 6, and clicking blindly on everything suddenly beat 89 % of weak honest players at
+   the old 0.8 s cost; a rising cost per wrong click fixed it.
 2. **Random setups.** Can bad luck create an unfair or trivial round?
    - Streaks: Go / No-Go once showed 15 greens in a row.
-   - Impossible combinations: fast speed with a very close target in Stop the Bar.
+   - Impossible combinations: fast speed with a very close target in Hit the Line.
    - Repeats of the same value; all-easy or all-hard runs.
    - Shapes or elements outside the visible area: mirrored shapes in Mental Rotation were once drawn off-center.
 
    Values are meant to be *semi-random*: spread over the range (see `spreadInts` in `src/lib/random.ts`), not purely random.
 3. **Luck vs. skill.** The same player should score about the same every run; skill, not luck, should decide the score.
    - **Measure it:** simulate one fixed player 1000 times through the pure functions (a fixed skill level plus human-like noise: reaction spread, an occasional slip, a guess error that grows with difficulty) with a seeded `rand`. Report the spread as a range, e.g. "most runs (10th–90th percentile) between 340 and 380", and as a share of the gap between a weak and a strong player.
+   - **Also give the standard deviation as a share of that gap.** When the score moves in steps (whole levels, 20-point steps), percentiles jump from step to step: N-Back's p10–p90 ratio went from 1.03 to 1.28 after a change while the SD ratio stayed at about 0.47. Judge on the SD ratio when the two disagree.
    - **Name the sources** of the spread:
      - random setup: easy vs. hard draws, lucky positions, short or long random delays;
      - sudden death: one slip ends the run, so a single early mistake decides the score;
@@ -72,6 +78,7 @@ Work through each point and note the result, even when it's fine.
 - For each finding, write a failing (or demonstrating) Vitest case, for example in `src/tests/<id>/scoring.review.test.ts`, and run it with `npx vitest run src/tests/<id>`.
 - To simulate strategies or many runs, call the pure functions directly. Pass a seeded `rand` (type `Rand` from `src/lib/random.ts`) where needed and loop 500–1000 times.
 - Never run vitest with `--root /` (it runs out of memory). Run it from the project folder.
+- Every number you write in a comment or report (a sum, a share, a time) comes from a test or simulation, not mental math. A comment once said 6 rising penalties add 6.3 s; the real sum was 8.1 s.
 - Leave the demonstrating tests in place, so the main session can keep or adapt them. Say which ones fail on purpose.
 
 ## Report

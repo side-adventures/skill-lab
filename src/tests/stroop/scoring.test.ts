@@ -13,7 +13,9 @@ describe('stroop', () => {
       if (t.word === t.ink) congruent++
       prev = t
     }
-    expect(congruent / 2000).toBeLessThan(0.35)
+    // 50 % same before the no-repeat rule, which removes a few more same than different trials
+    expect(congruent / 2000).toBeGreaterThan(0.4)
+    expect(congruent / 2000).toBeLessThan(0.55)
   })
   it('scores correct minus wrong', () => expect(stroopScore(30, 4)).toBe(26))
   it('averages correct answers by same/different color', () => {

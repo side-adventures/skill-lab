@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
@@ -31,11 +31,17 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
 
   const startRound = () => {
     setState({ name: 'waiting' })
-    timer.current = later(randomDelay(), () => {
-      goAt.current = performance.now()
-      setState({ name: 'go' })
-    })
+    goAt.current = 0
+    timer.current = later(randomDelay(), () => setState({ name: 'go' }))
   }
+
+  // Start the clock when green is actually drawn: the first animation frame after the change is
+  // committed (the frame that paints it), not when the timer fires.
+  useLayoutEffect(() => {
+    if (state.name !== 'go') return
+    const id = requestAnimationFrame(() => (goAt.current = performance.now()))
+    return () => cancelAnimationFrame(id)
+  }, [state.name])
 
   /** A click while red or within MIN_REACTION_MS of green; too many end the run without a score. */
   const early = () => {
@@ -57,6 +63,7 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
       return early()
     }
     if (state.name === 'go') {
+      if (!goAt.current) return early() // green isn't on screen yet
       const ms = performance.now() - goAt.current
       if (isTooFast(ms)) return early()
       setTimes([...times, ms])
@@ -92,9 +99,9 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
         right={times.length > 0 && <InfoValue label="Median" value={summarize(times).score} unit="ms" />}
       />
       <FullLayout
-        // pointerdown fires earlier than click → more accurate timing
+        // pointerdown fires earlier than click → more accurate timing. No color fade: green must be fully on at once.
         onPointerDown={(e) => e.button === 0 && press()}
-        className={`grid cursor-pointer place-items-center text-center transition-colors duration-75 ${
+        className={`grid cursor-pointer place-items-center text-center ${
           state.name === 'shown' ? 'bg-zinc-900' : `${VIEW[state.name].bg} text-white`
         }`}
       >

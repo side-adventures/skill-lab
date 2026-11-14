@@ -106,8 +106,13 @@ export default function GoNoGoTest({ onFinish }: TestComponentProps) {
         onPointerDown={(e) => e.button === 0 && tap()}
         className={`grid cursor-pointer place-items-center bg-zinc-900 ${feedbackRing(flash)}`}
       >
-        {/* No fade: the color must never change while the circle is still (partly) visible. */}
-        <span className={`size-48 rounded-full ${showStim ? (trials[i] ? 'bg-emerald-600' : 'bg-rose-700') : 'bg-transparent'}`} />
+        {/* Green circle = click, red square = don't (the shape helps color-blind players).
+            No fade: color and shape must never change while the shape is still (partly) visible. */}
+        <span
+          className={`size-48 ${
+            !showStim ? 'bg-transparent' : trials[i] ? 'rounded-full bg-emerald-600' : 'rounded-xl bg-rose-700'
+          }`}
+        />
       </FullLayout>
     </>
   )
