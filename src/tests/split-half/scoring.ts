@@ -8,8 +8,8 @@ export const ROUNDS = 5
 export type ShapeKind = 'familiar' | 'pointy'
 export const KINDS: ShapeKind[] = ['familiar', 'pointy']
 /**
- * The rounds of one run, in random order: two familiar shapes (always two different ones, the triangle is one
- * of them) and three pointy ones.
+ * The rounds of one run, in random order: two familiar shapes (always two different ones, picked from all of
+ * them, the triangle included) and three pointy ones.
  */
 export const RUN_KINDS: ShapeKind[] = ['familiar', 'familiar', 'pointy', 'pointy', 'pointy']
 /** The line always starts here (the middle of the board). */
@@ -172,7 +172,7 @@ export function halvingX(pts: Pt[]) {
 
 export interface Round {
   kind: ShapeKind
-  /** What to call it on the result screen: the familiar shape's name ("Key"), otherwise the kind ("Bite"). */
+  /** The familiar shape's name ("Key"), otherwise the kind ("Pointy"); for tests and debugging, not shown. */
   name: string
   pts: Pt[]
   /** Correct cut. */
@@ -223,12 +223,17 @@ export function evaluate(round: Round, x: number) {
 
 export const totalScore = (points: number[]) => round1(mean(points))
 
+/** A miss of `off` % points as a split, bigger side first: 3.4 → "53.4 / 46.6". */
+const asSplit = (off: number) => `${(50 + off).toFixed(1)} / ${(50 - off).toFixed(1)}`
+
+/** Result stats: the average, closest and furthest miss (as a split), and the points of each round. */
 export function resultDetails(results: { name: string; points: number; left: number }[]): ResultDetails {
   const off = results.map((r) => Math.abs(r.left - 0.5) * 100)
   return {
     stats: [
-      { label: 'Closest cut', value: `${(50 + Math.min(...off)).toFixed(1)} / ${(50 - Math.min(...off)).toFixed(1)}` },
-      { label: 'Furthest off', value: `${(50 + Math.max(...off)).toFixed(1)} / ${(50 - Math.max(...off)).toFixed(1)}` },
+      { label: 'Average miss', value: asSplit(mean(off)) },
+      { label: 'Closest cut', value: asSplit(Math.min(...off)) },
+      { label: 'Furthest off', value: asSplit(Math.max(...off)) },
     ],
     chips: {
       title: 'Points per round',

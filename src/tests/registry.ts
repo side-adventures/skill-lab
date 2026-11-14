@@ -494,30 +494,24 @@ export const TESTS: TestDefinition[] = [
     scoreVersion: 2, // "Make it level" replaced by "Make it parallel"
     Component: lazyTest(() => import('./geometry/GeometryTest')),
   },
-]
-
-/**
- * Prototypes: new tests being tried out. Shown in their own section at the bottom of the home page,
- * left out of the test count, "Next test" and the stats page. Rules and scoring may still change.
- */
-export const PROTOTYPES: TestDefinition[] = [
   {
     id: 'split-half',
     name: 'Split in Half',
     icon: '✂️',
     category: 'Estimation',
-    tagline: 'Cut the shape into two equal halves.',
-    skill: 'judging area',
+    tagline: 'Slide a line to cut a shape into two equal halves.',
+    skill: 'judging area by eye',
     howTo: [
-      'Drag the line left or right, or click where it should go.',
+      'Drag the line left or right, or click where it should go. The ← / → keys also move it.',
       'Place it so both sides of the shape have the same area, then click Done.',
-      '5 rounds, a different kind of shape each time.',
+      '5 rounds, a new shape each time. After each round you see the exact cut.',
     ],
     scoring: [
-      'Each round gives 0–100 points: 100 for a perfect 50 / 50 cut, 0 at 30 / 70 or worse. Your score is the average.',
+      'Each round: 100 points for a perfect 50 / 50 cut, 5 points less for every 1 % off (0 at 30 / 70 or worse).',
+      'Your score is the average of the 5 rounds.',
     ],
     durationHint: '~1 min',
-    scoreLabel: 'Score',
+    scoreLabel: 'Average points',
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} pts`,
     start: 'none',
@@ -525,5 +519,11 @@ export const PROTOTYPES: TestDefinition[] = [
     Component: lazyTest(() => import('./split-half/SplitHalfTest')),
   },
 ]
+
+/**
+ * Prototypes: new tests being tried out. Shown in their own section at the bottom of the home page,
+ * left out of the test count, "Next test" and the stats page. Rules and scoring may still change.
+ */
+export const PROTOTYPES: TestDefinition[] = []
 
 export const getTest = (id: string) => TESTS.find((t) => t.id === id) ?? PROTOTYPES.find((t) => t.id === id)

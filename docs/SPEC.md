@@ -67,6 +67,7 @@ screen then shows why, and nothing is saved.
 | `mental-rotation` | Mental Rotation | Thinking | Two 2D 7-square shapes (chiral, so mirrors are never identical); the right one is rotated 45°–315° and mirrored half the time. Answer SAME / MIRRORED. 60 s. Result: answer stats, accuracy for same vs mirrored, and avg time of correct answers for small (≤ 90°, the short way round) vs big turns (> 90°) with the difference. | Correct − wrong | Higher |
 | `line-tracing` | Line Tracing | Motor | Random smooth path (7 alternating turns) on a 1000×667 (3:2) board, corridor 60 units wide. Moving onto GO arms the run; the timer starts when you leave GO along the path (leaving it off the path just resets to waiting). Finish on the flag. Leaving the corridor (or lifting the finger) ends the run with no score. | Time | Lower |
 | `geometry` | Eye for Geometry | Estimation | 10 tasks, one of each kind in random order: middle of a line, center of a circle, make an angle, name the marked angle (typed), halve the marked angle (the arm can't leave the angle), make a line parallel to another (rotate around a fixed end; either direction counts), complete a square, copy a length, point equally far from 3 dots, slide a fixed-angle cut to halve an irregular shape. Each task scores 0–100 %, falling linearly with error (tolerances: 8 % of length, 25 % of radius, 25°, 25°, 15°, 10°, 25 % of side, 25 % of length, 30 % of radius, 10 % of area). Result lists every task's accuracy. | Average accuracy % | Higher |
+| `split-half` | Split in Half | Estimation | Starts at once (no Ready). Shapes are solid violet without a border; your line is white. 5 rounds in random order: **2 familiar shapes**, always 2 different ones, and **3 pointy shapes**. **Familiar**: triangle (no corner under 18°), L, T, U, arrow, boot, key or fish (stretched 0.7–1.4× each way and mirrored; letters and arrow also turned by quarter turns, the key only upside down, so it always lies; a retry keeps the same familiar shape, so each appears about equally often); **pointy** (5–14 corners at uneven angles, spikes and deep notches, never two notches in a row). Each shape is 55–80 units across. The vertical line always starts in the middle of the board; the shape is shifted so the answer is 6–20 units left or right of it, and never within 2.5 units of the middle of the shape's width. Drag or click to move the line (← / → nudge, Shift for bigger steps), then Done; after Done the exact cut is shown dashed and your two parts in two shades. Result: average miss, closest cut and furthest off (each as a split, bigger side first) and the points per round. | Points 0–100: per round 100 at 50 / 50, falling to 0 at 30 / 70; the score is the average | Higher |
 
 ### Prototypes
 
@@ -74,9 +75,7 @@ New tests being tried out live in `PROTOTYPES` in `src/tests/registry.ts`. They 
 at the bottom of the home page, and are left out of the "X of N played" count, "Next test", the stats page and
 "Share scores". Rules and scoring are rough until a prototype becomes a real test (then it moves into `TESTS`).
 
-| id | Name | Category | How it works | Score | Better |
-|---|---|---|---|---|---|
-| `split-half` | Split in Half | Estimation | Starts at once (no Ready). 5 rounds in random order: **2 familiar shapes**, always 2 different ones, and **3 pointy shapes**. **Familiar**: triangle (no corner under 18°), L, T, U, arrow, boot, key or fish (stretched 0.7–1.4× each way and mirrored; letters and arrow also turned by quarter turns, the key only upside down, so it always lies; a retry keeps the same familiar shape, so each appears about equally often); **pointy** (5–14 corners at uneven angles, spikes and deep notches, never two notches in a row). Each shape is 55–80 units across. The vertical line always starts in the middle of the board; the shape is shifted so the answer is 6–20 units left or right of it, and never within 2.5 units of the middle of the shape's width. Drag or click to move the line (← / → nudge, Shift for bigger steps), then Done. | Points 0–100: per round 100 at 50 / 50, falling to 0 at 30 / 70; the score is the average | Higher |
+None at the moment (Split in Half was the first; it became a regular test on 2026-11-14).
 
 ## Share format
 
@@ -100,7 +99,7 @@ all best scores in one message.
   itself) at the same place as the rules screen, so nothing moves when you press Start.
   - **Start:** per test `start` in the registry: `countdown` (3-2-1, 0.6 s steps: Stroop, Mental Rotation, Word
     Memory, Quick Maths, Aim Trainer, Go / No-Go, N-Back, Quick Count), `quick` (a short "Ready"), or `none`
-    (your first action starts it: Tap Speed, Line Tracing, Circle Chase, Time Estimation). The countdown is drawn on an empty
+    (your first action starts it: Tap Speed, Line Tracing, Circle Chase, Time Estimation, Split in Half). The countdown is drawn on an empty
     version of the test's layout (registry `layout`), so the play area is already there. The test's code is
     preloaded on the rules screen, so no loading state shows.
   - **Info row** (`<GameInfo>`): left = where you are (time left, round, level, lives), middle = what to do now
@@ -114,7 +113,7 @@ all best scores in one message.
       and equal-looking buttons.
     - *Single square* (no box, board at full height; the info row matches its width): Pattern Memory, Sequence
       Memory, Number Order and Flash Order (6:5 grid). Tiles via `TileGrid`.
-    - *Square + panel* (box; board left, panel right with its own keypad): N-Back, Quick Count, Eye for Geometry.
+    - *Square + panel* (box; board left, panel right with its own keypad): N-Back, Quick Count, Eye for Geometry, Split in Half.
   - **Correct / wrong feedback:** always the same green / red ring (`FEEDBACK_RING` in `lib/game.ts`:
     emerald-400 at 60 %, rose-400 at 65 %), never a filled area. Answer tests flash it on the display for ~0.2 s
     (`useAnswerFlash`); tile boards show it around the board on success / fail (`TileGrid` `frame`).
@@ -122,8 +121,8 @@ all best scores in one message.
     emerald-700 / amber-800; a wrong tile is rose-700.
   - **Round result** (`RoundResult`): one big value, one line of context, chips with the rounds so far (5-round
     tests: Reaction, Time Estimation, Hit the Line), "Click anywhere to continue" (any click, Enter or Space).
-    In panel layouts it sits in the panel and the board keeps showing the answer. Eye for Geometry shows a Next
-    button instead (its rounds end with a Done button too).
+    In panel layouts it sits in the panel and the board keeps showing the answer. Eye for Geometry and Split in Half show a
+    Next button instead (their rounds end with a Done button too).
   - **End moment:** when a run ends by a mistake, the game freezes for 1.5 s (`END_MOMENT_MS`) showing what went
     wrong, then the result screen appears automatically.
 - **Result screen** (`components/ResultScreen.tsx`): a 3:2 stage like the rules screen.

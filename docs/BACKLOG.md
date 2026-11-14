@@ -8,7 +8,9 @@ Ideas and TODOs for later. Not planned yet; move an item into the work when it's
 - **Line Tracing: consider a rework.** More levels; lives and failing instead of just allowing another try; keep the
   tracks about equally long (path length now varies about ±9 % between runs, which is layout luck).
 - **Eye for Geometry: fairer scoring across the challenges.** The tasks are scored on different scales; consider a method
-  that weighs them more equally. Also consider making "Split in half" its own test.
+  that weighs them more equally. Its "Split it in half" task now duplicates the Split in Half test (same skill, a
+  different scale, a clashing name): drop it, maybe for a "Balance point" task (mark a shape's centre of mass), see
+  `docs/reviews/2026-11-14-split-half.md`. Changes live Geometry scores.
 
 ## Later
 - **A finer score for every test.** Span tests (Number Memory, Number Order, Sequence Memory, Pattern Memory) score whole
