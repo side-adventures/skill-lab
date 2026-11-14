@@ -3,8 +3,6 @@
 Ideas and TODOs for later. Not planned yet; move an item into the work when it's picked up.
 
 ## TODO
-- **Tap Speed icon** (`src/icons/tap-speed.svg`) is a placeholder and looks too close to Aim Trainer's. Draw a real one
-  (style rules in `src/icons/README.md`).
 - **Quick Maths: more varied problems.** More variety in the equations; at higher levels maybe answers over 100,
   negative numbers, or a third number in the problem (e.g. 7 × 4 − 9).
 - **Line Tracing: consider a rework.** More levels; lives and failing instead of just allowing another try; keep the
