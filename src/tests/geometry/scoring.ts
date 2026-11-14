@@ -303,7 +303,8 @@ export function copyLength(rand: Rand): Task {
       const tick = (k: number): Shape => ({ t: 'seg', a: add(add(origin, dir, k * L), n, -3), b: add(add(origin, dir, k * L), n, 3) })
       return {
         points: pointsFor(e, 0.25), label: `${length! < L ? 'short' : 'long'} by ${(e * 100).toFixed(1)} %`,
-        solution: [{ t: 'seg', a: origin, b: add(origin, dir, L) }], zone: [tick(0.75), tick(1.25)],
+        // a solid dot marks where the right length ends
+        solution: [{ t: 'seg', a: origin, b: add(origin, dir, L) }, { t: 'dot', p: add(origin, dir, L) }], zone: [tick(0.75), tick(1.25)],
       }
     },
   }

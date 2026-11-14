@@ -10,15 +10,29 @@ import type { TestComponentProps } from '../types'
 import { NEW_TASK_MAKERS, add, angleTo, clampToRange, dirOf, makeTasks, resultDetails, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
 
 const STROKE = 0.9
+/** Line widths: your answer a bit bolder, the solution thinner, so both stay visible where they overlap. */
+const WIDTH = { base: STROKE, answer: 1.3, solution: 0.6, zone: 0.35 }
+
+/**
+ * A dash pattern for an open line of this length that starts and ends with a dash (never a gap), so the ends
+ * of the dashed solution are always visible: n dashes and n − 1 gaps of equal length, about 1.75 each.
+ */
+const dashFor = (len: number) => {
+  const n = Math.max(1, Math.round((len + 1.75) / 3.5))
+  const unit = len / (2 * n - 1)
+  return `${unit} ${unit}`
+}
+const pathLength = (pts: Pt[]) => pts.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - pts[i].x, p.y - pts[i].y), 0)
 
 function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'solution' | 'zone' }) {
   const color = tone === 'base' ? 'stroke-zinc-800 dark:stroke-zinc-200' : tone === 'answer' ? 'stroke-violet-500' : tone === 'zone' ? 'stroke-emerald-400/50' : 'stroke-emerald-500'
   const fill = tone === 'base' ? 'fill-zinc-800 dark:fill-zinc-200' : tone === 'answer' ? 'fill-violet-500' : 'fill-emerald-500'
-  const dashed = tone === 'solution' ? '2 1.5' : undefined
-  const width = tone === 'zone' ? 0.35 : STROKE // the 0 % zone is a hairline
+  const dashed = tone === 'solution' ? '2 1.5' : undefined // closed shapes; open lines use dashFor
+  const dashedOpen = (len: number) => (tone === 'solution' ? dashFor(len) : undefined)
+  const width = WIDTH[tone]
   switch (shape.t) {
     case 'seg':
-      return <line x1={shape.a.x} y1={shape.a.y} x2={shape.b.x} y2={shape.b.y} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashed} className={color} />
+      return <line x1={shape.a.x} y1={shape.a.y} x2={shape.b.x} y2={shape.b.y} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashedOpen(Math.hypot(shape.b.x - shape.a.x, shape.b.y - shape.a.y))} className={color} />
     case 'circle':
       return <circle cx={shape.c.x} cy={shape.c.y} r={shape.r} fill="none" strokeWidth={width} strokeDasharray={dashed} className={color} />
     case 'dot':
@@ -26,13 +40,13 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
     case 'poly':
       return <polygon points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} strokeWidth={width} strokeDasharray={dashed} strokeLinejoin="round" className={`${color} ${tone === 'zone' ? 'fill-none' : 'fill-violet-500/10'}`} />
     case 'polyline':
-      return <polyline points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" strokeWidth={width} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={dashed} className={color} />
+      return <polyline points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" strokeWidth={width} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={dashedOpen(pathLength(shape.pts))} className={color} />
     case 'arcline': {
       const p1 = add(shape.c, dirOf(shape.from), shape.r), p2 = add(shape.c, dirOf(shape.from + shape.span), shape.r)
       return (
         <path
           d={`M ${p1.x} ${p1.y} A ${shape.r} ${shape.r} 0 ${shape.span > 180 ? 1 : 0} 0 ${p2.x} ${p2.y}`}
-          fill="none" strokeWidth={width} strokeLinecap="round" strokeDasharray={dashed} className={color}
+          fill="none" strokeWidth={width} strokeLinecap="round" strokeDasharray={dashedOpen((shape.r * shape.span * Math.PI) / 180)} className={color}
         />
       )
     }
@@ -40,7 +54,7 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
       const end = add(shape.from, dirOf(shape.angle), shape.len)
       return (
         <g>
-          <line x1={shape.from.x} y1={shape.from.y} x2={end.x} y2={end.y} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashed} className={color} />
+          <line x1={shape.from.x} y1={shape.from.y} x2={end.x} y2={end.y} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashedOpen(shape.len)} className={color} />
           <circle cx={shape.from.x} cy={shape.from.y} r={1.2} className={fill} />
         </g>
       )
