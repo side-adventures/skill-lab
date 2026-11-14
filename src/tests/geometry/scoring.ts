@@ -507,18 +507,13 @@ export const TASK_GROUPS = {
 }
 export const TASKS_PER_GROUP = 2
 export const TASK_MAKERS = Object.values(TASK_GROUPS).flat()
-/** The tasks added or changed on 2026-11-14, for the test link `#/test/geometry?tasks=new` (dev server only). */
-export const NEW_TASK_MAKERS = [middleOfLine, centerOfCircle, anglePercent, balancePoint, whereTheyMeet, mirrorPoint, matchSize]
 
 /** Tasks per run: 2 from each of the 4 groups, so runs differ but always have the same mix, about 3 minutes. */
 export const TASKS_PER_RUN = Object.keys(TASK_GROUPS).length * TASKS_PER_GROUP
 
-/**
- * A run: TASKS_PER_GROUP random tasks from every group, all in random order. `makers` given (the test link):
- * all of those, no picking.
- */
-export const makeTasks = (rand: Rand = Math.random, makers?: typeof TASK_MAKERS) => {
-  const picked = makers ?? Object.values(TASK_GROUPS).flatMap((group) => shuffle(group, rand).slice(0, TASKS_PER_GROUP))
+/** A run: TASKS_PER_GROUP random tasks from every group, all in random order. */
+export const makeTasks = (rand: Rand = Math.random) => {
+  const picked = Object.values(TASK_GROUPS).flatMap((group) => shuffle(group, rand).slice(0, TASKS_PER_GROUP))
   return shuffle(picked, rand).map((make) => make(rand))
 }
 

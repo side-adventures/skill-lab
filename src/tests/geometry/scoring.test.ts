@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  COPY_MIN_TURN, NEW_TASK_MAKERS, PARALLEL_MIN_GAP, SHORT, SIZE_SHAPES, TASK_GROUPS, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
+  COPY_MIN_TURN, PARALLEL_MIN_GAP, SHORT, SIZE_SHAPES, TASK_GROUPS, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
   completeSquare, copyLength, dirOf, equalDistance, clampToRange, makeParallel, makeTasks, matchSize, middleOfLine,
   mirrorPoint, pathMiddle, closestOnPath, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
 } from './scoring'
@@ -63,7 +63,7 @@ describe('geometry tasks', () => {
       expect(t.title).toMatch(/^Make (1|2|3|4|5|6|7|8|9)[05] % of the angle$/) // 10–90 % in steps of 5
     }
   })
-  it('a run has 8 different tasks, 2 from each group; over many runs every task shows up; the test link has only the 7 new / changed ones', () => {
+  it('a run has 8 different tasks, 2 from each group; over many runs every task shows up', () => {
     const groupOf = new Map(Object.entries(TASK_GROUPS).flatMap(([g, makers]) => makers.map((m) => [m(r).kind, g] as const)))
     const seen = new Set<string>()
     for (let i = 0; i < 200; i++) {
@@ -77,7 +77,6 @@ describe('geometry tasks', () => {
     }
     expect(seen.size).toBe(12)
     expect(TASK_MAKERS).toHaveLength(12)
-    expect(makeTasks(Math.random, NEW_TASK_MAKERS).map((t) => t.kind).sort()).toEqual(['angle-pct', 'balance', 'center', 'meet', 'middle', 'mirror', 'size'])
   })})
 
 describe('new and changed tasks (2026-11-14)', () => {
