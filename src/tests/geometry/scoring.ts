@@ -187,7 +187,7 @@ export function middleOfLine(rand: Rand): Task {
     const { mid, total } = pathMiddle(pts)
     if (total < 60) continue
     return {
-      kind: 'middle', title: 'Middle of the line', prompt: 'Place the mark halfway along the line, measured along its bends.', input: 'point',
+      kind: 'middle', title: 'Middle of the line', prompt: 'Place the mark halfway along the zigzag line, measured along its bends.', input: 'point',
       shapes: [{ t: 'polyline', pts }],
       snap: (q) => closestOnPath(pts, q).point,
       drawAnswer: ({ point }) => (point ? [barAcross(pts, point)] : []),
@@ -208,7 +208,7 @@ export function centerOfCircle(rand: Rand): Task {
   // the whole circle (shown after the answer) fits on the board, not just the arc
   const c = { x: between(rand, 5 + r, 95 - r), y: between(rand, 5 + r, 95 - r) }
   return {
-    kind: 'center', title: 'Center of the circle', prompt: 'Only part of a circle is shown. Place the point at its center.', input: 'point',
+    kind: 'center', title: 'Center of the arc', prompt: 'Only part of a circle is shown. Place the point at its center.', input: 'point',
     shapes: [{ t: 'arcline', c, r, from, span }],
     evaluate: ({ point }) => {
       const e = dist(point!, c) / r
@@ -245,7 +245,7 @@ export function anglePercent(rand: Rand): Task {
   const base = between(rand, 0, 360), spread = between(rand, 50, 160), pct = 5 * randInt(2, 18, rand)
   const goal = base + (spread * pct) / 100
   return {
-    kind: 'angle-pct', title: `${pct} % of the angle`, prompt: `Turn the arm to close the angle until it is ${pct} % as wide as now.`, input: 'ray',
+    kind: 'angle-pct', title: `Make ${pct} % of the angle`, prompt: `Turn the arm to close the angle until it is ${pct} % as wide as now.`, input: 'ray',
     shapes: [
       { t: 'wedge', c: C, r: 42, from: base, span: spread },
       { t: 'ray', from: C, angle: base, len: 42 },
@@ -366,7 +366,7 @@ export function equalDistance(rand: Rand): Task {
     const pts = [a0, a0 + g1, a0 + g1 + g2].map((a) => add(c, dirOf(a), R))
     if (pts.some((p) => p.x < 6 || p.x > 94 || p.y < 6 || p.y > 94)) continue
     return {
-      kind: 'equidistant', title: 'Equal distance', prompt: 'Place the point so it is equally far from all three dots.', input: 'point',
+      kind: 'equidistant', title: 'Center of the dots', prompt: 'Place the point so it is equally far from all three dots.', input: 'point',
       shapes: pts.map((p) => ({ t: 'dot', p }) as Shape),
       evaluate: ({ point }) => {
         const e = dist(point!, c) / R
@@ -419,7 +419,7 @@ export function whereTheyMeet(rand: Rand): Task {
     if (!pieces.every((s) => onBoard(s.from, 5) && onBoard(s.to, 5))) continue
     const gap = mean(pieces.map((s) => s.near))
     return {
-      kind: 'meet', title: 'Where they meet', prompt: 'Both lines go on beyond their ends. Place the point where they would cross.', input: 'point',
+      kind: 'meet', title: 'Where the lines cross', prompt: 'Both lines go on beyond their ends. Place the point where they would cross.', input: 'point',
       shapes: pieces.map((s) => ({ t: 'seg', a: s.from, b: s.to }) as Shape),
       evaluate: ({ point }) => {
         const e = dist(point!, P) / gap
@@ -525,10 +525,15 @@ export const makeTasks = (rand: Rand = Math.random, makers?: typeof TASK_MAKERS)
 export const totalScore = (points: number[]) => round1(mean(points))
 
 /** Short task names for the result chips (all tasks must fit in two rows). */
-const SHORT: Record<string, string> = {
-  middle: 'Middle', center: 'Center', 'angle-pct': 'Angle %', parallel: 'Parallel', balance: 'Balance',
-  meet: 'Meet', mirror: 'Mirror', size: 'Size',
-  square: 'Square', 'copy-length': 'Length', equidistant: 'Equal dist.',
+/**
+ * Short names for the result chips and the saved results: one per task kind, sharing words with the title, no
+ * numbers (so a task always saves under the same name; "Make X°" is literally X).
+ */
+export const SHORT: Record<string, string> = {
+  center: 'Arc center', equidistant: 'Dots center', balance: 'Balance',
+  meet: 'Crossing', square: 'Square', mirror: 'Mirror',
+  'set-angle': 'Make X°', 'angle-pct': '% of angle', parallel: 'Parallel',
+  'copy-length': 'Length', middle: 'Zigzag', size: 'Size',
 }
 const shortName = (t: Task) => SHORT[t.kind] ?? t.title
 
