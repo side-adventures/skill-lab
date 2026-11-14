@@ -19,7 +19,8 @@ export type Input = 'point' | 'ray' | 'length' | 'offset' | 'number'
 
 export interface Answer { point?: Pt; angle?: number; length?: number; offset?: number; number?: number }
 
-export interface Evaluation { points: number; label: string; solution: Shape[] }
+/** `zone`: where the score reaches 0 % (thin rings, ticks or rays), drawn faintly with the solution. */
+export interface Evaluation { points: number; label: string; solution: Shape[]; zone?: Shape[] }
 
 export interface Task {
   kind: string
@@ -72,6 +73,11 @@ export function clampToRange(angle: number, { from, span }: { from: number; span
 export const pointsFor = (error: number, tolerance: number) => Math.round(100 * Math.max(0, 1 - error / tolerance))
 
 const pct = (e: number) => `${(e * 100).toFixed(1)} % off`
+/** 0 % zone of a point task: a ring of this radius around the right answer. */
+const ring = (c: Pt, r: number): Shape[] => [{ t: 'circle', c, r }]
+/** 0 % zone of an angle task: the two arms at ± tolerance around the right one. */
+const fan = (from: Pt, angle: number, tol: number, len: number): Shape[] =>
+  [-tol, tol].map((d) => ({ t: 'ray', from, angle: angle + d, len }) as Shape)
 const deg = (e: number) => `${e.toFixed(1)}° off`
 
 // ---------- polygon area (used by Split in Half) ----------
@@ -117,6 +123,16 @@ export function pathMiddle(pts: Pt[]) {
     left -= lens[i]
   }
   return { mid: pts[pts.length - 1], total }
+}
+
+/** The point at distance s along a path. */
+function pointAlong(pts: Pt[], s: number): Pt {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const len = dist(pts[i], pts[i + 1])
+    if (s <= len) return add(pts[i], { x: pts[i + 1].x - pts[i].x, y: pts[i + 1].y - pts[i].y }, s / len)
+    s -= len
+  }
+  return pts[pts.length - 1]
 }
 
 /** The point on a path closest to p, how far along the path it is, and the direction of that section (deg). */
@@ -173,7 +189,10 @@ export function middleOfLine(rand: Rand): Task {
       drawAnswer: ({ point }) => (point ? [barAcross(pts, point)] : []),
       evaluate: ({ point }) => {
         const e = Math.abs(closestOnPath(pts, point!).along - total / 2) / total
-        return { points: pointsFor(e, 0.08), label: pct(e), solution: [barAcross(pts, mid), { t: 'dot', p: mid }] }
+        return {
+          points: pointsFor(e, 0.08), label: pct(e), solution: [barAcross(pts, mid), { t: 'dot', p: mid }],
+          zone: [-0.08, 0.08].map((d) => barAcross(pts, pointAlong(pts, total / 2 + d * total))),
+        }
       },
     }
   }
@@ -189,7 +208,7 @@ export function centerOfCircle(rand: Rand): Task {
     shapes: [{ t: 'arcline', c, r, from, span }],
     evaluate: ({ point }) => {
       const e = dist(point!, c) / r
-      return { points: pointsFor(e, 0.3), label: pct(e), solution: [{ t: 'dot', p: c }, { t: 'circle', c, r }] }
+      return { points: pointsFor(e, 0.3), label: pct(e), solution: [{ t: 'dot', p: c }, { t: 'circle', c, r }], zone: ring(c, 0.3 * r) }
     },
   }
 }
@@ -203,7 +222,12 @@ export function setAngle(rand: Rand): Task {
       const made = angleDiff(angle!, base)
       const e = Math.abs(made - target)
       const right = angleDiff(angle!, base + target) < angleDiff(angle!, base - target) ? base + target : base - target
-      return { points: pointsFor(e, 25), label: `${made.toFixed(1)}° made · ${deg(e)}`, solution: [{ t: 'ray', from: C, angle: right, len: 42 }] }
+      return {
+        points: pointsFor(e, 25), label: `${made.toFixed(1)}° made · ${deg(e)}`, solution: [{ t: 'ray', from: C, angle: right, len: 42 }],
+        // the limits at target ± 25°, on the side of the right answer; an angle over 180° or under 0° doesn't exist
+        zone: [target - 25, target + 25].filter((t) => t >= 0 && t <= 180)
+          .map((t) => ({ t: 'ray', from: C, angle: right === base + target ? base + t : base - t, len: 42 }) as Shape),
+      }
     },
   }
 }
@@ -222,7 +246,7 @@ export function bisectAngle(rand: Rand): Task {
     initial: { angle: rand() < 0.5 ? base + spread * 0.08 : base + spread * 0.92 },
     evaluate: ({ angle }) => {
       const e = angleDiff(angle!, bis)
-      return { points: pointsFor(e, 15), label: deg(e), solution: [{ t: 'ray', from: C, angle: bis, len: 42 }] }
+      return { points: pointsFor(e, 15), label: deg(e), solution: [{ t: 'ray', from: C, angle: bis, len: 42 }], zone: fan(C, bis, 15, 42) }
     },
   }
 }
@@ -241,7 +265,7 @@ export function makeParallel(rand: Rand): Task {
     evaluate: ({ angle }) => {
       const e = angleDiff(angle!, refAng, 180) // either direction counts
       const right = angleDiff(angle!, refAng) <= 90 ? refAng : refAng + 180
-      return { points: pointsFor(e, 10), label: deg(e), solution: [{ t: 'ray', from: pivot, angle: right, len: L }] }
+      return { points: pointsFor(e, 10), label: deg(e), solution: [{ t: 'ray', from: pivot, angle: right, len: L }], zone: fan(pivot, right, 10, L) }
     },
   }
 }
@@ -257,7 +281,10 @@ export function completeSquare(rand: Rand): Task {
     shapes: [{ t: 'seg', a, b }, { t: 'seg', a: b, b: c }, { t: 'dot', p: a }, { t: 'dot', p: b }, { t: 'dot', p: c }],
     evaluate: ({ point }) => {
       const e = dist(point!, d) / side
-      return { points: pointsFor(e, 0.25), label: pct(e), solution: [{ t: 'seg', a: c, b: d }, { t: 'seg', a: d, b: a }, { t: 'dot', p: d }] }
+      return {
+        points: pointsFor(e, 0.25), label: pct(e), solution: [{ t: 'seg', a: c, b: d }, { t: 'seg', a: d, b: a }, { t: 'dot', p: d }],
+        zone: ring(d, 0.25 * side),
+      }
     },
   }
 }
@@ -272,7 +299,12 @@ export function copyLength(rand: Rand): Task {
     shapes: [{ t: 'seg', a, b }, { t: 'dot', p: origin }], pivot: origin, dir, initial: { length: 8 },
     evaluate: ({ length }) => {
       const e = Math.abs(length! - L) / L
-      return { points: pointsFor(e, 0.25), label: `${length! < L ? 'short' : 'long'} by ${(e * 100).toFixed(1)} %`, solution: [{ t: 'seg', a: origin, b: add(origin, dir, L) }] }
+      const n = { x: -dir.y, y: dir.x }
+      const tick = (k: number): Shape => ({ t: 'seg', a: add(add(origin, dir, k * L), n, -3), b: add(add(origin, dir, k * L), n, 3) })
+      return {
+        points: pointsFor(e, 0.25), label: `${length! < L ? 'short' : 'long'} by ${(e * 100).toFixed(1)} %`,
+        solution: [{ t: 'seg', a: origin, b: add(origin, dir, L) }], zone: [tick(0.75), tick(1.25)],
+      }
     },
   }
 }
@@ -289,7 +321,7 @@ export function equalDistance(rand: Rand): Task {
       shapes: pts.map((p) => ({ t: 'dot', p }) as Shape),
       evaluate: ({ point }) => {
         const e = dist(point!, c) / R
-        return { points: pointsFor(e, 0.3), label: pct(e), solution: [{ t: 'dot', p: c }, { t: 'circle', c, r: R }] }
+        return { points: pointsFor(e, 0.3), label: pct(e), solution: [{ t: 'dot', p: c }, { t: 'circle', c, r: R }], zone: ring(c, 0.3 * R) }
       },
     }
   }
@@ -320,7 +352,7 @@ export function balancePoint(rand: Rand): Task {
       shapes: [{ t: 'poly', pts }],
       evaluate: ({ point }) => {
         const e = dist(point!, g) / longest
-        return { points: pointsFor(e, 0.12), label: pct(e), solution: [...medians, { t: 'dot', p: g }] }
+        return { points: pointsFor(e, 0.12), label: pct(e), solution: [...medians, { t: 'dot', p: g }], zone: ring(g, 0.12 * longest) }
       },
     }
   }
@@ -346,6 +378,7 @@ export function whereTheyMeet(rand: Rand): Task {
           points: pointsFor(e, 0.5),
           label: pct(e),
           solution: [...pieces.map((s) => ({ t: 'seg', a: s.to, b: P }) as Shape), { t: 'dot', p: P }],
+          zone: ring(P, 0.5 * gap),
         }
       },
     }
@@ -366,7 +399,7 @@ export function mirrorPoint(rand: Rand): Task {
       shapes: [{ t: 'line', through: L0, angle }, { t: 'dot', p: D }],
       evaluate: ({ point }) => {
         const e = dist(point!, M) / (2 * Math.abs(h))
-        return { points: pointsFor(e, 0.35), label: pct(e), solution: [{ t: 'seg', a: D, b: M }, { t: 'dot', p: M }] }
+        return { points: pointsFor(e, 0.35), label: pct(e), solution: [{ t: 'seg', a: D, b: M }, { t: 'dot', p: M }], zone: ring(M, 0.35 * 2 * Math.abs(h)) }
       },
     }
   }
@@ -404,6 +437,8 @@ export function matchSize(rand: Rand): Task {
         points: pointsFor(e, 0.35),
         label: `${Math.abs(ratio * 100 - 100).toFixed(0)} % ${ratio < 1 ? 'too small' : 'too big'}`,
         solution: [{ t: 'poly', pts: placeShape(adjKind, adjC, goal) }],
+        // the area may be off by a factor e^±0.35, so the outline by e^±0.175
+        zone: [-0.175, 0.175].map((k) => ({ t: 'poly', pts: placeShape(adjKind, adjC, goal * Math.exp(k)) }) as Shape),
       }
     },
   }

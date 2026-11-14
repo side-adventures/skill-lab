@@ -11,27 +11,28 @@ import { NEW_TASK_MAKERS, add, angleTo, clampToRange, dirOf, makeTasks, resultDe
 
 const STROKE = 0.9
 
-function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'solution' }) {
-  const color = tone === 'base' ? 'stroke-zinc-800 dark:stroke-zinc-200' : tone === 'answer' ? 'stroke-violet-500' : 'stroke-emerald-500'
+function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'solution' | 'zone' }) {
+  const color = tone === 'base' ? 'stroke-zinc-800 dark:stroke-zinc-200' : tone === 'answer' ? 'stroke-violet-500' : tone === 'zone' ? 'stroke-emerald-400/50' : 'stroke-emerald-500'
   const fill = tone === 'base' ? 'fill-zinc-800 dark:fill-zinc-200' : tone === 'answer' ? 'fill-violet-500' : 'fill-emerald-500'
   const dashed = tone === 'solution' ? '2 1.5' : undefined
+  const width = tone === 'zone' ? 0.35 : STROKE // the 0 % zone is a hairline
   switch (shape.t) {
     case 'seg':
-      return <line x1={shape.a.x} y1={shape.a.y} x2={shape.b.x} y2={shape.b.y} strokeWidth={STROKE} strokeLinecap="round" strokeDasharray={dashed} className={color} />
+      return <line x1={shape.a.x} y1={shape.a.y} x2={shape.b.x} y2={shape.b.y} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashed} className={color} />
     case 'circle':
-      return <circle cx={shape.c.x} cy={shape.c.y} r={shape.r} fill="none" strokeWidth={STROKE} strokeDasharray={dashed} className={color} />
+      return <circle cx={shape.c.x} cy={shape.c.y} r={shape.r} fill="none" strokeWidth={width} strokeDasharray={dashed} className={color} />
     case 'dot':
       return <circle cx={shape.p.x} cy={shape.p.y} r={1.4} className={fill} />
     case 'poly':
-      return <polygon points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} strokeWidth={STROKE} strokeDasharray={dashed} strokeLinejoin="round" className={`${color} fill-violet-500/10`} />
+      return <polygon points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} strokeWidth={width} strokeDasharray={dashed} strokeLinejoin="round" className={`${color} ${tone === 'zone' ? 'fill-none' : 'fill-violet-500/10'}`} />
     case 'polyline':
-      return <polyline points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" strokeWidth={STROKE} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={dashed} className={color} />
+      return <polyline points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" strokeWidth={width} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={dashed} className={color} />
     case 'arcline': {
       const p1 = add(shape.c, dirOf(shape.from), shape.r), p2 = add(shape.c, dirOf(shape.from + shape.span), shape.r)
       return (
         <path
           d={`M ${p1.x} ${p1.y} A ${shape.r} ${shape.r} 0 ${shape.span > 180 ? 1 : 0} 0 ${p2.x} ${p2.y}`}
-          fill="none" strokeWidth={STROKE} strokeLinecap="round" strokeDasharray={dashed} className={color}
+          fill="none" strokeWidth={width} strokeLinecap="round" strokeDasharray={dashed} className={color}
         />
       )
     }
@@ -39,7 +40,7 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
       const end = add(shape.from, dirOf(shape.angle), shape.len)
       return (
         <g>
-          <line x1={shape.from.x} y1={shape.from.y} x2={end.x} y2={end.y} strokeWidth={STROKE} strokeLinecap="round" strokeDasharray={dashed} className={color} />
+          <line x1={shape.from.x} y1={shape.from.y} x2={end.x} y2={end.y} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashed} className={color} />
           <circle cx={shape.from.x} cy={shape.from.y} r={1.2} className={fill} />
         </g>
       )
@@ -58,7 +59,7 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
     }
     case 'line': {
       const a = add(shape.through, dirOf(shape.angle), -150), b = add(shape.through, dirOf(shape.angle), 150)
-      return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth={STROKE} strokeDasharray={dashed} className={color} />
+      return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth={width} strokeDasharray={dashed} className={color} />
     }
   }
 }
@@ -173,6 +174,7 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
             {task.shapes.map((s, i) => <Draw key={`b${i}`} shape={s} tone="base" />)}
             {answerShapes(task, answer).map((s, i) => <Draw key={`a${i}`} shape={s} tone="answer" />)}
             {handle && !evaluation && <circle cx={handle.x} cy={handle.y} r={2.6} className="fill-violet-500/30 stroke-violet-500" strokeWidth={0.5} />}
+            {evaluation?.zone?.map((s, i) => <Draw key={`z${i}`} shape={s} tone="zone" />)}
             {evaluation?.solution.map((s, i) => <Draw key={`s${i}`} shape={s} tone="solution" />)}
           </svg>
         }

@@ -81,7 +81,11 @@ describe('new and changed tasks (2026-11-14)', () => {
         const t = make(r)
         const dot = t.evaluate({ point: { x: 0, y: 0 } }).solution.find((s): s is Extract<Shape, { t: 'dot' }> => s.t === 'dot')!
         expect(t.evaluate({ point: dot.p }).points, name).toBe(100)
-        expect(t.evaluate({ point: { x: dot.p.x + 4, y: dot.p.y } }).points, name).toBeLessThan(100)
+        // (Middle of the line snaps onto the line, so a click beside the middle can still be perfect: test its ends instead)
+        if (name === 'middleOfLine') {
+          const line = t.shapes[0]
+          if (line.t === 'polyline') expect(t.evaluate({ point: line.pts[0] }).points, name).toBe(0)
+        } else expect(t.evaluate({ point: { x: dot.p.x + 4, y: dot.p.y } }).points, name).toBeLessThan(100)
         expect(onBoard(dot.p), name).toBe(true)
       }
     }
@@ -136,6 +140,24 @@ describe('new and changed tasks (2026-11-14)', () => {
       expect(goal).toBeLessThanOrEqual(25) // reachable with the handle
       expect(t.evaluate({ length: t.initial!.length! }).points).toBeLessThan(100) // starts off
       expect(t.drawAnswer!({ length: 10 })).toHaveLength(1)
+    }
+  })
+  it('every task shows its 0 % zone, and the zone is where the points run out', () => {
+    for (const make of TASK_MAKERS) {
+      for (let i = 0; i < 50; i++) {
+        const t = make(r)
+        const blank = t.input === 'point' ? { point: { x: 50, y: 50 } } : t.input === 'ray' ? { angle: 0 } : { length: 10 }
+        const ev = t.evaluate(blank)
+        expect(ev.zone?.length, t.kind).toBeGreaterThan(0)
+        const z = ev.zone![0]
+        if (t.input === 'point' && z.t === 'circle') {
+          expect(t.evaluate({ point: { x: z.c.x + z.r * 1.01, y: z.c.y } }).points, t.kind).toBe(0)
+          expect(t.evaluate({ point: { x: z.c.x + z.r * 0.9, y: z.c.y } }).points, t.kind).toBeGreaterThan(0)
+        }
+        if (t.input === 'ray' && z.t === 'ray') {
+          expect(t.evaluate({ angle: z.angle }).points, t.kind).toBe(0)
+        }
+      }
     }
   })
 })
