@@ -495,8 +495,15 @@ export const TASK_MAKERS = [
 /** The tasks added or changed on 2026-11-14, for the test link `#/test/geometry?tasks=new` (dev server only). */
 export const NEW_TASK_MAKERS = [middleOfLine, centerOfCircle, anglePercent, balancePoint, whereTheyMeet, mirrorPoint, matchSize]
 
-/** One round of every task type, in random order (`makers`: a subset, for testing). */
-export const makeTasks = (rand: Rand = Math.random, makers = TASK_MAKERS) => shuffle(makers, rand).map((make) => make(rand))
+/** Tasks per run: 8 of the 12 kinds, so runs differ and stay about 3 minutes. */
+export const TASKS_PER_RUN = 8
+
+/**
+ * A run: TASKS_PER_RUN different task kinds picked at random, in random order. `makers` given (the test link):
+ * all of those, no picking.
+ */
+export const makeTasks = (rand: Rand = Math.random, makers?: typeof TASK_MAKERS) =>
+  (makers ? shuffle(makers, rand) : shuffle(TASK_MAKERS, rand).slice(0, TASKS_PER_RUN)).map((make) => make(rand))
 
 export const totalScore = (points: number[]) => round1(mean(points))
 

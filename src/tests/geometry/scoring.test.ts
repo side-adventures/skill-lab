@@ -63,10 +63,15 @@ describe('geometry tasks', () => {
       expect(t.title).toMatch(/^(1|2|3|4|5|6|7|8|9)[05] % of the angle$/) // 10–90 % in steps of 5
     }
   })
-  it('makes one round of each of the 12 tasks; the test link has only the 7 new / changed ones', () => {
-    const tasks = makeTasks()
-    expect(tasks).toHaveLength(12)
-    expect(new Set(tasks.map((t) => t.kind)).size).toBe(12)
+  it('a run has 8 different tasks out of the 12; over many runs every task shows up; the test link has only the 7 new / changed ones', () => {
+    const seen = new Set<string>()
+    for (let i = 0; i < 200; i++) {
+      const tasks = makeTasks()
+      expect(tasks).toHaveLength(8)
+      expect(new Set(tasks.map((t) => t.kind)).size).toBe(8)
+      tasks.forEach((t) => seen.add(t.kind))
+    }
+    expect(seen.size).toBe(12)
     expect(TASK_MAKERS).toHaveLength(12)
     expect(makeTasks(Math.random, NEW_TASK_MAKERS).map((t) => t.kind).sort()).toEqual(['angle-pct', 'balance', 'center', 'meet', 'middle', 'mirror', 'size'])
   })})
