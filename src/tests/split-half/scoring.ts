@@ -39,9 +39,10 @@ function minAngle(pts: Pt[]) {
 
 /**
  * Familiar shapes in a unit box (y down), with random proportions. `turn`: may be turned by quarter
- * turns and still be recognisable (letters, arrow); the others are only mirrored (a house stays upright).
+ * turns and still be recognisable (letters, arrow, key); the others are only mirrored (a tree stays upright).
  */
-const FAMILIAR: { name: string; turn: boolean; make: (rand: Rand) => Pt[] }[] = [
+type Familiar = { name: string; turn: boolean; make: (rand: Rand) => Pt[] }
+const FAMILIAR: Familiar[] = [
   { name: 'L', turn: true, make: (rand) => {
     const a = between(rand, 0.25, 0.45), b = between(rand, 0.25, 0.45)
     return P([[0, 0], [a, 0], [a, 1 - b], [1, 1 - b], [1, 1], [0, 1]])
@@ -58,10 +59,6 @@ const FAMILIAR: { name: string; turn: boolean; make: (rand: Rand) => Pt[] }[] = 
     const sw = between(rand, 0.08, 0.18), hw = between(rand, 0.3, 0.5), hl = between(rand, 0.25, 0.45)
     return P([[0, 0.5 - sw], [1 - hl, 0.5 - sw], [1 - hl, 0.5 - hw], [1, 0.5], [1 - hl, 0.5 + hw], [1 - hl, 0.5 + sw], [0, 0.5 + sw]])
   } },
-  { name: 'House', turn: false, make: (rand) => {
-    const ax = between(rand, 0.2, 0.8), rh = between(rand, 0.3, 0.55)
-    return P([[0, 1], [0, rh], [ax, 0], [1, rh], [1, 1]])
-  } },
   { name: 'Boot', turn: false, make: (rand) => {
     const leg = between(rand, 0.3, 0.5), ankle = between(rand, 0.45, 0.65)
     return P([[0, 0], [leg, 0], [leg, ankle], [0.85, ankle + 0.08], [1, 0.85], [1, 1], [0, 1]])
@@ -74,11 +71,47 @@ const FAMILIAR: { name: string; turn: boolean; make: (rand: Rand) => Pt[] }[] = 
     const j = () => between(rand, -0.05, 0.05)
     return P([[0.3 + j(), 0], [0.85, 0], [0.55 + j(), 0.4], [0.85, 0.4], [0.2 + j(), 1], [0.4 + j(), 0.52], [0.1, 0.52]])
   } },
+  { name: 'Key', turn: true, make: (rand) => {
+    // a cut-corner head on the left, a shaft, two teeth hanging down near the end
+    const hw = between(rand, 0.28, 0.38), h = between(rand, 0.22, 0.32), c = h * 0.4
+    const sh = between(rand, 0.05, 0.09), t = between(rand, 0.12, 0.2)
+    const t1 = between(rand, 0.6, 0.7), t2 = between(rand, 0.8, 0.86)
+    return P([
+      [c, 0.5 - h], [hw - c, 0.5 - h], [hw, 0.5 - h + c], [hw, 0.5 - sh], [1, 0.5 - sh], [1, 0.5 + sh + t],
+      [t2, 0.5 + sh + t], [t2, 0.5 + sh], [t1 + 0.08, 0.5 + sh], [t1 + 0.08, 0.5 + sh + t * 0.7], [t1, 0.5 + sh + t * 0.7],
+      [t1, 0.5 + sh], [hw, 0.5 + sh], [hw, 0.5 + h - c], [hw - c, 0.5 + h], [c, 0.5 + h], [0, 0.5 + h - c], [0, 0.5 - h + c],
+    ])
+  } },
+  { name: 'Trophy', turn: false, make: (rand) => {
+    // a cup on a stem and base; the two handles differ in size, so it isn't mirror-symmetric
+    const e1 = between(rand, 0.06, 0.1), e2 = between(rand, 0.15, 0.24)
+    const bh = between(rand, 0.45, 0.55), sw = between(rand, 0.05, 0.08), by = between(rand, 0.78, 0.85), bw = between(rand, 0.2, 0.3)
+    const L = 0.18, R = 0.82 // bowl from L to R at the top, narrowing to the stem
+    return P([
+      [L, 0], [R, 0], [R + e2, 0.05], [R + e2, 0.3], [R - 0.06, 0.38], [0.5 + 0.1, bh], [0.5 + sw, bh], [0.5 + sw, by],
+      [0.5 + bw, by], [0.5 + bw, 1], [0.5 - bw, 1], [0.5 - bw, by], [0.5 - sw, by], [0.5 - sw, bh], [0.5 - 0.1, bh],
+      [L + 0.06, 0.38], [L - e1, 0.3], [L - e1, 0.05],
+    ])
+  } },
+  { name: 'Tree', turn: false, make: (rand) => {
+    // a lopsided triangle top and an off-centre trunk
+    const ax = between(rand, 0.3, 0.7), ct = between(rand, 0.62, 0.75), tw = between(rand, 0.07, 0.11), tx = between(rand, 0.4, 0.6)
+    return P([[ax, 0], [1, ct], [tx + tw, ct], [tx + tw, 1], [tx - tw, 1], [tx - tw, ct], [0, ct]])
+  } },
+  { name: 'Fish', turn: false, make: (rand) => {
+    // a pointed body with a forked tail
+    const bh = between(rand, 0.25, 0.4), tw = between(rand, 0.25, 0.4), neck = between(rand, 0.62, 0.72), fork = between(rand, 0.86, 0.94)
+    return P([
+      [0, 0.5], [0.25, 0.5 - bh], [0.5, 0.5 - bh * 0.75], [neck, 0.46], [1, 0.5 - tw], [fork, 0.5],
+      [1, 0.5 + tw], [neck, 0.54], [0.5, 0.5 + bh * 0.75], [0.25, 0.5 + bh],
+    ])
+  } },
 ]
 export const FAMILIAR_NAMES = FAMILIAR.map((f) => f.name)
 
-/** A familiar shape, stretched 0.7–1.4× in each direction, mirrored, and (letters, arrow) turned. */
-export function familiar(rand: Rand, which = FAMILIAR[Math.floor(rand() * FAMILIAR.length)]): Pt[] {
+/** A familiar shape, stretched 0.7–1.4× in each direction, mirrored, and (letters, arrow, key) turned. */
+export const pickFamiliar = (rand: Rand) => FAMILIAR[Math.floor(rand() * FAMILIAR.length)]
+export function familiar(rand: Rand, which: Familiar = pickFamiliar(rand)): Pt[] {
   const sx = between(rand, 0.7, 1.4), sy = between(rand, 0.7, 1.4)
   const flip = rand() < 0.5, turns = which.turn ? intBetween(rand, 0, 3) : 0
   return which.make(rand).map(({ x, y }) => {
@@ -137,7 +170,7 @@ function spikes(rand: Rand): Pt[] {
 }
 
 /** A raw shape of this kind (any size and position; `scale` and `makeRound` fit it on the board). */
-export function rawShape(kind: ShapeKind, rand: Rand): Pt[] {
+export function rawShape(kind: ShapeKind, rand: Rand, which?: Familiar): Pt[] {
   switch (kind) {
     case 'triangle':
       for (;;) {
@@ -145,7 +178,7 @@ export function rawShape(kind: ShapeKind, rand: Rand): Pt[] {
         if (minAngle(pts) >= 18 && polygonArea(pts) > 0.12) return pts
       }
     case 'familiar':
-      return familiar(rand)
+      return familiar(rand, which)
     case 'pointy':
       return pointy(rand)
     case 'bite':
@@ -201,8 +234,11 @@ export interface Round {
  * width (≥ 2.5 units off), so "cut in the middle of the box" isn't a shortcut.
  */
 export function makeRound(kind: ShapeKind, rand: Rand = Math.random): Round {
+  // A familiar shape is picked once: a retry only changes its proportions and turn, so shapes that often
+  // land near the middle (lightning, tree) aren't quietly replaced by ones that never do (L, boot).
+  const which = kind === 'familiar' ? pickFamiliar(rand) : undefined
   for (let tries = 0; ; tries++) {
-    const raw = scale(rawShape(kind, rand), rand)
+    const raw = scale(rawShape(kind, rand, which), rand)
     const b = bounds(raw)
     if (polygonArea(raw) < 600 && tries < 60) continue // too thin to judge
     const rawHalf = halvingX(raw)
