@@ -6,11 +6,11 @@ import { RoundResult } from '../../components/game/RoundResult'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import type { Pt } from '../geometry/scoring'
-import { ROUNDS, START_X, evaluate, leftPart, makeRounds, resultDetails, rightPart, totalScore, type ShapeKind } from './scoring'
+import { ROUNDS, START_X, evaluate, leftPart, makeRounds, resultDetails, rightPart, totalScore } from './scoring'
 
 const STROKE = 0.9
 const toPoints = (pts: Pt[]) => pts.map((p) => `${p.x},${p.y}`).join(' ')
-type Result = { kind: ShapeKind; points: number; left: number }
+type Result = { name: string; points: number; left: number }
 
 export default function SplitHalfTest({ onFinish }: TestComponentProps) {
   const [rounds] = useState(() => makeRounds())
@@ -33,7 +33,7 @@ export default function SplitHalfTest({ onFinish }: TestComponentProps) {
   const submit = () => {
     if (result || !touched) return
     const ev = evaluate(round, x)
-    const r = { kind: round.kind, points: ev.points, left: ev.left }
+    const r = { name: round.name, points: ev.points, left: ev.left }
     setResult(r)
     setResults([...results, r])
   }
