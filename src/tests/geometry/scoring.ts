@@ -89,6 +89,9 @@ export function clipHalf(pts: Pt[], origin: Pt, n: Pt, offset: number): Pt[] {
   return out
 }
 
+// ---------- the tasks ----------
+const C: Pt = { x: 50, y: 50 }
+
 export function middleOfLine(rand: Rand): Task {
   const len = between(rand, 55, 85), ang = between(rand, 0, 180)
   const mid = { x: between(rand, 45, 55), y: between(rand, 45, 55) }
