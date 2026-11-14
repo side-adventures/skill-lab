@@ -483,6 +483,7 @@ export const TESTS: TestDefinition[] = [
     ],
     scoring: [
       'Each task scores up to 100 %, depending on how close you got.',
+      'After each task, a thin green circle (or two thin lines) shows where the points run out: beyond it, the task scores 0 %.',
       'Your score is your average accuracy over all 12 tasks.',
     ],
     durationHint: '~4 min',
