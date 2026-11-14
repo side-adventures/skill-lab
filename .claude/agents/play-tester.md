@@ -28,6 +28,7 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
   - wait for the start transition, which depends on the registry `start`: `countdown` 3-2-1 (~1.8 s), `quick` "Ready" (~0.45 s), `none` (no wait, your first input starts the run);
   - send input with `new PointerEvent('pointerdown', { bubbles: true, clientX, clientY, button: 0 })` on the right element. Tests react to `pointerdown`, not `click`.
 - **Wait briefly (`await sleep(50–100)`) after each input** before reading the DOM again, or you'll read stale state.
+- **Wait for the phase text in the info row** ("Memorize", "Your turn", …), not for tile colors: found, lit and hidden tiles can share one color, so a color check can read the previous level's tiles as the new pattern.
 - **Tool calls time out after ~45 s.** For longer runs, start an async loop that stores its result on `window.__result` and returns at once. Then poll with short calls (`for (…) { if (window.__result) break; await sleep(1000) }`).
 - Play like different users:
   - **Honest:** correct answers with human timing (~250–400 ms).
@@ -55,6 +56,10 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
    - No errors in `read_console_messages`.
    - **Result screen** (see "Result screen" in `docs/SPEC.md`): check every stat against your inputs; "Attempt N" / "Not counted"; Rules / Stats links; Share · Try again · Next test (and which test Next picks); Enter / Space / N; nothing overflows the stage, even with many chips.
 6. **Keyboard extras:** answer buttons show their key inside (1–4, ← / → for two-choice tests, Space for N-Back MATCH); Enter / Space continue a round result. Keyboard is a bonus: report broken keys, never missing ones.
+
+**Your runs are saved like real ones** (localStorage of the built-in browser on localhost): they change "First score",
+best scores and the stats graph there. Say in the report which tests you played, so nobody mistakes those results for
+real ones. Don't clear storage unless asked.
 
 Take a screenshot only when the visual result matters (colors, layout), at `scale: 0.5` to save tokens. Prefer `get_page_text` or DOM reads for text and numbers.
 
