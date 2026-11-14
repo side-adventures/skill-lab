@@ -6,8 +6,14 @@ import { clipHalf, polygonArea, pointsFor, type Pt } from '../geometry/scoring'
 export const ROUNDS = 5
 
 export type ShapeKind = 'triangle' | 'four corners' | 'blocks' | 'star' | 'jagged'
-/** One round of each kind per run, so every run gets the same mix of simple and complex shapes. */
 export const KINDS: ShapeKind[] = ['triangle', 'four corners', 'blocks', 'star', 'jagged']
+/**
+ * The shapes of one run. Normally one of each kind (the same mix of simple and complex every run).
+ * TESTING (2026-11-14): only jagged shapes, to try out the pointier generator.
+ */
+export const RUN_KINDS: ShapeKind[] = ['jagged', 'jagged', 'jagged', 'jagged', 'jagged']
+/** The line always starts here (the middle of the board). */
+export const START_X = 50
 
 const between = (rand: Rand, lo: number, hi: number) => lo + rand() * (hi - lo)
 const intBetween = (rand: Rand, lo: number, hi: number) => Math.floor(between(rand, lo, hi + 1))
@@ -58,7 +64,33 @@ function blocks(rand: Rand): Pt[] {
   }
 }
 
-/** A raw shape of this kind (any size and position; `place` fits it on the board). */
+/**
+ * A pointy, irregular shape: 5–14 corners at uneven angles around the middle, each either a spike far out
+ * or a notch deep in, with never two notches in a row. Uneven gaps and radii give sharp corners and edges
+ * of very different lengths, never a round, even outline.
+ */
+function jagged(rand: Rand): Pt[] {
+  const n = intBetween(rand, 5, 14)
+  // uneven angle gaps: some corners bunch up, others are far apart. No gap over 40 % of a full turn:
+  // a gap over half a turn would let that edge pass the far side of the middle and cross another edge.
+  let gaps: number[], total: number
+  do {
+    gaps = Array.from({ length: n }, () => 0.08 + rand() ** 3 * 2)
+    total = gaps.reduce((a, b) => a + b, 0)
+  } while (Math.max(...gaps) > 0.4 * total)
+  const start = rand() * Math.PI * 2
+  let angle = start, notchBefore = false
+  return gaps.map((g) => {
+    const notch = !notchBefore && rand() < 0.65
+    notchBefore = notch
+    const r = notch ? between(rand, 0.12, 0.45) : between(rand, 0.6, 1)
+    const p = { x: Math.cos(angle) * r, y: Math.sin(angle) * r }
+    angle += (g / total) * Math.PI * 2
+    return p
+  })
+}
+
+/** A raw shape of this kind (any size and position; `scale` and `makeRound` fit it on the board). */
 export function rawShape(kind: ShapeKind, rand: Rand): Pt[] {
   switch (kind) {
     case 'triangle':
@@ -84,7 +116,7 @@ export function rawShape(kind: ShapeKind, rand: Rand): Pt[] {
       return aroundCenter(spikes * 2, (i) => (i % 2 ? inner * between(rand, 0.8, 1.2) : between(rand, 0.65, 1)), rand, 0.25)
     }
     case 'jagged':
-      return aroundCenter(intBetween(rand, 7, 11), () => between(rand, 0.3, 1), rand, 0.3)
+      return jagged(rand)
   }
 }
 
@@ -93,14 +125,15 @@ const bounds = (pts: Pt[]) => {
   return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) }
 }
 
-/** Scales the shape to 55–80 units across (its longer side) and puts it at a random spot on the board. */
-export function place(pts: Pt[], rand: Rand): Pt[] {
+/** Scales the shape to 55–80 units across (its longer side), at a random height, left edge at x = 0. */
+export function scale(pts: Pt[], rand: Rand): Pt[] {
   const b = bounds(pts)
   const k = between(rand, 55, 80) / Math.max(b.maxX - b.minX, b.maxY - b.minY)
-  const w = (b.maxX - b.minX) * k, h = (b.maxY - b.minY) * k
-  const ox = between(rand, 8, 92 - w), oy = between(rand, 8, 92 - h)
-  return pts.map((p) => ({ x: ox + (p.x - b.minX) * k, y: oy + (p.y - b.minY) * k }))
+  const h = (b.maxY - b.minY) * k
+  const oy = between(rand, 8, 92 - h)
+  return pts.map((p) => ({ x: (p.x - b.minX) * k, y: oy + (p.y - b.minY) * k }))
 }
+const shiftX = (pts: Pt[], dx: number) => pts.map((p) => ({ x: p.x + dx, y: p.y }))
 
 /** Share of the area right of the vertical line at x. */
 export const rightShare = (pts: Pt[], x: number) => polygonArea(clipHalf(pts, { x: 0, y: 0 }, { x: 1, y: 0 }, x)) / polygonArea(pts)
@@ -125,29 +158,36 @@ export interface Round {
   pts: Pt[]
   /** Correct cut. */
   half: number
-  /** Where the line starts: clearly off the answer. */
-  start: number
 }
 
 /**
- * One round of a kind. The answer is never the middle of the shape's width (≥ 2.5 units off), so
- * "cut in the middle of the box" isn't a shortcut, and the line starts 10–18 units off the answer.
+ * One round of a kind. The line starts in the middle of the board (START_X); the shape is shifted so the
+ * correct cut is 6–20 units to the left or right of it. The answer is also never the middle of the shape's
+ * width (≥ 2.5 units off), so "cut in the middle of the box" isn't a shortcut.
  */
 export function makeRound(kind: ShapeKind, rand: Rand = Math.random): Round {
   for (let tries = 0; ; tries++) {
-    const pts = place(rawShape(kind, rand), rand)
-    const half = halvingX(pts)
-    const b = bounds(pts)
-    if (Math.abs(half - (b.minX + b.maxX) / 2) < 2.5 && tries < 60) continue
-    let start = half + (rand() < 0.5 ? -1 : 1) * between(rand, 10, 18)
-    if (start < 4 || start > 96) start = half * 2 - start // other side if it would leave the board
-    return { kind, pts, half, start }
+    const raw = scale(rawShape(kind, rand), rand)
+    const b = bounds(raw)
+    if (polygonArea(raw) < 600 && tries < 60) continue // too thin to judge
+    const rawHalf = halvingX(raw)
+    if (Math.abs(rawHalf - (b.minX + b.maxX) / 2) < 2.5 && tries < 60) continue
+    // Shift the shape so the answer lands 6–20 units left or right of the start line, keeping the
+    // shape on the board (x 8–92). Only sides that can be reached are used; none → draw a new shape.
+    const lo = rawHalf + 8 - b.minX, hi = rawHalf + 92 - b.maxX // where the answer can go
+    const sides = [[START_X - 20, START_X - 6], [START_X + 6, START_X + 20]]
+      .map(([a, z]) => [Math.max(a, lo), Math.min(z, hi)])
+      .filter(([a, z]) => a <= z)
+    if (!sides.length) continue
+    const [a, z] = sides[Math.floor(rand() * sides.length)]
+    const pts = shiftX(raw, between(rand, a, z) - rawHalf)
+    return { kind, pts, half: halvingX(pts) }
   }
 }
 
-export const makeRounds = (rand: Rand = Math.random) => shuffle(KINDS, rand).map((k) => makeRound(k, rand))
+export const makeRounds = (rand: Rand = Math.random) => shuffle(RUN_KINDS, rand).map((k) => makeRound(k, rand))
 
-/** Accuracy of a cut: 100 % for a perfect 50 / 50, down to 0 at 40 / 60 (same as Eye for Geometry's split). */
+/** Points for a cut: 100 for a perfect 50 / 50, down to 0 at 40 / 60. */
 export function evaluate(round: Round, x: number) {
   const right = rightShare(round.pts, x)
   const left = 1 - right
@@ -160,12 +200,12 @@ export function resultDetails(results: { kind: ShapeKind; points: number; left: 
   const off = results.map((r) => Math.abs(r.left - 0.5) * 100)
   return {
     stats: [
-      { label: 'Closest cut', value: `${Math.min(...off).toFixed(1)} % off` },
-      { label: 'Furthest off', value: `${Math.max(...off).toFixed(1)} % off` },
+      { label: 'Closest cut', value: `${(50 + Math.min(...off)).toFixed(1)} / ${(50 - Math.min(...off)).toFixed(1)}` },
+      { label: 'Furthest off', value: `${(50 + Math.max(...off)).toFixed(1)} / ${(50 - Math.max(...off)).toFixed(1)}` },
     ],
     chips: {
-      title: 'Accuracy per shape',
-      items: results.map((r) => ({ label: r.kind[0].toUpperCase() + r.kind.slice(1), value: `${r.points} %` })),
+      title: 'Points per round',
+      items: results.map((r, i) => ({ label: `Round ${i + 1}`, value: `${r.points} pts` })),
     },
   }
 }

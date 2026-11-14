@@ -6,7 +6,7 @@ import { RoundResult } from '../../components/game/RoundResult'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import type { Pt } from '../geometry/scoring'
-import { ROUNDS, evaluate, leftPart, makeRounds, resultDetails, rightPart, totalScore, type ShapeKind } from './scoring'
+import { ROUNDS, START_X, evaluate, leftPart, makeRounds, resultDetails, rightPart, totalScore, type ShapeKind } from './scoring'
 
 const STROKE = 0.9
 const toPoints = (pts: Pt[]) => pts.map((p) => `${p.x},${p.y}`).join(' ')
@@ -16,7 +16,7 @@ export default function SplitHalfTest({ onFinish }: TestComponentProps) {
   const [rounds] = useState(() => makeRounds())
   const [index, setIndex] = useState(0)
   const round = rounds[index]
-  const [x, setX] = useState(round.start)
+  const [x, setX] = useState(START_X)
   const [touched, setTouched] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
   const [results, setResults] = useState<Result[]>([])
@@ -41,7 +41,7 @@ export default function SplitHalfTest({ onFinish }: TestComponentProps) {
   const next = () => {
     if (index + 1 >= ROUNDS) return onFinish({ score: totalScore(results.map((r) => r.points)), details: resultDetails(results) })
     setIndex(index + 1)
-    setX(rounds[index + 1].start)
+    setX(START_X)
     setTouched(false)
     setResult(null)
   }
@@ -67,7 +67,7 @@ export default function SplitHalfTest({ onFinish }: TestComponentProps) {
       <GameInfo
         left={<InfoValue value={`Round ${index + 1}`} of={ROUNDS} />}
         middle={result ? '' : touched ? 'Adjust, then Done' : 'Click or drag on the board'}
-        right={results.length > 0 && <InfoValue label="Accuracy" value={soFar.toFixed(1)} unit="%" />}
+        right={results.length > 0 && <InfoValue label="Score" value={soFar.toFixed(1)} unit="pts" />}
       />
       <SquarePanelLayout
         board={
@@ -108,7 +108,7 @@ export default function SplitHalfTest({ onFinish }: TestComponentProps) {
               {result ? (
                 <RoundResult
                   value={result.points}
-                  unit="%"
+                  unit="pts"
                   line={`${(result.left * 100).toFixed(1)} / ${((1 - result.left) * 100).toFixed(1)} split`}
                   button={index + 1 >= ROUNDS ? 'See result' : 'Next'}
                   onContinue={next}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { polygonArea } from '../geometry/scoring'
-import { KINDS, ROUNDS, evaluate, halvingX, makeRound, makeRounds, rawShape, rightShare, totalScore } from './scoring'
+import { KINDS, ROUNDS, RUN_KINDS, START_X, evaluate, halvingX, makeRound, makeRounds, rawShape, rightShare, totalScore } from './scoring'
 
 // mulberry32, seeded
 const seeded = (seed: number) => () => {
@@ -22,10 +22,10 @@ const isSimple = (pts: { x: number; y: number }[]) =>
   }))
 
 describe('split in half', () => {
-  it('a run has one round of every shape kind', () => {
+  it('a run has the planned shapes (for now only jagged ones)', () => {
     const rounds = makeRounds(seeded(1))
     expect(rounds).toHaveLength(ROUNDS)
-    expect(new Set(rounds.map((r) => r.kind))).toEqual(new Set(KINDS))
+    expect(rounds.map((r) => r.kind).sort()).toEqual([...RUN_KINDS].sort())
   })
 
   it('shapes never cross themselves, fit on the board and are big enough', () => {
@@ -41,9 +41,8 @@ describe('split in half', () => {
           expect(p.y).toBeLessThanOrEqual(92.01)
         }
         expect(polygonArea(r.pts)).toBeGreaterThan(400)
-        expect(r.start).toBeGreaterThanOrEqual(0)
-        expect(r.start).toBeLessThanOrEqual(100)
-        expect(Math.abs(r.start - r.half)).toBeGreaterThanOrEqual(10)
+        // the line starts in the middle: the answer is clearly left or right of it
+        expect(Math.abs(r.half - START_X)).toBeGreaterThanOrEqual(5.9)
       }
     }
   })
@@ -55,7 +54,7 @@ describe('split in half', () => {
     // L shape: 10 × 40 bar + 10 × 10 foot = 500; half (250) is 6.25 into the 40-high bar
     const l = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 30 }, { x: 20, y: 30 }, { x: 20, y: 40 }, { x: 0, y: 40 }]
     expect(halvingX(l)).toBeCloseTo(6.25, 5)
-    const round = { kind: 'triangle' as const, pts: square, half: 20, start: 5 }
+    const round = { kind: 'triangle' as const, pts: square, half: 20 }
     expect(evaluate(round, 20).points).toBe(100)
     expect(evaluate(round, 18).points).toBe(0) // 40 / 60
     expect(evaluate(round, 19).points).toBe(50) // 45 / 55
@@ -72,5 +71,25 @@ describe('split in half', () => {
       n++
     }
     expect(far / n).toBeGreaterThan(0.95)
+  })
+  it('jagged shapes are pointy and uneven', () => {
+    const rand = seeded(4)
+    const corner = (a: { x: number; y: number }, p: typeof a, b: typeof a) => {
+      const u = { x: a.x - p.x, y: a.y - p.y }, v = { x: b.x - p.x, y: b.y - p.y }
+      return (Math.acos((u.x * v.x + u.y * v.y) / (Math.hypot(u.x, u.y) * Math.hypot(v.x, v.y))) * 180) / Math.PI
+    }
+    let sharp = 0, uneven = 0
+    const counts = new Set<number>()
+    for (let i = 0; i < 300; i++) {
+      const pts = rawShape('jagged', rand)
+      counts.add(pts.length)
+      const angles = pts.map((p, j) => corner(pts[(j + pts.length - 1) % pts.length], p, pts[(j + 1) % pts.length]))
+      if (Math.min(...angles) < 50) sharp++
+      const edges = pts.map((p, j) => Math.hypot(pts[(j + 1) % pts.length].x - p.x, pts[(j + 1) % pts.length].y - p.y))
+      if (Math.max(...edges) / Math.min(...edges) > 2.5) uneven++
+    }
+    expect(sharp / 300).toBeGreaterThan(0.9) // almost always a corner sharper than 50°
+    expect(uneven / 300).toBeGreaterThan(0.85) // longest edge 2.5× the shortest or more (measured ≈ 90 %)
+    expect(counts.size).toBeGreaterThanOrEqual(8) // corner counts vary (5–14)
   })
 })
