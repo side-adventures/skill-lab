@@ -5,27 +5,24 @@ import { clipHalf, polygonArea, pointsFor, type Pt } from '../geometry/scoring'
 /** Board is a 100 × 100 viewBox; the cut is a vertical line at x. */
 export const ROUNDS = 5
 
-export type ShapeKind = 'triangle' | 'four corners' | 'blocks' | 'star' | 'jagged'
-export const KINDS: ShapeKind[] = ['triangle', 'four corners', 'blocks', 'star', 'jagged']
-/**
- * The shapes of one run. Normally one of each kind (the same mix of simple and complex every run).
- * TESTING (2026-11-14): only jagged shapes, to try out the pointier generator.
- */
-export const RUN_KINDS: ShapeKind[] = ['jagged', 'jagged', 'jagged', 'jagged', 'jagged']
+export type ShapeKind = 'triangle' | 'familiar' | 'pointy' | 'bite' | 'spikes'
+/** One round of each kind per run (in random order): a triangle, a familiar shape and three irregular ones. */
+export const KINDS: ShapeKind[] = ['triangle', 'familiar', 'pointy', 'bite', 'spikes']
 /** The line always starts here (the middle of the board). */
 export const START_X = 50
 
 const between = (rand: Rand, lo: number, hi: number) => lo + rand() * (hi - lo)
 const intBetween = (rand: Rand, lo: number, hi: number) => Math.floor(between(rand, lo, hi + 1))
+const P = (pts: [number, number][]): Pt[] => pts.map(([x, y]) => ({ x, y }))
 
-/** Points at sorted angles around the origin, so the polygon never crosses itself. */
-function aroundCenter(n: number, radius: (i: number) => number, rand: Rand, jitter = 0.35): Pt[] {
+/** A polygon from (angle, radius) corners around the middle, sorted by angle, so it never crosses itself. */
+const polar = (corners: { a: number; r: number }[]): Pt[] =>
+  [...corners].sort((p, q) => p.a - q.a).map(({ a, r }) => ({ x: Math.cos(a) * r, y: Math.sin(a) * r }))
+
+/** n corners spread evenly around the middle (a little jitter), each at radius r(i). */
+const evenCorners = (n: number, r: (i: number) => number, rand: Rand) => {
   const start = rand() * Math.PI * 2
-  return Array.from({ length: n }, (_, i) => {
-    const a = start + ((i + between(rand, -jitter, jitter)) / n) * Math.PI * 2
-    const r = radius(i)
-    return { x: Math.cos(a) * r, y: Math.sin(a) * r }
-  })
+  return Array.from({ length: n }, (_, i) => ({ a: start + ((i + between(rand, -0.25, 0.25)) / n) * Math.PI * 2, r: r(i) }))
 }
 
 /** Smallest corner angle of a triangle (degrees), to avoid needle-thin triangles. */
@@ -40,54 +37,103 @@ function minAngle(pts: Pt[]) {
   )
 }
 
-/** Straight-edged blocky shapes (L, T, U, steps), each with random proportions. */
-function blocks(rand: Rand): Pt[] {
-  const w = 1, h = between(rand, 0.7, 1.2)
-  const a = between(rand, 0.25, 0.45), b = between(rand, 0.25, 0.45)
-  const P = (pts: [number, number][]) => pts.map(([x, y]) => ({ x, y }))
-  switch (intBetween(rand, 0, 3)) {
-    case 0: // L
-      return P([[0, 0], [a, 0], [a, h - b * h], [w, h - b * h], [w, h], [0, h]])
-    case 1: { // T with the stem off-centre
-      const c = between(rand, 0.1, w - a - 0.1)
-      return P([[0, 0], [w, 0], [w, b * h], [c + a, b * h], [c + a, h], [c, h], [c, b * h], [0, b * h]])
-    }
-    case 2: { // U with arms of different widths and heights
-      const a2 = between(rand, 0.2, 0.4), d = between(rand, 0.3, 0.7) * h, top = between(rand, 0, 0.6) * d
-      return P([[0, 0], [a, 0], [a, d], [w - a2, d], [w - a2, top], [w, top], [w, h], [0, h]])
-    }
-    default: { // 3 steps of random sizes
-      const x1 = between(rand, 0.2, 0.4), x2 = between(rand, 0.5, 0.75)
-      const y1 = between(rand, 0.15, 0.35) * h, y2 = between(rand, 0.45, 0.7) * h
-      return P([[0, 0], [x1, 0], [x1, y1], [x2, y1], [x2, y2], [w, y2], [w, h], [0, h]])
-    }
-  }
+/**
+ * Familiar shapes in a unit box (y down), with random proportions. `turn`: may be turned by quarter
+ * turns and still be recognisable (letters, arrow); the others are only mirrored (a house stays upright).
+ */
+const FAMILIAR: { name: string; turn: boolean; make: (rand: Rand) => Pt[] }[] = [
+  { name: 'L', turn: true, make: (rand) => {
+    const a = between(rand, 0.25, 0.45), b = between(rand, 0.25, 0.45)
+    return P([[0, 0], [a, 0], [a, 1 - b], [1, 1 - b], [1, 1], [0, 1]])
+  } },
+  { name: 'T', turn: true, make: (rand) => {
+    const a = between(rand, 0.2, 0.4), b = between(rand, 0.2, 0.4), c = between(rand, 0.15, 0.85 - a)
+    return P([[0, 0], [1, 0], [1, b], [c + a, b], [c + a, 1], [c, 1], [c, b], [0, b]])
+  } },
+  { name: 'U', turn: true, make: (rand) => {
+    const a = between(rand, 0.2, 0.4), a2 = between(rand, 0.2, 0.4), d = between(rand, 0.5, 0.8), top = between(rand, 0, 0.4) * d
+    return P([[0, 0], [a, 0], [a, d], [1 - a2, d], [1 - a2, top], [1, top], [1, 1], [0, 1]])
+  } },
+  { name: 'Arrow', turn: true, make: (rand) => {
+    const sw = between(rand, 0.08, 0.18), hw = between(rand, 0.3, 0.5), hl = between(rand, 0.25, 0.45)
+    return P([[0, 0.5 - sw], [1 - hl, 0.5 - sw], [1 - hl, 0.5 - hw], [1, 0.5], [1 - hl, 0.5 + hw], [1 - hl, 0.5 + sw], [0, 0.5 + sw]])
+  } },
+  { name: 'House', turn: false, make: (rand) => {
+    const ax = between(rand, 0.2, 0.8), rh = between(rand, 0.3, 0.55)
+    return P([[0, 1], [0, rh], [ax, 0], [1, rh], [1, 1]])
+  } },
+  { name: 'Boot', turn: false, make: (rand) => {
+    const leg = between(rand, 0.3, 0.5), ankle = between(rand, 0.45, 0.65)
+    return P([[0, 0], [leg, 0], [leg, ankle], [0.85, ankle + 0.08], [1, 0.85], [1, 1], [0, 1]])
+  } },
+  { name: 'Flag', turn: false, make: (rand) => {
+    const pole = between(rand, 0.05, 0.1), fh = between(rand, 0.35, 0.55)
+    return P([[0, 0], [1, fh / 2], [pole, fh], [pole, 1], [0, 1]])
+  } },
+  { name: 'Lightning', turn: false, make: (rand) => {
+    const j = () => between(rand, -0.05, 0.05)
+    return P([[0.3 + j(), 0], [0.85, 0], [0.55 + j(), 0.4], [0.85, 0.4], [0.2 + j(), 1], [0.4 + j(), 0.52], [0.1, 0.52]])
+  } },
+]
+export const FAMILIAR_NAMES = FAMILIAR.map((f) => f.name)
+
+/** A familiar shape, stretched 0.7–1.4× in each direction, mirrored, and (letters, arrow) turned. */
+export function familiar(rand: Rand, which = FAMILIAR[Math.floor(rand() * FAMILIAR.length)]): Pt[] {
+  const sx = between(rand, 0.7, 1.4), sy = between(rand, 0.7, 1.4)
+  const flip = rand() < 0.5, turns = which.turn ? intBetween(rand, 0, 3) : 0
+  return which.make(rand).map(({ x, y }) => {
+    let p = { x: (flip ? -x : x) * sx, y: y * sy }
+    for (let i = 0; i < turns; i++) p = { x: -p.y, y: p.x }
+    return p
+  })
 }
 
 /**
- * A pointy, irregular shape: 5–14 corners at uneven angles around the middle, each either a spike far out
- * or a notch deep in, with never two notches in a row. Uneven gaps and radii give sharp corners and edges
- * of very different lengths, never a round, even outline.
+ * Pointy: 5–14 corners at uneven angles around the middle, each a spike far out or a notch deep in, never
+ * two notches in a row: sharp corners and edges of very different lengths, never a round, even outline.
  */
-function jagged(rand: Rand): Pt[] {
+function pointy(rand: Rand): Pt[] {
   const n = intBetween(rand, 5, 14)
-  // uneven angle gaps: some corners bunch up, others are far apart. No gap over 40 % of a full turn:
-  // a gap over half a turn would let that edge pass the far side of the middle and cross another edge.
+  // uneven gaps; none over 40 % of a full turn (over half a turn, an edge could cross another one)
   let gaps: number[], total: number
   do {
     gaps = Array.from({ length: n }, () => 0.08 + rand() ** 3 * 2)
     total = gaps.reduce((a, b) => a + b, 0)
   } while (Math.max(...gaps) > 0.4 * total)
-  const start = rand() * Math.PI * 2
-  let angle = start, notchBefore = false
-  return gaps.map((g) => {
+  let a = rand() * Math.PI * 2, notchBefore = false
+  return polar(gaps.map((g) => {
     const notch = !notchBefore && rand() < 0.65
     notchBefore = notch
-    const r = notch ? between(rand, 0.12, 0.45) : between(rand, 0.6, 1)
-    const p = { x: Math.cos(angle) * r, y: Math.sin(angle) * r }
-    angle += (g / total) * Math.PI * 2
-    return p
-  })
+    const corner = { a, r: notch ? between(rand, 0.12, 0.45) : between(rand, 0.6, 1) }
+    a += (g / total) * Math.PI * 2
+    return corner
+  }))
+}
+
+/** Bite: a chunky, fairly round body with a big bite taken out of one side (2–4 corners pulled deep in). */
+function bite(rand: Rand): Pt[] {
+  const n = intBetween(rand, 11, 14)
+  const from = intBetween(rand, 0, n - 1), len = intBetween(rand, 2, 4)
+  const inBite = (i: number) => (i - from + n) % n < len
+  return polar(evenCorners(n, (i) => (inBite(i) ? between(rand, 0.12, 0.4) : between(rand, 0.8, 1)), rand))
+}
+
+/** Spikes: a chunky body with 1–3 long, thin spikes on one side, which make it look wider than its area is. */
+function spikes(rand: Rand): Pt[] {
+  const body = evenCorners(intBetween(rand, 7, 9), () => between(rand, 0.45, 0.6), rand)
+  const count = intBetween(rand, 1, 3), side = rand() * Math.PI * 2
+  const tips: number[] = []
+  while (tips.length < count) {
+    const a = side + between(rand, -1.1, 1.1) // within about 125° of one direction
+    if (tips.every((t) => Math.abs(t - a) > 0.45)) tips.push(a)
+  }
+  const corners = body.filter((c) => tips.every((t) => Math.abs(Math.atan2(Math.sin(c.a - t), Math.cos(c.a - t))) > 0.15))
+  for (const t of tips) {
+    const w = between(rand, 0.04, 0.08), base = between(rand, 0.4, 0.5)
+    corners.push({ a: t - w, r: base }, { a: t, r: between(rand, 1.2, 1.6) }, { a: t + w, r: base })
+  }
+  // angles to one turn around, so sorting keeps the outline in order
+  return polar(corners.map((c) => ({ ...c, a: ((c.a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) })))
 }
 
 /** A raw shape of this kind (any size and position; `scale` and `makeRound` fit it on the board). */
@@ -98,25 +144,14 @@ export function rawShape(kind: ShapeKind, rand: Rand): Pt[] {
         const pts = Array.from({ length: 3 }, () => ({ x: rand(), y: rand() }))
         if (minAngle(pts) >= 18 && polygonArea(pts) > 0.12) return pts
       }
-    case 'four corners':
-      return aroundCenter(4, () => between(rand, 0.55, 1), rand, 0.3)
-    case 'blocks': {
-      const pts = blocks(rand)
-      // mirror and turn by a quarter, so the open side and the long arm point anywhere
-      const flip = rand() < 0.5, turn = intBetween(rand, 0, 3)
-      return pts.map(({ x, y }) => {
-        let p = { x: flip ? -x : x, y }
-        for (let i = 0; i < turn; i++) p = { x: -p.y, y: p.x }
-        return p
-      })
-    }
-    case 'star': {
-      const spikes = intBetween(rand, 4, 7)
-      const inner = between(rand, 0.3, 0.55)
-      return aroundCenter(spikes * 2, (i) => (i % 2 ? inner * between(rand, 0.8, 1.2) : between(rand, 0.65, 1)), rand, 0.25)
-    }
-    case 'jagged':
-      return jagged(rand)
+    case 'familiar':
+      return familiar(rand)
+    case 'pointy':
+      return pointy(rand)
+    case 'bite':
+      return bite(rand)
+    case 'spikes':
+      return spikes(rand)
   }
 }
 
@@ -185,13 +220,13 @@ export function makeRound(kind: ShapeKind, rand: Rand = Math.random): Round {
   }
 }
 
-export const makeRounds = (rand: Rand = Math.random) => shuffle(RUN_KINDS, rand).map((k) => makeRound(k, rand))
+export const makeRounds = (rand: Rand = Math.random) => shuffle(KINDS, rand).map((k) => makeRound(k, rand))
 
-/** Points for a cut: 100 for a perfect 50 / 50, down to 0 at 40 / 60. */
+/** Points for a cut: 100 for a perfect 50 / 50, down to 0 at 30 / 70. */
 export function evaluate(round: Round, x: number) {
   const right = rightShare(round.pts, x)
   const left = 1 - right
-  return { points: pointsFor(Math.abs(right - 0.5), 0.1), left, right }
+  return { points: pointsFor(Math.abs(right - 0.5), 0.2), left, right }
 }
 
 export const totalScore = (points: number[]) => round1(mean(points))
@@ -204,8 +239,8 @@ export function resultDetails(results: { kind: ShapeKind; points: number; left: 
       { label: 'Furthest off', value: `${(50 + Math.max(...off)).toFixed(1)} / ${(50 - Math.max(...off)).toFixed(1)}` },
     ],
     chips: {
-      title: 'Points per round',
-      items: results.map((r, i) => ({ label: `Round ${i + 1}`, value: `${r.points} pts` })),
+      title: 'Points per shape',
+      items: results.map((r) => ({ label: r.kind[0].toUpperCase() + r.kind.slice(1), value: `${r.points} pts` })),
     },
   }
 }

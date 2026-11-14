@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { polygonArea } from '../geometry/scoring'
-import { KINDS, ROUNDS, RUN_KINDS, START_X, evaluate, halvingX, makeRound, makeRounds, rawShape, rightShare, totalScore } from './scoring'
+import { FAMILIAR_NAMES, KINDS, ROUNDS, START_X, evaluate, familiar, halvingX, makeRound, makeRounds, rawShape, rightShare, totalScore } from './scoring'
 
 // mulberry32, seeded
 const seeded = (seed: number) => () => {
@@ -22,10 +22,16 @@ const isSimple = (pts: { x: number; y: number }[]) =>
   }))
 
 describe('split in half', () => {
-  it('a run has the planned shapes (for now only jagged ones)', () => {
+  it('a run has one shape of every kind', () => {
     const rounds = makeRounds(seeded(1))
     expect(rounds).toHaveLength(ROUNDS)
-    expect(rounds.map((r) => r.kind).sort()).toEqual([...RUN_KINDS].sort())
+    expect(new Set(rounds.map((r) => r.kind))).toEqual(new Set(KINDS))
+  })
+
+  it('every familiar shape stays a clean outline after stretching, mirroring and turning', () => {
+    const rand = seeded(5)
+    expect(FAMILIAR_NAMES).toEqual(['L', 'T', 'U', 'Arrow', 'House', 'Boot', 'Flag', 'Lightning'])
+    for (let i = 0; i < 2000; i++) expect(isSimple(familiar(rand))).toBe(true)
   })
 
   it('shapes never cross themselves, fit on the board and are big enough', () => {
@@ -56,8 +62,9 @@ describe('split in half', () => {
     expect(halvingX(l)).toBeCloseTo(6.25, 5)
     const round = { kind: 'triangle' as const, pts: square, half: 20 }
     expect(evaluate(round, 20).points).toBe(100)
-    expect(evaluate(round, 18).points).toBe(0) // 40 / 60
-    expect(evaluate(round, 19).points).toBe(50) // 45 / 55
+    expect(evaluate(round, 16).points).toBe(0) // 30 / 70
+    expect(evaluate(round, 18).points).toBe(50) // 40 / 60
+    expect(evaluate(round, 19).points).toBe(75) // 45 / 55
     expect(totalScore([100, 50, 75])).toBe(75)
   })
 
@@ -72,7 +79,7 @@ describe('split in half', () => {
     }
     expect(far / n).toBeGreaterThan(0.95)
   })
-  it('jagged shapes are pointy and uneven', () => {
+  it('pointy shapes are pointy and uneven', () => {
     const rand = seeded(4)
     const corner = (a: { x: number; y: number }, p: typeof a, b: typeof a) => {
       const u = { x: a.x - p.x, y: a.y - p.y }, v = { x: b.x - p.x, y: b.y - p.y }
@@ -81,7 +88,7 @@ describe('split in half', () => {
     let sharp = 0, uneven = 0
     const counts = new Set<number>()
     for (let i = 0; i < 300; i++) {
-      const pts = rawShape('jagged', rand)
+      const pts = rawShape('pointy', rand)
       counts.add(pts.length)
       const angles = pts.map((p, j) => corner(pts[(j + pts.length - 1) % pts.length], p, pts[(j + 1) % pts.length]))
       if (Math.min(...angles) < 50) sharp++
