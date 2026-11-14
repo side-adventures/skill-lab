@@ -11,7 +11,8 @@ export type Shape =
   | { t: 'poly'; pts: Pt[] }
   | { t: 'polyline'; pts: Pt[] } // open path (the zigzag line)
   | { t: 'arcline'; c: Pt; r: number; from: number; span: number } // part of a circle's outline: from `from`, CCW by `span`
-  | { t: 'ray'; from: Pt; angle: number; len: number }
+  | { t: 'ray'; from: Pt; angle: number; len: number; faint?: boolean } // faint: drawn see-through (the angle's start side)
+  | { t: 'wedge'; c: Pt; r: number; from: number; span: number } // a lightly filled sector (the full angle as a reference)
   | { t: 'line'; through: Pt; angle: number } // infinite line (clipped by the board)
   | { t: 'arc'; c: Pt; r: number; from: number; span: number } // marks an angle: from `from`, CCW by `span`
 
@@ -236,21 +237,32 @@ export function setAngle(rand: Rand): Task {
   }
 }
 
-export function bisectAngle(rand: Rand): Task {
-  const base = between(rand, 0, 360), spread = between(rand, 45, 160), bis = base + spread / 2
+/**
+ * X % of the angle: the arm starts on the faint side of a marked angle; close it until the angle is X % (10–90 %,
+ * in steps of 5) as wide as the full one. The full angle stays lightly filled as the 100 % reference.
+ */
+export function anglePercent(rand: Rand): Task {
+  const base = between(rand, 0, 360), spread = between(rand, 50, 160), pct = 5 * randInt(2, 18, rand)
+  const goal = base + (spread * pct) / 100
   return {
-    kind: 'bisect', title: 'Half the angle', prompt: 'Rotate the arm so it splits the marked angle into two equal halves.', input: 'ray',
+    kind: 'angle-pct', title: `${pct} % of the angle`, prompt: `Turn the arm to close the angle until it is ${pct} % as wide as now.`, input: 'ray',
     shapes: [
-      { t: 'arc', c: C, r: 10, from: base, span: spread },
+      { t: 'wedge', c: C, r: 42, from: base, span: spread },
       { t: 'ray', from: C, angle: base, len: 42 },
-      { t: 'ray', from: C, angle: base + spread, len: 42 },
+      { t: 'ray', from: C, angle: base + spread, len: 42, faint: true },
     ],
-    // The arm stays inside the angle and starts close to one of its sides.
-    pivot: C, range: { from: base, span: spread },
-    initial: { angle: rand() < 0.5 ? base + spread * 0.08 : base + spread * 0.92 },
+    // The arm stays inside the angle and starts on top of the faint side (100 %).
+    pivot: C, range: { from: base, span: spread }, initial: { angle: base + spread },
     evaluate: ({ angle }) => {
-      const e = angleDiff(angle!, bis)
-      return { points: pointsFor(e, 15), label: deg(e), solution: [{ t: 'ray', from: C, angle: bis, len: 42 }], zone: fan(C, bis, 15, 42) }
+      const e = angleDiff(angle!, goal)
+      const made = (angleDiff(angle!, base) / spread) * 100
+      return {
+        points: pointsFor(e, 15), label: `${made.toFixed(0)} % made · ${deg(e)}`,
+        solution: [{ t: 'ray', from: C, angle: goal, len: 42 }],
+        // ±15° limits, only where they're still inside the angle
+        zone: [-15, 15].map((d) => (spread * pct) / 100 + d).filter((a) => a >= 0 && a <= spread)
+          .map((a) => ({ t: 'ray', from: C, angle: base + a, len: 42 }) as Shape),
+      }
     },
   }
 }
@@ -463,11 +475,11 @@ export function matchSize(rand: Rand): Task {
 }
 
 export const TASK_MAKERS = [
-  middleOfLine, centerOfCircle, setAngle, bisectAngle, makeParallel, completeSquare, copyLength, equalDistance,
+  middleOfLine, centerOfCircle, setAngle, anglePercent, makeParallel, completeSquare, copyLength, equalDistance,
   balancePoint, whereTheyMeet, mirrorPoint, matchSize,
 ]
 /** The tasks added or changed on 2026-11-14, for the test link `#/test/geometry?tasks=new` (dev server only). */
-export const NEW_TASK_MAKERS = [middleOfLine, centerOfCircle, balancePoint, whereTheyMeet, mirrorPoint, matchSize]
+export const NEW_TASK_MAKERS = [middleOfLine, centerOfCircle, anglePercent, balancePoint, whereTheyMeet, mirrorPoint, matchSize]
 
 /** One round of every task type, in random order (`makers`: a subset, for testing). */
 export const makeTasks = (rand: Rand = Math.random, makers = TASK_MAKERS) => shuffle(makers, rand).map((make) => make(rand))
@@ -476,7 +488,7 @@ export const totalScore = (points: number[]) => round1(mean(points))
 
 /** Short task names for the result chips (all tasks must fit in two rows). */
 const SHORT: Record<string, string> = {
-  middle: 'Middle', center: 'Center', bisect: 'Half angle', parallel: 'Parallel', balance: 'Balance',
+  middle: 'Middle', center: 'Center', 'angle-pct': 'Angle %', parallel: 'Parallel', balance: 'Balance',
   meet: 'Meet', mirror: 'Mirror', size: 'Size',
   square: 'Square', 'copy-length': 'Length', equidistant: 'Equal dist.',
 }
