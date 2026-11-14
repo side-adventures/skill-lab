@@ -41,6 +41,8 @@ export interface Task {
   lengthRange?: [number, number]
   /** draws the current answer when a plain dot / arm / segment isn't enough (Match the size: the resized shape) */
   drawAnswer?: (a: Answer) => Shape[]
+  /** point input: moves the clicked point, e.g. onto the line (Middle of the line) */
+  snap?: (p: Pt) => Pt
   evaluate: (a: Answer) => Evaluation
 }
 
@@ -117,28 +119,61 @@ export function pathMiddle(pts: Pt[]) {
   return { mid: pts[pts.length - 1], total }
 }
 
-/** Middle of a zigzag line with 2–4 bends: the point halfway along the line, not the middle of its outline. */
+/** The point on a path closest to p, how far along the path it is, and the direction of that section (deg). */
+export function closestOnPath(pts: Pt[], p: Pt) {
+  let best = { point: pts[0], along: 0, angle: angleTo(pts[0], pts[1]), d: Infinity }
+  let walked = 0
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1], len = dist(a, b)
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / (len * len)))
+    const q = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+    const d = dist(p, q)
+    if (d < best.d) best = { point: q, along: walked + t * len, angle: angleTo(a, b), d }
+    walked += len
+  }
+  return best
+}
+
+/** A short bar across the line at a point of it (the answer and solution marker of Middle of the line). */
+const barAcross = (pts: Pt[], p: Pt): Shape => {
+  const { point, angle } = closestOnPath(pts, p)
+  const n = dirOf(angle + 90)
+  return { t: 'seg', a: add(point, n, -3), b: add(point, n, 3) }
+}
+
+/**
+ * Middle of a zigzag line: 3–5 sections (2–4 bends) of very different lengths (the longest at least 2.5× the
+ * shortest), centered on the board. The point snaps onto the line; it's scored by how far along the line it is.
+ */
 export function middleOfLine(rand: Rand): Task {
   for (;;) {
     const segments = randInt(3, 5, rand)
-    let p = { x: between(rand, 15, 85), y: between(rand, 15, 85) }, ang = between(rand, 0, 360)
-    const pts = [p]
-    for (let i = 0; i < segments; i++) {
+    const lens = Array.from({ length: segments }, () => between(rand, 7, 40))
+    if (Math.max(...lens) < 2.5 * Math.min(...lens)) continue
+    let p = { x: 0, y: 0 }, ang = between(rand, 0, 360)
+    let pts = [p]
+    lens.forEach((len, i) => {
       if (i > 0) ang += (rand() < 0.5 ? -1 : 1) * between(rand, 35, 120)
-      p = add(p, dirOf(ang), between(rand, 14, 32))
+      p = add(p, dirOf(ang), len)
       pts.push(p)
-    }
+    })
+    // center the whole line on the board
+    const xs = pts.map((q) => q.x), ys = pts.map((q) => q.y)
+    const dx = 50 - (Math.min(...xs) + Math.max(...xs)) / 2, dy = 50 - (Math.min(...ys) + Math.max(...ys)) / 2
+    pts = pts.map((q) => ({ x: q.x + dx, y: q.y + dy }))
     if (!pts.every((q) => onBoard(q))) continue
     const crosses = pts.slice(1).some((q, i) => pts.slice(1).some((r, j) => j > i + 1 && segmentsCross(pts[i], q, pts[j], r)))
     if (crosses) continue
     const { mid, total } = pathMiddle(pts)
     if (total < 60) continue
     return {
-      kind: 'middle', title: 'Middle of the line', prompt: 'Place the point halfway along the line, measured along its bends.', input: 'point',
+      kind: 'middle', title: 'Middle of the line', prompt: 'Place the mark halfway along the line, measured along its bends.', input: 'point',
       shapes: [{ t: 'polyline', pts }],
+      snap: (q) => closestOnPath(pts, q).point,
+      drawAnswer: ({ point }) => (point ? [barAcross(pts, point)] : []),
       evaluate: ({ point }) => {
-        const e = dist(point!, mid) / total
-        return { points: pointsFor(e, 0.08), label: pct(e), solution: [{ t: 'dot', p: mid }] }
+        const e = Math.abs(closestOnPath(pts, point!).along - total / 2) / total
+        return { points: pointsFor(e, 0.08), label: pct(e), solution: [barAcross(pts, mid), { t: 'dot', p: mid }] }
       },
     }
   }
@@ -146,19 +181,16 @@ export function middleOfLine(rand: Rand): Task {
 
 /** Center of a circle of which only an arc (90–180°) is shown. */
 export function centerOfCircle(rand: Rand): Task {
-  for (;;) {
-    const r = between(rand, 24, 40), span = between(rand, 90, 180), from = between(rand, 0, 360)
-    const c = { x: between(rand, 22, 78), y: between(rand, 22, 78) }
-    const arc = Array.from({ length: 13 }, (_, i) => add(c, dirOf(from + (span * i) / 12), r))
-    if (!arc.every((q) => onBoard(q, 5))) continue
-    return {
-      kind: 'center', title: 'Center of the circle', prompt: 'Only part of a circle is shown. Place the point at its center.', input: 'point',
-      shapes: [{ t: 'arcline', c, r, from, span }],
-      evaluate: ({ point }) => {
-        const e = dist(point!, c) / r
-        return { points: pointsFor(e, 0.3), label: pct(e), solution: [{ t: 'dot', p: c }, { t: 'circle', c, r }] }
-      },
-    }
+  const r = between(rand, 24, 40), span = between(rand, 90, 180), from = between(rand, 0, 360)
+  // the whole circle (shown after the answer) fits on the board, not just the arc
+  const c = { x: between(rand, 5 + r, 95 - r), y: between(rand, 5 + r, 95 - r) }
+  return {
+    kind: 'center', title: 'Center of the circle', prompt: 'Only part of a circle is shown. Place the point at its center.', input: 'point',
+    shapes: [{ t: 'arcline', c, r, from, span }],
+    evaluate: ({ point }) => {
+      const e = dist(point!, c) / r
+      return { points: pointsFor(e, 0.3), label: pct(e), solution: [{ t: 'dot', p: c }, { t: 'circle', c, r }] }
+    },
   }
 }
 

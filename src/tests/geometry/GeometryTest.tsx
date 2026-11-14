@@ -105,7 +105,7 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
     const sp = new DOMPoint(e.clientX, e.clientY).matrixTransform(m)
     const p = { x: Math.min(100, Math.max(0, sp.x)), y: Math.min(100, Math.max(0, sp.y)) }
     const rel = task.pivot && { x: p.x - task.pivot.x, y: p.y - task.pivot.y }
-    if (task.input === 'point') setAnswer({ point: p })
+    if (task.input === 'point') setAnswer({ point: task.snap ? task.snap(p) : p })
     if (task.input === 'ray') {
       const angle = angleTo(task.pivot!, p)
       setAnswer({ angle: task.range ? clampToRange(angle, task.range) : angle })
