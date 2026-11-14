@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  angleDiff, angleTo, bisectAngle, centerOfCircle, clipHalf, completeSquare, copyLength, dirOf, equalDistance,
-  clampToRange, makeParallel, makeTasks, middleOfLine, pointsFor, polygonArea, setAngle, totalScore,
+  NEW_TASK_MAKERS, SIZE_SHAPES, TASK_MAKERS, angleDiff, angleTo, balancePoint, bisectAngle, centerOfCircle, clipHalf,
+  completeSquare, copyLength, dirOf, equalDistance, clampToRange, makeParallel, makeTasks, matchSize, middleOfLine,
+  mirrorPoint, pathMiddle, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
 } from './scoring'
 
 describe('geometry helpers', () => {
@@ -61,9 +62,67 @@ describe('geometry tasks', () => {
       expect(t.evaluate({ angle: a }).points).toBeLessThan(100)
     }
   })
-  it('makes one round of each of the 9 tasks', () => {
+  it('makes one round of each of the 12 tasks; the test link has only the 6 new / changed ones', () => {
     const tasks = makeTasks()
-    expect(tasks).toHaveLength(9)
-    expect(new Set(tasks.map((t) => t.kind)).size).toBe(9)
+    expect(tasks).toHaveLength(12)
+    expect(new Set(tasks.map((t) => t.kind)).size).toBe(12)
+    expect(TASK_MAKERS).toHaveLength(12)
+    expect(makeTasks(Math.random, NEW_TASK_MAKERS).map((t) => t.kind).sort()).toEqual(['balance', 'center', 'meet', 'middle', 'mirror', 'size'])
+  })})
+
+describe('new and changed tasks (2026-11-14)', () => {
+  const r = Math.random
+  const pointTasks = { middleOfLine, centerOfCircle, balancePoint, whereTheyMeet, mirrorPoint }
+  const onBoard = (p: { x: number; y: number }) => p.x >= 0 && p.x <= 100 && p.y >= 0 && p.y <= 100
+
+  it('give 100 points for the exact answer, less for a miss', () => {
+    for (const [name, make] of Object.entries(pointTasks)) {
+      for (let i = 0; i < 200; i++) {
+        const t = make(r)
+        const dot = t.evaluate({ point: { x: 0, y: 0 } }).solution.find((s): s is Extract<Shape, { t: 'dot' }> => s.t === 'dot')!
+        expect(t.evaluate({ point: dot.p }).points, name).toBe(100)
+        expect(t.evaluate({ point: { x: dot.p.x + 4, y: dot.p.y } }).points, name).toBeLessThan(100)
+        expect(onBoard(dot.p), name).toBe(true)
+      }
+    }
+  })
+
+  it('finds the middle along a zigzag, not of its outline', () => {
+    const { mid, total } = pathMiddle([{ x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 10 }])
+    expect(total).toBe(40)
+    expect(mid).toEqual({ x: 20, y: 0 })
+    for (let i = 0; i < 200; i++) {
+      const t = middleOfLine(r)
+      const line = t.shapes[0]
+      if (line.t !== 'polyline') throw new Error('expected a zigzag')
+      expect(line.pts.length).toBeGreaterThanOrEqual(4) // 2–4 bends
+      expect(line.pts.length).toBeLessThanOrEqual(6)
+      expect(line.pts.every(onBoard)).toBe(true)
+    }
+  })
+
+  it('shows only an arc of 90–180° for the circle', () => {
+    for (let i = 0; i < 200; i++) {
+      const s = centerOfCircle(r).shapes[0]
+      if (s.t !== 'arcline') throw new Error('expected an arc')
+      expect(s.span).toBeGreaterThanOrEqual(90)
+      expect(s.span).toBeLessThanOrEqual(180)
+    }
+  })
+
+  it('Match the size: equal area gives 100, the four shapes, two different ones per task', () => {
+    expect(SIZE_SHAPES).toEqual(['square', 'circle', 'triangle', 'star'])
+    expect(shapeArea('square', 1)).toBeCloseTo(2)
+    expect(shapeArea('circle', 10)).toBeCloseTo(Math.PI * 100, -1)
+    for (let i = 0; i < 200; i++) {
+      const t = matchSize(r)
+      const sol = t.evaluate({ length: 1 }).solution[0]
+      if (sol.t !== 'poly') throw new Error('expected a shape')
+      const goal = Math.hypot(sol.pts[0].x - 70, sol.pts[0].y - 50) // circumradius of the right-size shape
+      expect(t.evaluate({ length: goal }).points).toBe(100)
+      expect(goal).toBeLessThanOrEqual(25) // reachable with the handle
+      expect(t.evaluate({ length: t.initial!.length! }).points).toBeLessThan(100) // starts off
+      expect(t.drawAnswer!({ length: 10 })).toHaveLength(1)
+    }
   })
 })

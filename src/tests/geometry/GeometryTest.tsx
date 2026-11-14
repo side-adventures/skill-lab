@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button } from '../../components/Button'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
@@ -6,7 +7,7 @@ import { RoundResult } from '../../components/game/RoundResult'
 import { NumberPad } from '../../components/NumberPad'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
-import { add, angleTo, clampToRange, dirOf, makeTasks, resultDetails, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
+import { NEW_TASK_MAKERS, add, angleTo, clampToRange, dirOf, makeTasks, resultDetails, totalScore, type Answer, type Evaluation, type Pt, type Shape, type Task } from './scoring'
 
 const STROKE = 0.9
 
@@ -22,7 +23,18 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
     case 'dot':
       return <circle cx={shape.p.x} cy={shape.p.y} r={1.4} className={fill} />
     case 'poly':
-      return <polygon points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} strokeWidth={STROKE} className={`${color} fill-violet-500/10`} />
+      return <polygon points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} strokeWidth={STROKE} strokeDasharray={dashed} strokeLinejoin="round" className={`${color} fill-violet-500/10`} />
+    case 'polyline':
+      return <polyline points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" strokeWidth={STROKE} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={dashed} className={color} />
+    case 'arcline': {
+      const p1 = add(shape.c, dirOf(shape.from), shape.r), p2 = add(shape.c, dirOf(shape.from + shape.span), shape.r)
+      return (
+        <path
+          d={`M ${p1.x} ${p1.y} A ${shape.r} ${shape.r} 0 ${shape.span > 180 ? 1 : 0} 0 ${p2.x} ${p2.y}`}
+          fill="none" strokeWidth={STROKE} strokeLinecap="round" strokeDasharray={dashed} className={color}
+        />
+      )
+    }
     case 'ray': {
       const end = add(shape.from, dirOf(shape.angle), shape.len)
       return (
@@ -53,6 +65,7 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
 
 /** Turns the current answer into something drawable. */
 function answerShapes(task: Task, a: Answer): Shape[] {
+  if (task.drawAnswer) return task.drawAnswer(a)
   switch (task.input) {
     case 'point': return a.point ? [{ t: 'dot', p: a.point }] : []
     case 'ray': return a.angle === undefined ? [] : [{ t: 'ray', from: task.pivot!, angle: a.angle, len: task.armLen ?? 42 }]
@@ -72,7 +85,10 @@ function handleAt(task: Task, a: Answer): Pt | undefined {
 }
 
 export default function GeometryTest({ onFinish }: TestComponentProps) {
-  const [tasks] = useState(() => makeTasks())
+  // Test link (dev server only): #/test/geometry?tasks=new runs just the new / changed tasks and saves nothing.
+  const [params] = useSearchParams()
+  const testMode = import.meta.env.DEV && params.get('tasks') === 'new'
+  const [tasks] = useState(() => makeTasks(Math.random, testMode ? NEW_TASK_MAKERS : undefined))
   const [index, setIndex] = useState(0)
   const task = tasks[index]
   const [answer, setAnswer] = useState<Answer>(() => task.initial ?? {})
@@ -94,7 +110,10 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
       const angle = angleTo(task.pivot!, p)
       setAnswer({ angle: task.range ? clampToRange(angle, task.range) : angle })
     }
-    if (task.input === 'length') setAnswer({ length: Math.max(0, rel!.x * task.dir!.x + rel!.y * task.dir!.y) })
+    if (task.input === 'length') {
+      const [min, max] = task.lengthRange ?? [0, Infinity]
+      setAnswer({ length: Math.min(max, Math.max(min, rel!.x * task.dir!.x + rel!.y * task.dir!.y)) })
+    }
     if (task.input === 'offset') setAnswer({ offset: rel!.x * task.dir!.x + rel!.y * task.dir!.y })
     setTouched(true)
   }
@@ -110,6 +129,7 @@ export default function GeometryTest({ onFinish }: TestComponentProps) {
     if (index + 1 >= tasks.length) {
       return onFinish({
         score: totalScore(results.map((r) => r.ev.points)),
+        ...(testMode && { failed: 'Test run with only the new tasks: not saved' }),
         details: resultDetails(results),
       })
     }
