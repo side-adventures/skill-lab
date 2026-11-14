@@ -36,8 +36,13 @@ function Draw({ shape, tone }: { shape: Shape; tone: 'base' | 'answer' | 'soluti
     case 'circle':
       return <circle cx={shape.c.x} cy={shape.c.y} r={shape.r} fill="none" strokeWidth={width} strokeDasharray={dashed} className={color} />
     case 'dot':
-      return <circle cx={shape.p.x} cy={shape.p.y} r={1.4} className={fill} />
+      // your dot a bit bigger than the solution's, so a perfect answer still shows both
+      return <circle cx={shape.p.x} cy={shape.p.y} r={tone === 'answer' ? 1.7 : tone === 'solution' ? 1.05 : 1.4} className={fill} />
     case 'poly':
+      if (shape.solid && tone !== 'solution' && tone !== 'zone') {
+        // a solid shape without a border (Match the size): the border would add visible area the score doesn't count
+        return <polygon points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} className="fill-violet-800" />
+      }
       return <polygon points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} strokeWidth={width} strokeDasharray={dashed} strokeLinejoin="round" className={`${color} ${tone === 'zone' ? 'fill-none' : 'fill-violet-500/10'}`} />
     case 'polyline':
       return <polyline points={shape.pts.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" strokeWidth={width} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={dashedOpen(pathLength(shape.pts))} className={color} />
