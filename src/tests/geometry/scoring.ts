@@ -430,6 +430,9 @@ const placeShape = (kind: string, c: Pt, r: number): Pt[] => UNIT_SHAPES[kind].m
 /** Area of a shape of this kind at circumradius r. */
 export const shapeArea = (kind: string, r: number) => polygonArea(UNIT_SHAPES[kind]) * r * r
 
+/** Match the size: 0 points when the area is off by a factor e^0.6 (82 % too big, 45 % too small). */
+export const SIZE_TOLERANCE = 0.6
+
 /** Match the size: resize one shape until it has the same area as another, different shape. */
 export function matchSize(rand: Rand): Task {
   const [refKind, adjKind] = shuffle(SIZE_SHAPES, rand)
@@ -447,11 +450,13 @@ export function matchSize(rand: Rand): Task {
       const ratio = shapeArea(adjKind, length!) / target
       const e = Math.abs(Math.log(ratio))
       return {
-        points: pointsFor(e, 0.35),
+        // 0 points at an area e^0.6 = 82 % too big or e^−0.6 = 45 % too small (width about 35 % / 26 % off):
+        // area grows with the square of the width, so a stricter limit punishes shapes that only look a bit off
+        points: pointsFor(e, SIZE_TOLERANCE),
         label: `${Math.abs(ratio * 100 - 100).toFixed(0)} % ${ratio < 1 ? 'too small' : 'too big'}`,
         solution: [{ t: 'poly', pts: placeShape(adjKind, adjC, goal) }],
-        // the area may be off by a factor e^±0.35, so the outline by e^±0.175
-        zone: [-0.175, 0.175].map((k) => ({ t: 'poly', pts: placeShape(adjKind, adjC, goal * Math.exp(k)) }) as Shape),
+        // the area may be off by a factor e^±SIZE_TOLERANCE, so the outline by half that
+        zone: [-1, 1].map((k) => ({ t: 'poly', pts: placeShape(adjKind, adjC, goal * Math.exp((k * SIZE_TOLERANCE) / 2)) }) as Shape),
       }
     },
   }
