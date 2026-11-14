@@ -39,9 +39,10 @@ function minAngle(pts: Pt[]) {
 
 /**
  * Familiar shapes in a unit box (y down), with random proportions. `turn`: may be turned by quarter
- * turns and still be recognisable (letters, arrow, key); the others are only mirrored (a tree stays upright).
+ * turns and still be recognisable (letters, arrow, key); the lightning bolt is tilted a little; the others stay upright.
  */
-type Familiar = { name: string; turn: boolean; make: (rand: Rand) => Pt[] }
+/** `turn`: may be turned by quarter turns; `tilt`: may be tilted up to this many degrees either way. */
+type Familiar = { name: string; turn: boolean; tilt?: number; make: (rand: Rand) => Pt[] }
 const FAMILIAR: Familiar[] = [
   { name: 'L', turn: true, make: (rand) => {
     const a = between(rand, 0.25, 0.45), b = between(rand, 0.25, 0.45)
@@ -67,9 +68,15 @@ const FAMILIAR: Familiar[] = [
     const pole = between(rand, 0.05, 0.1), fh = between(rand, 0.35, 0.55)
     return P([[0, 0], [1, fh / 2], [pole, fh], [pole, 1], [0, 1]])
   } },
-  { name: 'Lightning', turn: false, make: (rand) => {
-    const j = () => between(rand, -0.05, 0.05)
-    return P([[0.3 + j(), 0], [0.85, 0], [0.55 + j(), 0.4], [0.85, 0.4], [0.2 + j(), 1], [0.4 + j(), 0.52], [0.1, 0.52]])
+  { name: 'Lightning', turn: false, tilt: 30, make: (rand) => {
+    // a zigzag bolt: top edge, a step out, a long point down, a step back; every corner moved a lot,
+    // and the two steps at different heights, so no two bolts look alike
+    const j = (d: number) => between(rand, -d, d)
+    const top = between(rand, 0.35, 0.65), step1 = between(rand, 0.3, 0.5), step2 = step1 + between(rand, 0.04, 0.16)
+    return P([
+      [0.3 + j(0.12), 0], [0.3 + top + j(0.08), 0], [0.5 + j(0.12), step1], [0.85 + j(0.12), step1 + j(0.04)],
+      [0.15 + j(0.15), 1], [0.42 + j(0.1), step2], [0.08 + j(0.08), step2 + j(0.04)],
+    ])
   } },
   { name: 'Key', turn: true, make: (rand) => {
     // a cut-corner head on the left, a shaft, two teeth hanging down near the end
@@ -82,22 +89,6 @@ const FAMILIAR: Familiar[] = [
       [t1, 0.5 + sh], [hw, 0.5 + sh], [hw, 0.5 + h - c], [hw - c, 0.5 + h], [c, 0.5 + h], [0, 0.5 + h - c], [0, 0.5 - h + c],
     ])
   } },
-  { name: 'Trophy', turn: false, make: (rand) => {
-    // a cup on a stem and base; the two handles differ in size, so it isn't mirror-symmetric
-    const e1 = between(rand, 0.06, 0.1), e2 = between(rand, 0.15, 0.24)
-    const bh = between(rand, 0.45, 0.55), sw = between(rand, 0.05, 0.08), by = between(rand, 0.78, 0.85), bw = between(rand, 0.2, 0.3)
-    const L = 0.18, R = 0.82 // bowl from L to R at the top, narrowing to the stem
-    return P([
-      [L, 0], [R, 0], [R + e2, 0.05], [R + e2, 0.3], [R - 0.06, 0.38], [0.5 + 0.1, bh], [0.5 + sw, bh], [0.5 + sw, by],
-      [0.5 + bw, by], [0.5 + bw, 1], [0.5 - bw, 1], [0.5 - bw, by], [0.5 - sw, by], [0.5 - sw, bh], [0.5 - 0.1, bh],
-      [L + 0.06, 0.38], [L - e1, 0.3], [L - e1, 0.05],
-    ])
-  } },
-  { name: 'Tree', turn: false, make: (rand) => {
-    // a lopsided triangle top and an off-centre trunk
-    const ax = between(rand, 0.3, 0.7), ct = between(rand, 0.62, 0.75), tw = between(rand, 0.07, 0.11), tx = between(rand, 0.4, 0.6)
-    return P([[ax, 0], [1, ct], [tx + tw, ct], [tx + tw, 1], [tx - tw, 1], [tx - tw, ct], [0, ct]])
-  } },
   { name: 'Fish', turn: false, make: (rand) => {
     // a pointed body with a forked tail
     const bh = between(rand, 0.25, 0.4), tw = between(rand, 0.25, 0.4), neck = between(rand, 0.62, 0.72), fork = between(rand, 0.86, 0.94)
@@ -109,15 +100,17 @@ const FAMILIAR: Familiar[] = [
 ]
 export const FAMILIAR_NAMES = FAMILIAR.map((f) => f.name)
 
-/** A familiar shape, stretched 0.7–1.4× in each direction, mirrored, and (letters, arrow, key) turned. */
+/** A familiar shape, stretched 0.7–1.4× in each direction, mirrored, (letters, arrow, key) turned, (lightning) tilted. */
 export const pickFamiliar = (rand: Rand) => FAMILIAR[Math.floor(rand() * FAMILIAR.length)]
 export function familiar(rand: Rand, which: Familiar = pickFamiliar(rand)): Pt[] {
   const sx = between(rand, 0.7, 1.4), sy = between(rand, 0.7, 1.4)
   const flip = rand() < 0.5, turns = which.turn ? intBetween(rand, 0, 3) : 0
+  const tilt = which.tilt ? (between(rand, -which.tilt, which.tilt) * Math.PI) / 180 : 0
+  const cos = Math.cos(tilt), sin = Math.sin(tilt)
   return which.make(rand).map(({ x, y }) => {
     let p = { x: (flip ? -x : x) * sx, y: y * sy }
     for (let i = 0; i < turns; i++) p = { x: -p.y, y: p.x }
-    return p
+    return { x: p.x * cos - p.y * sin, y: p.x * sin + p.y * cos }
   })
 }
 
