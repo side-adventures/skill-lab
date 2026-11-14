@@ -5,13 +5,13 @@ import { clipHalf, polygonArea, pointsFor, type Pt } from '../geometry/scoring'
 /** Board is a 100 × 100 viewBox; the cut is a vertical line at x. */
 export const ROUNDS = 5
 
-export type ShapeKind = 'familiar' | 'pointy' | 'bite' | 'spikes'
-export const KINDS: ShapeKind[] = ['familiar', 'pointy', 'bite', 'spikes']
+export type ShapeKind = 'familiar' | 'pointy'
+export const KINDS: ShapeKind[] = ['familiar', 'pointy']
 /**
  * The rounds of one run, in random order: two familiar shapes (always two different ones, the triangle is one
- * of them) and the three irregular kinds.
+ * of them) and three pointy ones.
  */
-export const RUN_KINDS: ShapeKind[] = ['familiar', 'familiar', 'pointy', 'bite', 'spikes']
+export const RUN_KINDS: ShapeKind[] = ['familiar', 'familiar', 'pointy', 'pointy', 'pointy']
 /** The line always starts here (the middle of the board). */
 export const START_X = 50
 
@@ -22,12 +22,6 @@ const P = (pts: [number, number][]): Pt[] => pts.map(([x, y]) => ({ x, y }))
 /** A polygon from (angle, radius) corners around the middle, sorted by angle, so it never crosses itself. */
 const polar = (corners: { a: number; r: number }[]): Pt[] =>
   [...corners].sort((p, q) => p.a - q.a).map(({ a, r }) => ({ x: Math.cos(a) * r, y: Math.sin(a) * r }))
-
-/** n corners spread evenly around the middle (a little jitter), each at radius r(i). */
-const evenCorners = (n: number, r: (i: number) => number, rand: Rand) => {
-  const start = rand() * Math.PI * 2
-  return Array.from({ length: n }, (_, i) => ({ a: start + ((i + between(rand, -0.25, 0.25)) / n) * Math.PI * 2, r: r(i) }))
-}
 
 /** Smallest corner angle of a triangle (degrees), to avoid needle-thin triangles. */
 function minAngle(pts: Pt[]) {
@@ -132,32 +126,6 @@ function pointy(rand: Rand): Pt[] {
   }))
 }
 
-/** Bite: a chunky, fairly round body with a big bite taken out of one side (2–4 corners pulled deep in). */
-function bite(rand: Rand): Pt[] {
-  const n = intBetween(rand, 11, 14)
-  const from = intBetween(rand, 0, n - 1), len = intBetween(rand, 2, 4)
-  const inBite = (i: number) => (i - from + n) % n < len
-  return polar(evenCorners(n, (i) => (inBite(i) ? between(rand, 0.12, 0.4) : between(rand, 0.8, 1)), rand))
-}
-
-/** Spikes: a chunky body with 1–3 long, thin spikes on one side, which make it look wider than its area is. */
-function spikes(rand: Rand): Pt[] {
-  const body = evenCorners(intBetween(rand, 7, 9), () => between(rand, 0.45, 0.6), rand)
-  const count = intBetween(rand, 1, 3), side = rand() * Math.PI * 2
-  const tips: number[] = []
-  while (tips.length < count) {
-    const a = side + between(rand, -1.1, 1.1) // within about 125° of one direction
-    if (tips.every((t) => Math.abs(t - a) > 0.45)) tips.push(a)
-  }
-  const corners = body.filter((c) => tips.every((t) => Math.abs(Math.atan2(Math.sin(c.a - t), Math.cos(c.a - t))) > 0.15))
-  for (const t of tips) {
-    const w = between(rand, 0.04, 0.08), base = between(rand, 0.4, 0.5)
-    corners.push({ a: t - w, r: base }, { a: t, r: between(rand, 1.2, 1.6) }, { a: t + w, r: base })
-  }
-  // angles to one turn around, so sorting keeps the outline in order
-  return polar(corners.map((c) => ({ ...c, a: ((c.a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) })))
-}
-
 /** A raw shape of this kind (any size and position; `scale` and `makeRound` fit it on the board). */
 export function rawShape(kind: ShapeKind, rand: Rand, which?: Familiar): Pt[] {
   switch (kind) {
@@ -165,10 +133,6 @@ export function rawShape(kind: ShapeKind, rand: Rand, which?: Familiar): Pt[] {
       return familiar(rand, which)
     case 'pointy':
       return pointy(rand)
-    case 'bite':
-      return bite(rand)
-    case 'spikes':
-      return spikes(rand)
   }
 }
 
