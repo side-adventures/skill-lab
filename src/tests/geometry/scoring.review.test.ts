@@ -237,8 +237,8 @@ describe('review: degenerate strategies per task', () => {
     console.log('BEST NO-SKILL SHORTCUT per task', JSON.stringify(best), 'expected run score', r1(avg(KINDS.map((k) => best[k] ?? 0))))
   })
 
-  // Known issue (review 2026-11-15): fails while the issue exists; when fixed, this turns red: change it.fails back to it.
-  it.fails('FINDING: in Match the size the start can already score well, because the start is capped at the handle limit 25', () => {
+  // Fixed 2026-11-15 (was a known issue in the review).
+  it('FINDING: in Match the size the start can already score well, because the start is capped at the handle limit 25', () => {
     const rand = seeded(9)
     const startPts: number[] = [], capped: number[] = []
     for (let i = 0; i < 5000; i++) {
@@ -295,8 +295,8 @@ describe('review: round generation over many seeds', () => {
     expect(Object.values(report).every((r) => (r as { solutionDotOffBoard: number }).solutionDotOffBoard === 0)).toBe(true)
   })
 
-  // Known issue (review 2026-11-15): fails while the issue exists; when fixed, this turns red: change it.fails back to it.
-  it.fails('zigzag: how close the line comes to itself (non-neighbouring sections), and snapping at the true middle', () => {
+  // Fixed 2026-11-15 (was a known issue in the review).
+  it('zigzag: how close the line comes to itself (non-neighbouring sections), and snapping at the true middle', () => {
     const segDist = (a: Pt, b: Pt, c: Pt, d: Pt) => {
       const pd = (p: Pt, u: Pt, v: Pt) => closestOnPath([u, v], p).d
       return Math.min(pd(a, c, d), pd(b, c, d), pd(c, a, b), pd(d, a, b))

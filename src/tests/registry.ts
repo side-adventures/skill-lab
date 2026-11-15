@@ -477,13 +477,13 @@ export const TESTS: TestDefinition[] = [
     tagline: 'Middles, angles, centers — by eye.',
     skill: 'judging shapes and angles by eye',
     howTo: [
-      '8 short tasks, 2 each of centers, constructions, angles and lengths, such as the balance point of a triangle, the middle of a zigzag line or matching two sizes.',
+      '8 short tasks, 2 each of centers, constructions, angles, and lengths & sizes, such as the balance point of a triangle or the middle of a zigzag line.',
       'Drag or click on the board, then confirm with Done.',
       'After each task you see the exact solution.',
     ],
     scoring: [
       'Each task scores up to 100 %, depending on how close you got.',
-      'After each task, a thin green circle (or two thin lines) shows where the points run out: beyond it, the task scores 0 %.',
+      'After each task, thin green lines (a ring, two marks or two outlines) show where the points run out: beyond them, the task scores 0 %.',
       'Your score is your average accuracy over the 8 tasks.',
     ],
     durationHint: '~3 min',

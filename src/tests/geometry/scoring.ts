@@ -14,11 +14,10 @@ export type Shape =
   | { t: 'ray'; from: Pt; angle: number; len: number; faint?: boolean } // faint: drawn see-through (the angle's start side)
   | { t: 'wedge'; c: Pt; r: number; from: number; span: number } // a lightly filled sector (the full angle as a reference)
   | { t: 'line'; through: Pt; angle: number } // infinite line (clipped by the board)
-  | { t: 'arc'; c: Pt; r: number; from: number; span: number } // marks an angle: from `from`, CCW by `span`
 
-export type Input = 'point' | 'ray' | 'length' | 'offset' | 'number'
+export type Input = 'point' | 'ray' | 'length'
 
-export interface Answer { point?: Pt; angle?: number; length?: number; offset?: number; number?: number }
+export interface Answer { point?: Pt; angle?: number; length?: number }
 
 /** `zone`: where the score reaches 0 % (thin rings, ticks or rays), drawn faintly with the solution. */
 export interface Evaluation { points: number; label: string; solution: Shape[]; zone?: Shape[] }
@@ -35,7 +34,7 @@ export interface Task {
   armLen?: number
   /** ray input can only point inside this angle (CCW from `from` by `span`) */
   range?: { from: number; span: number }
-  /** length input direction; offset input normal (unit vectors) */
+  /** length input direction (unit vector) */
   dir?: Pt
   /** starting value shown before the player moves anything */
   initial?: Answer
@@ -161,6 +160,12 @@ const barAcross = (pts: Pt[], p: Pt): Shape => {
   return { t: 'seg', a: add(point, n, -3), b: add(point, n, 3) }
 }
 
+/** Zigzag: the smallest gap between two sections that aren't neighbours. */
+export const ZIGZAG_MIN_GAP = 5
+/** Distance between two segments that don't cross. */
+const segmentGap = (a: Pt, b: Pt, c: Pt, d: Pt) =>
+  Math.min(closestOnPath([c, d], a).d, closestOnPath([c, d], b).d, closestOnPath([a, b], c).d, closestOnPath([a, b], d).d)
+
 /**
  * Middle of a zigzag line: 3–5 sections (2–4 bends) of very different lengths (the longest at least 2.5× the
  * shortest), centered on the board. The point snaps onto the line; it's scored by how far along the line it is.
@@ -182,8 +187,10 @@ export function middleOfLine(rand: Rand): Task {
     const dx = 50 - (Math.min(...xs) + Math.max(...xs)) / 2, dy = 50 - (Math.min(...ys) + Math.max(...ys)) / 2
     pts = pts.map((q) => ({ x: q.x + dx, y: q.y + dy }))
     if (!pts.every((q) => onBoard(q))) continue
-    const crosses = pts.slice(1).some((q, i) => pts.slice(1).some((r, j) => j > i + 1 && segmentsCross(pts[i], q, pts[j], r)))
-    if (crosses) continue
+    // no crossing, and sections that aren't neighbours stay at least ZIGZAG_MIN_GAP apart (else they look touching)
+    const tooClose = pts.slice(1).some((q, i) => pts.slice(1).some((r, j) =>
+      j > i + 1 && (segmentsCross(pts[i], q, pts[j], r) || segmentGap(pts[i], q, pts[j], r) < ZIGZAG_MIN_GAP)))
+    if (tooClose) continue
     const { mid, total } = pathMiddle(pts)
     if (total < 60) continue
     return {
@@ -245,7 +252,7 @@ export function anglePercent(rand: Rand): Task {
   const base = between(rand, 0, 360), spread = between(rand, 50, 160), pct = 5 * randInt(2, 18, rand)
   const goal = base + (spread * pct) / 100
   return {
-    kind: 'angle-pct', title: `Make ${pct} % of the angle`, prompt: `Turn the arm to close the angle until it is ${pct} % as wide as now.`, input: 'ray',
+    kind: 'angle-pct', title: `Make ${pct} % of the angle`, prompt: `Turn the arm until the angle is ${pct} % as wide as the whole shaded angle.`, input: 'ray',
     shapes: [
       { t: 'wedge', c: C, r: 42, from: base, span: spread },
       { t: 'ray', from: C, angle: base, len: 42 },
@@ -366,7 +373,7 @@ export function equalDistance(rand: Rand): Task {
     const pts = [a0, a0 + g1, a0 + g1 + g2].map((a) => add(c, dirOf(a), R))
     if (pts.some((p) => p.x < 6 || p.x > 94 || p.y < 6 || p.y > 94)) continue
     return {
-      kind: 'equidistant', title: 'Center of the dots', prompt: 'Place the point so it is equally far from all three dots.', input: 'point',
+      kind: 'equidistant', title: 'Equally far from the dots', prompt: 'Place the point so it is equally far from all three dots.', input: 'point',
       shapes: pts.map((p) => ({ t: 'dot', p }) as Shape),
       evaluate: ({ point }) => {
         const e = dist(point!, c) / R
@@ -468,19 +475,28 @@ export const shapeArea = (kind: string, r: number) => polygonArea(UNIT_SHAPES[ki
 
 /** Match the size: 0 points when the area is off by a factor e^0.6 (82 % too big, 45 % too small). */
 export const SIZE_TOLERANCE = 0.6
+/** Match the size: the largest size (circumradius) the handle allows. */
+export const SIZE_MAX = 25
 
 /** Match the size: resize one shape until it has the same area as another, different shape. */
 export function matchSize(rand: Rand): Task {
   const [refKind, adjKind] = shuffle(SIZE_SHAPES, rand)
   const refC = { x: 26, y: 50 }, adjC = { x: 70, y: 50 }
-  const refR = between(rand, 11, 16)
-  const target = shapeArea(refKind, refR)
-  const goal = Math.sqrt(target / shapeArea(adjKind, 1)) // the right circumradius for the adjustable shape
-  const start = Math.min(25, Math.max(4, goal * (rand() < 0.5 ? between(rand, 0.55, 0.75) : between(rand, 1.3, 1.6))))
+  // The right size (circumradius) must leave room for the "too big" 0 % outline within the handle's reach.
+  let refR: number, target: number, goal: number
+  do {
+    refR = between(rand, 11, 16)
+    target = shapeArea(refKind, refR)
+    goal = Math.sqrt(target / shapeArea(adjKind, 1))
+  } while (goal * Math.exp(SIZE_TOLERANCE / 2) > SIZE_MAX)
+  // Start clearly too small or too big; too big only if that still fits under the handle limit (never capped onto
+  // the goal, so pressing Done right away never scores much).
+  const big = rand() < 0.5 && goal * 1.6 <= SIZE_MAX
+  const start = Math.max(4, goal * (big ? between(rand, 1.3, 1.6) : between(rand, 0.55, 0.75)))
   return {
     kind: 'size', title: 'Match the size', prompt: 'Drag to resize the right shape until it has the same area as the left one.', input: 'length',
     shapes: [{ t: 'poly', pts: placeShape(refKind, refC, refR), solid: true }],
-    pivot: adjC, dir: { x: 1, y: 0 }, lengthRange: [3, 25], initial: { length: start },
+    pivot: adjC, dir: { x: 1, y: 0 }, lengthRange: [3, SIZE_MAX], initial: { length: start },
     drawAnswer: ({ length }) => (length === undefined ? [] : [{ t: 'poly', pts: placeShape(adjKind, adjC, length), solid: true }]),
     evaluate: ({ length }) => {
       const ratio = shapeArea(adjKind, length!) / target
