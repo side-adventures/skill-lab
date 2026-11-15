@@ -13,7 +13,13 @@ const KEY_LABEL: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→',
 const keyLabel = (key: string) => KEY_LABEL[key] ?? key.toUpperCase()
 
 /** Large answer buttons with their key shown inside; reacts on pointerdown and on the key. */
-export function AnswerButtons({ options, columns, disabled }: { options: AnswerOption[]; columns?: number; disabled?: boolean }) {
+export function AnswerButtons({ options, columns, disabled, wide }: {
+  options: AnswerOption[]
+  columns?: number
+  disabled?: boolean
+  /** Use the full width of the strip (many small buttons, e.g. a 1–9 row). */
+  wide?: boolean
+}) {
   const latest = useLatest({ options, disabled })
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -28,8 +34,11 @@ export function AnswerButtons({ options, columns, disabled }: { options: AnswerO
   }, [latest])
 
   return (
-    <div className="mx-auto grid max-w-xl gap-3" style={{ gridTemplateColumns: `repeat(${columns ?? options.length}, minmax(0, 1fr))` }}>
-      {options.map((o) => (
+    <div className={`mx-auto grid gap-3 ${wide ? '' : 'max-w-xl'}`} style={{ gridTemplateColumns: `repeat(${columns ?? options.length}, minmax(0, 1fr))` }}>
+      {options.map((o) => {
+        // A button whose label is its key ("1") shows it once, centered.
+        const keyOnly = keyLabel(o.key) === o.label
+        return (
         <button
           key={o.label}
           type="button"
@@ -39,16 +48,19 @@ export function AnswerButtons({ options, columns, disabled }: { options: AnswerO
             e.preventDefault()
             o.onPress()
           }}
-          className={`flex h-14 items-center justify-between rounded-xl px-5 text-lg font-bold tracking-wider transition-colors active:scale-[0.98] disabled:opacity-40 ${
+          className={`flex h-14 items-center ${keyOnly ? 'justify-center' : 'justify-between'} rounded-xl px-5 text-lg font-bold tracking-wider transition-colors active:scale-[0.98] disabled:opacity-40 ${
             o.primary ? 'bg-violet-600 text-white hover:bg-violet-500' : 'border border-zinc-700 bg-zinc-900 text-zinc-100 hover:border-zinc-600'
           }`}
         >
           <span>{o.label}</span>
-          <kbd className={`rounded-md border px-1.5 text-xs font-medium ${o.primary ? 'border-white/30 text-white/80' : 'border-zinc-700 text-zinc-500'}`}>
-            {keyLabel(o.key)}
-          </kbd>
+          {!keyOnly && (
+            <kbd className={`rounded-md border px-1.5 text-xs font-medium ${o.primary ? 'border-white/30 text-white/80' : 'border-zinc-700 text-zinc-500'}`}>
+              {keyLabel(o.key)}
+            </kbd>
+          )}
         </button>
-      ))}
+        )
+      })}
     </div>
   )
 }
