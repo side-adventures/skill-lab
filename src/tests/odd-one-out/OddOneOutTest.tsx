@@ -47,6 +47,7 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
     signal(true)
     if (r + 1 < rounds.length) {
       setShowing(false)
+      setWrongAt(null)
       return setR(r + 1)
     }
     const { rows, perItem } = bySize(res)

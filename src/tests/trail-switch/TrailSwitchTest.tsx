@@ -62,8 +62,8 @@ export default function TrailSwitchTest({ onFinish }: TestComponentProps) {
       score: Math.round(tb),
       details: {
         stats: [
-          { label: 'Wrong clicks', value: `${a.wrong + b.wrong}` },
-          { label: 'Penalty', value: `+${(a.wrong + b.wrong) * (PENALTY_MS / 1000)} s` },
+          { label: 'Wrong clicks, part 1', value: String(a.wrong) },
+          { label: 'Wrong clicks, part 2', value: String(b.wrong) },
         ],
         extra: {
           kind: 'pair',

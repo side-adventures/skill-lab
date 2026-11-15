@@ -8,9 +8,9 @@ import { answerStats, slowdown } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import { DURATION_MS, arrowsOf, averageTimes, flankerScore, makeTrialSource, type Answer, type Dir } from './scoring'
 
-function Arrow({ dir, middle }: { dir: Dir; middle: boolean }) {
+function Arrow({ dir }: { dir: Dir }) {
   return (
-    <svg viewBox="0 0 40 40" className={`size-20 ${middle ? 'text-zinc-50' : 'text-zinc-400'}`} aria-hidden>
+    <svg viewBox="0 0 40 40" className="size-20 text-zinc-100" aria-hidden>
       <path
         d={dir === 'left' ? 'M34 20H8M18 9L7 20l11 11' : 'M6 20h26M22 9l11 11-11 11'}
         fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"
@@ -74,7 +74,7 @@ export default function FlankerTest({ onFinish }: TestComponentProps) {
         displayClassName={feedbackRing(flash)}
         display={
           <div className="flex gap-1" aria-label={`Middle arrow points ${trial.target}`}>
-            {row.map((d, i) => <Arrow key={i} dir={d} middle={i === (row.length - 1) / 2} />)}
+            {row.map((d, i) => <Arrow key={i} dir={d} />)}
           </div>
         }
         answers={
