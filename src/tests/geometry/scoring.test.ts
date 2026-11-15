@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  angleDiff, angleTo, areaFraction, bisectAngle, centerOfCircle, completeSquare, copyLength, dirOf, equalDistance,
-  clampToRange, halvingOffset, makeParallel, makeTasks, middleOfLine, pointsFor, polygonArea, setAngle, splitShape, totalScore,
+  COPY_MIN_TURN, PARALLEL_MIN_GAP, SHORT, SIZE_SHAPES, TASK_GROUPS, TASK_MAKERS, angleDiff, angleTo, balancePoint, anglePercent, centerOfCircle, clipHalf,
+  completeSquare, copyLength, dirOf, equalDistance, clampToRange, makeParallel, makeTasks, matchSize, middleOfLine,
+  mirrorPoint, pathMiddle, closestOnPath, pointsFor, polygonArea, setAngle, shapeArea, totalScore, whereTheyMeet, type Shape,
 } from './scoring'
 
 describe('geometry helpers', () => {
@@ -17,12 +18,10 @@ describe('geometry helpers', () => {
     expect(pointsFor(20, 10)).toBe(0)
     expect(totalScore([100, 50])).toBe(75)
   })
-  it('finds the halving cut of a polygon', () => {
+  it('measures and clips polygons (used by Split in Half)', () => {
     const square = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]
     expect(polygonArea(square)).toBe(100)
-    const n = { x: 1, y: 0 }
-    expect(areaFraction(square, { x: 0, y: 0 }, n, 7)).toBeCloseTo(0.3)
-    expect(halvingOffset(square, { x: 0, y: 0 }, n)).toBeCloseTo(5)
+    expect(polygonArea(clipHalf(square, { x: 0, y: 0 }, { x: 1, y: 0 }, 7))).toBeCloseTo(30)
   })
 })
 
@@ -36,7 +35,7 @@ describe('geometry tasks', () => {
     if (s2.t === 'dot') expect(t2.evaluate({ point: s2.p }).points).toBe(100)
     const t3 = setAngle(r); const s3 = t3.evaluate({ angle: 0 }).solution[0]
     if (s3.t === 'ray') expect(t3.evaluate({ angle: s3.angle }).points).toBe(100)
-    const t4 = bisectAngle(r); const s4 = t4.evaluate({ angle: 0 }).solution[0]
+    const t4 = anglePercent(r); const s4 = t4.evaluate({ angle: 0 }).solution[0]
     if (s4.t === 'ray') expect(t4.evaluate({ angle: s4.angle }).points).toBe(100)
     const t5 = makeParallel(r); const s5 = t5.evaluate({ angle: 0 }).solution[0]
     if (s5.t === 'ray') {
@@ -51,27 +50,199 @@ describe('geometry tasks', () => {
     const t8 = equalDistance(r); const s8 = t8.evaluate({ point: { x: 0, y: 0 } }).solution[0]
     if (s8.t === 'dot') expect(t8.evaluate({ point: s8.p }).points).toBe(100)
   })
-  it('keeps the bisect arm inside the angle', () => {
+  it('keeps the arm of X % of the angle inside the angle', () => {
     const range = { from: 350, span: 60 } // 350° … 50°
     expect(clampToRange(20, range)).toBeCloseTo(380)
     expect(clampToRange(150, range)).toBeCloseTo(410) // nearer to the 50° arm
     expect(clampToRange(250, range)).toBeCloseTo(350) // nearer to the 350° arm
     for (let i = 0; i < 50; i++) {
-      const t = bisectAngle(r)
+      const t = anglePercent(r)
       const a = clampToRange(t.initial!.angle!, t.range!)
-      expect(a).toBeCloseTo(t.initial!.angle!) // starts inside
+      expect(a).toBeCloseTo(t.initial!.angle!) // starts inside, on the faint side (100 %)
       expect(t.evaluate({ angle: a }).points).toBeLessThan(100)
+      expect(t.title).toMatch(/^Make (1|2|3|4|5|6|7|8|9)[05] % of the angle$/) // 10–90 % in steps of 5
     }
   })
-  it('splits shapes fairly and reports the split', () => {
-    for (let i = 0; i < 50; i++) {
-      const t = splitShape(r)
-      expect(t.evaluate({ offset: t.initial!.offset! }).points).toBeLessThan(100)
+  it('a run has 8 different tasks, 2 from each group; over many runs every task shows up', () => {
+    const groupOf = new Map(Object.entries(TASK_GROUPS).flatMap(([g, makers]) => makers.map((m) => [m(r).kind, g] as const)))
+    const seen = new Set<string>()
+    for (let i = 0; i < 200; i++) {
+      const tasks = makeTasks()
+      expect(tasks).toHaveLength(8)
+      expect(new Set(tasks.map((t) => t.kind)).size).toBe(8)
+      const perGroup: Record<string, number> = {}
+      tasks.forEach((t) => (perGroup[groupOf.get(t.kind)!] = (perGroup[groupOf.get(t.kind)!] ?? 0) + 1))
+      expect(Object.values(perGroup)).toEqual([2, 2, 2, 2])
+      tasks.forEach((t) => seen.add(t.kind))
+    }
+    expect(seen.size).toBe(12)
+    expect(TASK_MAKERS).toHaveLength(12)
+  })})
+
+describe('new and changed tasks (2026-11-14)', () => {
+  const r = Math.random
+  const pointTasks = { middleOfLine, centerOfCircle, balancePoint, whereTheyMeet, mirrorPoint }
+  const onBoard = (p: { x: number; y: number }) => p.x >= 0 && p.x <= 100 && p.y >= 0 && p.y <= 100
+
+  it('give 100 points for the exact answer, less for a miss', () => {
+    for (const [name, make] of Object.entries(pointTasks)) {
+      for (let i = 0; i < 200; i++) {
+        const t = make(r)
+        const dot = t.evaluate({ point: { x: 0, y: 0 } }).solution.find((s): s is Extract<Shape, { t: 'dot' }> => s.t === 'dot')!
+        expect(t.evaluate({ point: dot.p }).points, name).toBe(100)
+        // (Middle of the line snaps onto the line, so a click beside the middle can still be perfect: test its ends instead)
+        if (name === 'middleOfLine') {
+          const line = t.shapes[0]
+          if (line.t === 'polyline') expect(t.evaluate({ point: line.pts[0] }).points, name).toBe(0)
+        } else expect(t.evaluate({ point: { x: dot.p.x + 4, y: dot.p.y } }).points, name).toBeLessThan(100)
+        expect(onBoard(dot.p), name).toBe(true)
+      }
     }
   })
-  it('makes one round of each of the 10 tasks', () => {
-    const tasks = makeTasks()
-    expect(tasks).toHaveLength(10)
-    expect(new Set(tasks.map((t) => t.kind)).size).toBe(10)
+
+  it('finds the middle along a zigzag, not of its outline', () => {
+    const { mid, total } = pathMiddle([{ x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 10 }])
+    expect(total).toBe(40)
+    expect(mid).toEqual({ x: 20, y: 0 })
+    for (let i = 0; i < 200; i++) {
+      const t = middleOfLine(r)
+      const line = t.shapes[0]
+      if (line.t !== 'polyline') throw new Error('expected a zigzag')
+      expect(line.pts.length).toBeGreaterThanOrEqual(4) // 2–4 bends
+      expect(line.pts.length).toBeLessThanOrEqual(6)
+      expect(line.pts.every(onBoard)).toBe(true)
+      const lens = line.pts.slice(1).map((p, j) => Math.hypot(p.x - line.pts[j].x, p.y - line.pts[j].y))
+      expect(Math.max(...lens)).toBeGreaterThanOrEqual(2.5 * Math.min(...lens)) // very different section lengths
+      const xs = line.pts.map((p) => p.x), ys = line.pts.map((p) => p.y)
+      expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(50) // centered
+      expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(50)
+      // the point snaps onto the line
+      const snapped = t.snap!({ x: 0, y: 0 })
+      expect(closestOnPath(line.pts, snapped).d).toBeLessThan(1e-9)
+    }
+  })
+
+  it('shows only an arc of 90–180° for the circle', () => {
+    for (let i = 0; i < 200; i++) {
+      const s = centerOfCircle(r).shapes[0]
+      if (s.t !== 'arcline') throw new Error('expected an arc')
+      expect(s.span).toBeGreaterThanOrEqual(90)
+      expect(s.span).toBeLessThanOrEqual(180)
+      // the full circle fits on the board
+      expect(s.c.x - s.r).toBeGreaterThanOrEqual(5)
+      expect(s.c.x + s.r).toBeLessThanOrEqual(95)
+      expect(s.c.y - s.r).toBeGreaterThanOrEqual(5)
+      expect(s.c.y + s.r).toBeLessThanOrEqual(95)
+    }
+  })
+
+  it('Match the size: equal area gives 100, the four shapes, two different ones per task', () => {
+    expect(SIZE_SHAPES).toEqual(['square', 'circle', 'triangle', 'star'])
+    expect(shapeArea('square', 1)).toBeCloseTo(2)
+    expect(shapeArea('circle', 10)).toBeCloseTo(Math.PI * 100, -1)
+    for (let i = 0; i < 200; i++) {
+      const t = matchSize(r)
+      const sol = t.evaluate({ length: 1 }).solution[0]
+      if (sol.t !== 'poly') throw new Error('expected a shape')
+      const goal = Math.hypot(sol.pts[0].x - 70, sol.pts[0].y - 50) // circumradius of the right-size shape
+      expect(t.evaluate({ length: goal }).points).toBe(100)
+      expect(goal).toBeLessThanOrEqual(25) // reachable with the handle
+      expect(t.evaluate({ length: t.initial!.length! }).points).toBeLessThan(100) // starts off
+      expect(t.drawAnswer!({ length: 10 })).toHaveLength(1)
+    }
+  })
+  it('every task shows its 0 % zone, and the zone is where the points run out', () => {
+    for (const make of TASK_MAKERS) {
+      for (let i = 0; i < 50; i++) {
+        const t = make(r)
+        const blank = t.input === 'point' ? { point: { x: 50, y: 50 } } : t.input === 'ray' ? { angle: 0 } : { length: 10 }
+        const ev = t.evaluate(blank)
+        expect(ev.zone?.length, t.kind).toBeGreaterThan(0)
+        const z = ev.zone![0]
+        if (t.input === 'point' && z.t === 'circle') {
+          expect(t.evaluate({ point: { x: z.c.x + z.r * 1.01, y: z.c.y } }).points, t.kind).toBe(0)
+          expect(t.evaluate({ point: { x: z.c.x + z.r * 0.9, y: z.c.y } }).points, t.kind).toBeGreaterThan(0)
+        }
+        // (Make X° also draws a limit past 180° or below 0°, which only marks the limit; skip those here)
+        const target = Number(t.title.match(/\d+/)?.[0])
+        if (t.input === 'ray' && z.t === 'ray' && !(t.kind === 'set-angle' && target < 25)) {
+          expect(t.evaluate({ angle: z.angle }).points, t.kind).toBe(0)
+        }
+      }
+    }
+  })
+  it('Make an angle starts 15–30° off the line; Make it parallel shows longer lines; Copy the length draws end bars', () => {
+    for (let i = 0; i < 100; i++) {
+      const t = setAngle(r)
+      const base = t.shapes[0]
+      if (base.t !== 'ray') throw new Error('expected the fixed line')
+      const off = angleDiff(t.initial!.angle!, base.angle)
+      expect(off).toBeGreaterThanOrEqual(15)
+      expect(off).toBeLessThanOrEqual(30)
+    }
+    const p = makeParallel(r)
+    expect(p.resultArmLen).toBeCloseTo(2.2 * p.armLen!)
+    const c = copyLength(r)
+    expect(c.hideHandle).toBe(true)
+    expect(c.drawAnswer!({ length: 20 }).map((s) => s.t)).toEqual(['seg', 'seg']) // line + end bar
+    const sol = c.evaluate({ length: 20 }).solution
+    expect(sol.some((s) => s.t === 'seg' && s.solid)).toBe(true) // solid bar at the right end
+  })
+
+  it('point tasks show no "% off" line; Match the size and Copy the length keep theirs', () => {
+    for (const make of [middleOfLine, centerOfCircle, completeSquare, equalDistance, balancePoint, whereTheyMeet, mirrorPoint]) {
+      expect(make(r).evaluate({ point: { x: 50, y: 50 } }).label).toBe('')
+    }
+    expect(matchSize(r).evaluate({ length: 10 }).label).toMatch(/% too (big|small)/)
+    expect(copyLength(r).evaluate({ length: 10 }).label).toMatch(/^(short|long) by/)
+  })
+  it('Make it parallel never sets up two lines that are almost one straight line', () => {
+    for (let i = 0; i < 500; i++) {
+      const t = makeParallel(r)
+      const ref = t.shapes[0]
+      if (ref.t !== 'seg') throw new Error('expected the upper line')
+      const d = { x: ref.b.x - ref.a.x, y: ref.b.y - ref.a.y }, len = Math.hypot(d.x, d.y)
+      const gap = Math.abs((t.pivot!.x - ref.a.x) * d.y - (t.pivot!.y - ref.a.y) * d.x) / len
+      expect(gap).toBeGreaterThanOrEqual(PARALLEL_MIN_GAP - 1e-9)
+    }
+  })
+
+  it('Match the size draws both shapes solid, without a border', () => {
+    const t = matchSize(r)
+    const ref = t.shapes[0], mine = t.drawAnswer!({ length: 10 })[0]
+    expect(ref.t === 'poly' && ref.solid).toBe(true)
+    expect(mine.t === 'poly' && mine.solid).toBe(true)
+  })
+  it('Make X° targets 10–170° and always shows both 0 % lines; Copy the length is 18–56 long and never parallel', () => {
+    const targets: number[] = [], lengths: number[] = []
+    for (let i = 0; i < 1000; i++) {
+      const t = setAngle(r)
+      const target = Number(t.title.match(/\d+/)![0])
+      targets.push(target)
+      expect(t.evaluate({ angle: 0 }).zone).toHaveLength(2)
+      const c = copyLength(r)
+      const ref = c.shapes[0]
+      if (ref.t !== 'seg') throw new Error('expected the upper line')
+      expect(Math.min(ref.a.y, ref.b.y)).toBeGreaterThanOrEqual(5)
+      lengths.push(Math.hypot(ref.b.x - ref.a.x, ref.b.y - ref.a.y))
+      // the lower line (direction c.dir) and the upper line are at least 30° apart
+      const upper = angleTo(ref.a, ref.b), lower = angleTo({ x: 0, y: 0 }, c.dir!)
+      expect(angleDiff(upper, lower, 180)).toBeGreaterThanOrEqual(COPY_MIN_TURN - 1e-9)
+    }
+    expect(Math.min(...targets)).toBeLessThan(15)
+    expect(Math.max(...targets)).toBeGreaterThan(165)
+    expect(Math.min(...lengths)).toBeGreaterThanOrEqual(18)
+    expect(Math.min(...lengths)).toBeLessThan(21)
+    expect(Math.max(...lengths)).toBeGreaterThan(53)
+    expect(Math.max(...lengths)).toBeLessThanOrEqual(56)
+  })
+  it('every task has a short, number-free name that fits a chip', () => {
+    const kinds = TASK_MAKERS.map((m) => m(r).kind)
+    expect(Object.keys(SHORT).sort()).toEqual([...kinds].sort())
+    for (const name of Object.values(SHORT)) {
+      expect(name.length).toBeLessThanOrEqual(11)
+      expect(name).not.toMatch(/\d/)
+    }
+    expect(new Set(Object.values(SHORT)).size).toBe(12)
   })
 })

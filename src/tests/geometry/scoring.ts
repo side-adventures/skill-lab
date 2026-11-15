@@ -1,23 +1,26 @@
 import type { ResultDetails } from '../types'
-import { mean, round1, shuffle, type Rand } from '../../lib/random'
+import { mean, randInt, round1, shuffle, type Rand } from '../../lib/random'
 
 /** Board is a 100 × 100 viewBox. Angles are in degrees, counter-clockwise on screen. */
 export interface Pt { x: number; y: number }
 
 export type Shape =
-  | { t: 'seg'; a: Pt; b: Pt }
+  | { t: 'seg'; a: Pt; b: Pt; solid?: boolean } // solid: never dashed, even in the solution (end bars)
   | { t: 'circle'; c: Pt; r: number }
   | { t: 'dot'; p: Pt }
-  | { t: 'poly'; pts: Pt[] }
-  | { t: 'ray'; from: Pt; angle: number; len: number }
+  | { t: 'poly'; pts: Pt[]; solid?: boolean } // solid: filled, no border (Match the size)
+  | { t: 'polyline'; pts: Pt[] } // open path (the zigzag line)
+  | { t: 'arcline'; c: Pt; r: number; from: number; span: number } // part of a circle's outline: from `from`, CCW by `span`
+  | { t: 'ray'; from: Pt; angle: number; len: number; faint?: boolean } // faint: drawn see-through (the angle's start side)
+  | { t: 'wedge'; c: Pt; r: number; from: number; span: number } // a lightly filled sector (the full angle as a reference)
   | { t: 'line'; through: Pt; angle: number } // infinite line (clipped by the board)
-  | { t: 'arc'; c: Pt; r: number; from: number; span: number } // marks an angle: from `from`, CCW by `span`
 
-export type Input = 'point' | 'ray' | 'length' | 'offset' | 'number'
+export type Input = 'point' | 'ray' | 'length'
 
-export interface Answer { point?: Pt; angle?: number; length?: number; offset?: number; number?: number }
+export interface Answer { point?: Pt; angle?: number; length?: number }
 
-export interface Evaluation { points: number; label: string; solution: Shape[] }
+/** `zone`: where the score reaches 0 % (thin rings, ticks or rays), drawn faintly with the solution. */
+export interface Evaluation { points: number; label: string; solution: Shape[]; zone?: Shape[] }
 
 export interface Task {
   kind: string
@@ -31,10 +34,20 @@ export interface Task {
   armLen?: number
   /** ray input can only point inside this angle (CCW from `from` by `span`) */
   range?: { from: number; span: number }
-  /** length input direction; offset input normal (unit vectors) */
+  /** length input direction (unit vector) */
   dir?: Pt
   /** starting value shown before the player moves anything */
   initial?: Answer
+  /** length input: the smallest and largest length the handle allows */
+  lengthRange?: [number, number]
+  /** draws the current answer when a plain dot / arm / segment isn't enough (Match the size: the resized shape) */
+  drawAnswer?: (a: Answer) => Shape[]
+  /** point input: moves the clicked point, e.g. onto the line (Middle of the line) */
+  snap?: (p: Pt) => Pt
+  /** ray input: a longer arm once the answer is shown, so the difference is easier to see (Make it parallel) */
+  resultArmLen?: number
+  /** no round drag handle (the answer draws its own end marker) */
+  hideHandle?: boolean
   evaluate: (a: Answer) => Evaluation
 }
 
@@ -63,10 +76,14 @@ export function clampToRange(angle: number, { from, span }: { from: number; span
 /** 100 (%) for a perfect answer, falling linearly to 0 at `tolerance` error. */
 export const pointsFor = (error: number, tolerance: number) => Math.round(100 * Math.max(0, 1 - error / tolerance))
 
-const pct = (e: number) => `${(e * 100).toFixed(1)} % off`
+/** 0 % zone of a point task: a ring of this radius around the right answer. */
+const ring = (c: Pt, r: number): Shape[] => [{ t: 'circle', c, r }]
+/** 0 % zone of an angle task: the two arms at ± tolerance around the right one. */
+const fan = (from: Pt, angle: number, tol: number, len: number): Shape[] =>
+  [-tol, tol].map((d) => ({ t: 'ray', from, angle: angle + d, len }) as Shape)
 const deg = (e: number) => `${e.toFixed(1)}° off`
 
-// ---------- polygon area (for "Split it") ----------
+// ---------- polygon area (used by Split in Half) ----------
 export const polygonArea = (pts: Pt[]) =>
   Math.abs(pts.reduce((s, p, i) => {
     const q = pts[(i + 1) % pts.length]
@@ -89,113 +106,204 @@ export function clipHalf(pts: Pt[], origin: Pt, n: Pt, offset: number): Pt[] {
   return out
 }
 
-export const areaFraction = (pts: Pt[], origin: Pt, n: Pt, offset: number) =>
-  polygonArea(clipHalf(pts, origin, n, offset)) / polygonArea(pts)
-
-/** Offset where the cut gives two equal halves (binary search). */
-export function halvingOffset(pts: Pt[], origin: Pt, n: Pt) {
-  let lo = -60, hi = 60
-  for (let i = 0; i < 60; i++) {
-    const mid = (lo + hi) / 2
-    if (areaFraction(pts, origin, n, mid) > 0.5) lo = mid
-    else hi = mid
-  }
-  return (lo + hi) / 2
-}
-
-// ---------- the ten tasks ----------
+// ---------- the tasks ----------
 const C: Pt = { x: 50, y: 50 }
 
+/** True if segments ab and cd cross (touching at a shared end doesn't count). */
+function segmentsCross(a: Pt, b: Pt, c: Pt, d: Pt) {
+  const o = (p: Pt, q: Pt, r: Pt) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x))
+  return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0
+}
+const onBoard = (p: Pt, m = 8) => p.x >= m && p.x <= 100 - m && p.y >= m && p.y <= 100 - m
+
+/** The point halfway along a path (by length). */
+export function pathMiddle(pts: Pt[]) {
+  const lens = pts.slice(1).map((p, i) => dist(pts[i], p))
+  const total = lens.reduce((x, y) => x + y, 0)
+  let left = total / 2
+  for (let i = 0; i < lens.length; i++) {
+    if (left <= lens[i]) return { mid: add(pts[i], { x: pts[i + 1].x - pts[i].x, y: pts[i + 1].y - pts[i].y }, left / lens[i]), total }
+    left -= lens[i]
+  }
+  return { mid: pts[pts.length - 1], total }
+}
+
+/** The point at distance s along a path. */
+function pointAlong(pts: Pt[], s: number): Pt {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const len = dist(pts[i], pts[i + 1])
+    if (s <= len) return add(pts[i], { x: pts[i + 1].x - pts[i].x, y: pts[i + 1].y - pts[i].y }, s / len)
+    s -= len
+  }
+  return pts[pts.length - 1]
+}
+
+/** The point on a path closest to p, how far along the path it is, and the direction of that section (deg). */
+export function closestOnPath(pts: Pt[], p: Pt) {
+  let best = { point: pts[0], along: 0, angle: angleTo(pts[0], pts[1]), d: Infinity }
+  let walked = 0
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1], len = dist(a, b)
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / (len * len)))
+    const q = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+    const d = dist(p, q)
+    if (d < best.d) best = { point: q, along: walked + t * len, angle: angleTo(a, b), d }
+    walked += len
+  }
+  return best
+}
+
+/** A short bar across the line at a point of it (the answer and solution marker of Middle of the line). */
+const barAcross = (pts: Pt[], p: Pt): Shape => {
+  const { point, angle } = closestOnPath(pts, p)
+  const n = dirOf(angle + 90)
+  return { t: 'seg', a: add(point, n, -3), b: add(point, n, 3) }
+}
+
+/** Zigzag: the smallest gap between two sections that aren't neighbours. */
+export const ZIGZAG_MIN_GAP = 5
+/** Distance between two segments that don't cross. */
+const segmentGap = (a: Pt, b: Pt, c: Pt, d: Pt) =>
+  Math.min(closestOnPath([c, d], a).d, closestOnPath([c, d], b).d, closestOnPath([a, b], c).d, closestOnPath([a, b], d).d)
+
+/**
+ * Middle of a zigzag line: 3–5 sections (2–4 bends) of very different lengths (the longest at least 2.5× the
+ * shortest), centered on the board. The point snaps onto the line; it's scored by how far along the line it is.
+ */
 export function middleOfLine(rand: Rand): Task {
-  const len = between(rand, 55, 85), ang = between(rand, 0, 180)
-  const mid = { x: between(rand, 45, 55), y: between(rand, 45, 55) }
-  const a = add(mid, dirOf(ang), -len / 2), b = add(mid, dirOf(ang), len / 2)
-  return {
-    kind: 'middle', title: 'Middle of the line', prompt: 'Place the point exactly in the middle of the line.', input: 'point',
-    shapes: [{ t: 'seg', a, b }],
-    evaluate: ({ point }) => {
-      const e = dist(point!, mid) / len
-      return { points: pointsFor(e, 0.08), label: pct(e), solution: [{ t: 'dot', p: mid }] }
-    },
+  for (;;) {
+    const segments = randInt(3, 5, rand)
+    const lens = Array.from({ length: segments }, () => between(rand, 7, 40))
+    if (Math.max(...lens) < 2.5 * Math.min(...lens)) continue
+    let p = { x: 0, y: 0 }, ang = between(rand, 0, 360)
+    let pts = [p]
+    lens.forEach((len, i) => {
+      if (i > 0) ang += (rand() < 0.5 ? -1 : 1) * between(rand, 35, 120)
+      p = add(p, dirOf(ang), len)
+      pts.push(p)
+    })
+    // center the whole line on the board
+    const xs = pts.map((q) => q.x), ys = pts.map((q) => q.y)
+    const dx = 50 - (Math.min(...xs) + Math.max(...xs)) / 2, dy = 50 - (Math.min(...ys) + Math.max(...ys)) / 2
+    pts = pts.map((q) => ({ x: q.x + dx, y: q.y + dy }))
+    if (!pts.every((q) => onBoard(q))) continue
+    // no crossing, and sections that aren't neighbours stay at least ZIGZAG_MIN_GAP apart (else they look touching)
+    const tooClose = pts.slice(1).some((q, i) => pts.slice(1).some((r, j) =>
+      j > i + 1 && (segmentsCross(pts[i], q, pts[j], r) || segmentGap(pts[i], q, pts[j], r) < ZIGZAG_MIN_GAP)))
+    if (tooClose) continue
+    const { mid, total } = pathMiddle(pts)
+    if (total < 60) continue
+    return {
+      kind: 'middle', title: 'Middle of the line', prompt: 'Place the mark halfway along the zigzag line, measured along its bends.', input: 'point',
+      shapes: [{ t: 'polyline', pts }],
+      snap: (q) => closestOnPath(pts, q).point,
+      drawAnswer: ({ point }) => (point ? [barAcross(pts, point)] : []),
+      evaluate: ({ point }) => {
+        const e = Math.abs(closestOnPath(pts, point!).along - total / 2) / total
+        return {
+          points: pointsFor(e, 0.08), label: '', solution: [barAcross(pts, mid), { t: 'dot', p: mid }],
+          zone: [-0.08, 0.08].map((d) => barAcross(pts, pointAlong(pts, total / 2 + d * total))),
+        }
+      },
+    }
   }
 }
 
+/** Center of a circle of which only an arc (90–180°) is shown. */
 export function centerOfCircle(rand: Rand): Task {
-  const r = between(rand, 18, 34), c = { x: between(rand, 38, 62), y: between(rand, 38, 62) }
+  const r = between(rand, 24, 40), span = between(rand, 90, 180), from = between(rand, 0, 360)
+  // the whole circle (shown after the answer) fits on the board, not just the arc
+  const c = { x: between(rand, 5 + r, 95 - r), y: between(rand, 5 + r, 95 - r) }
   return {
-    kind: 'center', title: 'Center of the circle', prompt: 'Place the point at the exact center of the circle.', input: 'point',
-    shapes: [{ t: 'circle', c, r }],
+    kind: 'center', title: 'Center of the arc', prompt: 'Only part of a circle is shown. Place the point at its center.', input: 'point',
+    shapes: [{ t: 'arcline', c, r, from, span }],
     evaluate: ({ point }) => {
       const e = dist(point!, c) / r
-      return { points: pointsFor(e, 0.25), label: pct(e), solution: [{ t: 'dot', p: c }] }
+      return { points: pointsFor(e, 0.3), label: '', solution: [{ t: 'dot', p: c }, { t: 'circle', c, r }], zone: ring(c, 0.3 * r) }
     },
   }
 }
 
 export function setAngle(rand: Rand): Task {
-  const base = between(rand, 0, 360), target = Math.round(between(rand, 15, 165))
+  const base = between(rand, 0, 360), target = Math.round(between(rand, 10, 170))
   return {
     kind: 'set-angle', title: `Make ${target}°`, prompt: `Rotate the arm to make a ${target}° angle with the fixed line.`, input: 'ray',
-    shapes: [{ t: 'ray', from: C, angle: base, len: 42 }], pivot: C, initial: { angle: base },
+    // the arm starts 15–30° away from the fixed line, not on top of it
+    shapes: [{ t: 'ray', from: C, angle: base, len: 42 }], pivot: C, initial: { angle: base + (rand() < 0.5 ? -1 : 1) * between(rand, 15, 30) },
     evaluate: ({ angle }) => {
       const made = angleDiff(angle!, base)
       const e = Math.abs(made - target)
       const right = angleDiff(angle!, base + target) < angleDiff(angle!, base - target) ? base + target : base - target
-      return { points: pointsFor(e, 25), label: `${made.toFixed(1)}° made · ${deg(e)}`, solution: [{ t: 'ray', from: C, angle: right, len: 42 }] }
+      return {
+        points: pointsFor(e, 25), label: `${made.toFixed(1)}° made · ${deg(e)}`, solution: [{ t: 'ray', from: C, angle: right, len: 42 }],
+        // the limits at target ± 25°, on the side of the right answer, always both. (Past 180° an angle shrinks
+        // again, so an arm placed exactly on a line beyond 180° would still score a little; it just marks the limit.)
+        zone: [target - 25, target + 25].map((t) => ({ t: 'ray', from: C, angle: right === base + target ? base + t : base - t, len: 42 }) as Shape),
+      }
     },
   }
 }
 
-export function guessAngle(rand: Rand): Task {
-  const base = between(rand, 0, 360), target = Math.round(between(rand, 10, 170))
+/**
+ * X % of the angle: the arm starts on the faint side of a marked angle; close it until the angle is X % (10–90 %,
+ * in steps of 5) as wide as the full one. The full angle stays lightly filled as the 100 % reference.
+ */
+export function anglePercent(rand: Rand): Task {
+  const base = between(rand, 0, 360), spread = between(rand, 50, 160), pct = 5 * randInt(2, 18, rand)
+  const goal = base + (spread * pct) / 100
   return {
-    kind: 'guess-angle', title: 'Name the angle', prompt: 'How many degrees is the marked angle? Type your guess.', input: 'number',
+    kind: 'angle-pct', title: `Make ${pct} % of the angle`, prompt: `Turn the arm until the angle is ${pct} % as wide as the whole shaded angle.`, input: 'ray',
     shapes: [
-      { t: 'arc', c: C, r: 10, from: base, span: target },
+      { t: 'wedge', c: C, r: 42, from: base, span: spread },
       { t: 'ray', from: C, angle: base, len: 42 },
-      { t: 'ray', from: C, angle: base + target, len: 42 },
+      { t: 'ray', from: C, angle: base + spread, len: 42, faint: true },
     ],
-    evaluate: ({ number }) => {
-      const e = Math.abs(number! - target)
-      return { points: pointsFor(e, 25), label: `It was ${target}° · ${deg(e)}`, solution: [] }
-    },
-  }
-}
-
-export function bisectAngle(rand: Rand): Task {
-  const base = between(rand, 0, 360), spread = between(rand, 45, 160), bis = base + spread / 2
-  return {
-    kind: 'bisect', title: 'Half the angle', prompt: 'Rotate the arm so it splits the marked angle into two equal halves.', input: 'ray',
-    shapes: [
-      { t: 'arc', c: C, r: 10, from: base, span: spread },
-      { t: 'ray', from: C, angle: base, len: 42 },
-      { t: 'ray', from: C, angle: base + spread, len: 42 },
-    ],
-    // The arm stays inside the angle and starts close to one of its sides.
-    pivot: C, range: { from: base, span: spread },
-    initial: { angle: rand() < 0.5 ? base + spread * 0.08 : base + spread * 0.92 },
+    // The arm stays inside the angle and starts on top of the faint side (100 %).
+    pivot: C, range: { from: base, span: spread }, initial: { angle: base + spread },
     evaluate: ({ angle }) => {
-      const e = angleDiff(angle!, bis)
-      return { points: pointsFor(e, 15), label: deg(e), solution: [{ t: 'ray', from: C, angle: bis, len: 42 }] }
+      const e = angleDiff(angle!, goal)
+      const made = (angleDiff(angle!, base) / spread) * 100
+      return {
+        points: pointsFor(e, 15), label: `${made.toFixed(0)} % made · ${deg(e)}`,
+        solution: [{ t: 'ray', from: C, angle: goal, len: 42 }],
+        // ±15° limits, only where they're still inside the angle
+        zone: [-15, 15].map((d) => (spread * pct) / 100 + d).filter((a) => a >= 0 && a <= spread)
+          .map((a) => ({ t: 'ray', from: C, angle: base + a, len: 42 }) as Shape),
+      }
     },
   }
 }
+
+/** Distance from p to the infinite line through `through` at `angle` (deg). */
+const distToLine = (p: Pt, through: Pt, angle: number) => {
+  const d = dirOf(angle)
+  return Math.abs((p.x - through.x) * d.y - (p.y - through.y) * d.x)
+}
+
+/** Lines closer than this to each other's extension look like one straight line when parallel: redrawn. */
+export const PARALLEL_MIN_GAP = 20
 
 export function makeParallel(rand: Rand): Task {
-  const L = between(rand, 24, 30), refAng = between(rand, 0, 180)
-  // Reference line in one top corner, the movable one starts in the opposite bottom corner.
+  const L = between(rand, 24, 30)
+  // Reference line in one top corner, the movable one starts in the opposite bottom corner. The pivot is never
+  // close to the reference line's extension, so the answer is never "the same line, continued".
   const left = rand() < 0.5
-  const refMid = { x: left ? between(rand, 28, 36) : between(rand, 64, 72), y: between(rand, 26, 34) }
+  let refAng: number, refMid: Pt, pivot: Pt
+  do {
+    refAng = between(rand, 0, 180)
+    refMid = { x: left ? between(rand, 28, 36) : between(rand, 64, 72), y: between(rand, 26, 34) }
+    pivot = { x: left ? between(rand, 58, 66) : between(rand, 34, 42), y: between(rand, 62, 68) }
+  } while (distToLine(pivot, refMid, refAng) < PARALLEL_MIN_GAP)
   const a = add(refMid, dirOf(refAng), -L / 2), b = add(refMid, dirOf(refAng), L / 2)
-  const pivot = { x: left ? between(rand, 58, 66) : between(rand, 34, 42), y: between(rand, 62, 68) }
   const start = refAng + (rand() < 0.5 ? -1 : 1) * between(rand, 30, 70)
   return {
     kind: 'parallel', title: 'Make it parallel', prompt: 'Rotate the lower line until it is exactly parallel to the upper one.', input: 'ray',
-    shapes: [{ t: 'seg', a, b }], pivot, armLen: L, initial: { angle: start },
+    shapes: [{ t: 'seg', a, b }], pivot, armLen: L, resultArmLen: 2.2 * L, initial: { angle: start },
     evaluate: ({ angle }) => {
       const e = angleDiff(angle!, refAng, 180) // either direction counts
       const right = angleDiff(angle!, refAng) <= 90 ? refAng : refAng + 180
-      return { points: pointsFor(e, 10), label: deg(e), solution: [{ t: 'ray', from: pivot, angle: right, len: L }] }
+      // drawn longer than the arm, so a small difference in angle is easy to see
+      return { points: pointsFor(e, 10), label: deg(e), solution: [{ t: 'ray', from: pivot, angle: right, len: 2.2 * L }], zone: fan(pivot, right, 10, 2.2 * L) }
     },
   }
 }
@@ -211,22 +319,48 @@ export function completeSquare(rand: Rand): Task {
     shapes: [{ t: 'seg', a, b }, { t: 'seg', a: b, b: c }, { t: 'dot', p: a }, { t: 'dot', p: b }, { t: 'dot', p: c }],
     evaluate: ({ point }) => {
       const e = dist(point!, d) / side
-      return { points: pointsFor(e, 0.25), label: pct(e), solution: [{ t: 'seg', a: c, b: d }, { t: 'seg', a: d, b: a }, { t: 'dot', p: d }] }
+      return {
+        points: pointsFor(e, 0.25), label: '', solution: [{ t: 'seg', a: c, b: d }, { t: 'seg', a: d, b: a }, { t: 'dot', p: d }],
+        zone: ring(d, 0.25 * side),
+      }
     },
   }
 }
 
+/** A short bar across a line at distance k from its start (the end markers of Copy the length). */
+const endBar = (origin: Pt, dir: Pt, k: number): Shape & { t: 'seg' } => {
+  const n = { x: -dir.y, y: dir.x }, end = add(origin, dir, k)
+  return { t: 'seg', a: add(end, n, -3), b: add(end, n, 3) }
+}
+
+/** Copy the length: the smallest difference in direction between the two lines (degrees). */
+export const COPY_MIN_TURN = 30
+
 export function copyLength(rand: Rand): Task {
-  const L = between(rand, 22, 42)
-  const refAng = between(rand, 35, 145), refMid = { x: 50, y: 27 }
+  // lengths 18–56; the upper line is tilted so it stays on the board (y ≥ 5): the longest ones lie fairly flat
+  // The two lines are always at least COPY_MIN_TURN apart in direction: lines that point the same way are much
+  // easier to compare. (They never cross: the upper line stays above y 48, the lower one below y 60.)
+  const L = between(rand, 18, 56), refMid = { x: 50, y: 27 }
+  let refAng: number, dirAng: number
+  do {
+    refAng = between(rand, 35, 145)
+    dirAng = between(rand, -15, 20)
+  } while ((Math.abs(Math.sin((refAng * Math.PI) / 180)) * L) / 2 > 21 || angleDiff(refAng, dirAng, 180) < COPY_MIN_TURN)
   const a = add(refMid, dirOf(refAng), -L / 2), b = add(refMid, dirOf(refAng), L / 2)
-  const origin = { x: 14, y: between(rand, 66, 80) }, dirAng = between(rand, -15, 20), dir = dirOf(dirAng)
+  const origin = { x: 14, y: between(rand, 66, 80) }, dir = dirOf(dirAng)
   return {
     kind: 'copy-length', title: 'Copy the length', prompt: 'Drag the lower line so it is exactly as long as the upper one.', input: 'length',
-    shapes: [{ t: 'seg', a, b }, { t: 'dot', p: origin }], pivot: origin, dir, initial: { length: 8 },
+    shapes: [{ t: 'seg', a, b }, { t: 'dot', p: origin }], pivot: origin, dir, initial: { length: 8 }, hideHandle: true,
+    // your line with a bar across its end (instead of a round handle)
+    drawAnswer: ({ length }) => (length === undefined ? [] : [{ t: 'seg', a: origin, b: add(origin, dir, length) }, endBar(origin, dir, length)]),
     evaluate: ({ length }) => {
       const e = Math.abs(length! - L) / L
-      return { points: pointsFor(e, 0.25), label: `${length! < L ? 'short' : 'long'} by ${(e * 100).toFixed(1)} %`, solution: [{ t: 'seg', a: origin, b: add(origin, dir, L) }] }
+      const tick = (k: number): Shape => endBar(origin, dir, k * L)
+      return {
+        points: pointsFor(e, 0.25), label: `${length! < L ? 'short' : 'long'} by ${(e * 100).toFixed(1)} %`,
+        // a solid bar marks where the right length ends
+        solution: [{ t: 'seg', a: origin, b: add(origin, dir, L) }, { ...endBar(origin, dir, L), solid: true }], zone: [tick(0.75), tick(1.25)],
+      }
     },
   }
 }
@@ -239,53 +373,178 @@ export function equalDistance(rand: Rand): Task {
     const pts = [a0, a0 + g1, a0 + g1 + g2].map((a) => add(c, dirOf(a), R))
     if (pts.some((p) => p.x < 6 || p.x > 94 || p.y < 6 || p.y > 94)) continue
     return {
-      kind: 'equidistant', title: 'Equal distance', prompt: 'Place the point so it is equally far from all three dots.', input: 'point',
+      kind: 'equidistant', title: 'Equally far from the dots', prompt: 'Place the point so it is equally far from all three dots.', input: 'point',
       shapes: pts.map((p) => ({ t: 'dot', p }) as Shape),
       evaluate: ({ point }) => {
         const e = dist(point!, c) / R
-        return { points: pointsFor(e, 0.3), label: pct(e), solution: [{ t: 'dot', p: c }, { t: 'circle', c, r: R }] }
+        return { points: pointsFor(e, 0.3), label: '', solution: [{ t: 'dot', p: c }, { t: 'circle', c, r: R }], zone: ring(c, 0.3 * R) }
       },
     }
   }
 }
 
-export function splitShape(rand: Rand): Task {
-  const n = 11
-  const radii = Array.from({ length: n }, () => between(rand, 20, 37))
-  const smooth = radii.map((r, i) => (r * 2 + radii[(i + 1) % n] + radii[(i + n - 1) % n]) / 4)
-  const pts = smooth.map((r, i) => add(C, dirOf((360 / n) * i + between(rand, -8, 8)), r))
-  const lineAng = between(rand, 0, 180)
-  const normal = dirOf(lineAng + 90)
-  const best = halvingOffset(pts, C, normal)
+/** Smallest corner angle (degrees) of a triangle. */
+function minCorner(t: Pt[]) {
+  return Math.min(...t.map((p, i) => {
+    const a = t[(i + 1) % 3], b = t[(i + 2) % 3]
+    return angleDiff(angleTo(p, a), angleTo(p, b))
+  }))
+}
+
+/** Balance point: the centroid (center of mass) of a random triangle. */
+export function balancePoint(rand: Rand): Task {
+  for (;;) {
+    const a0 = between(rand, 0, 360)
+    const pts = [0, 1, 2].map((i) => add(C, dirOf(a0 + i * 120 + between(rand, -45, 45)), between(rand, 22, 42)))
+    if (!pts.every((q) => onBoard(q, 6)) || minCorner(pts) < 20) continue
+    const g = { x: mean(pts.map((p) => p.x)), y: mean(pts.map((p) => p.y)) }
+    const longest = Math.max(...pts.map((p, i) => dist(p, pts[(i + 1) % 3])))
+    const medians: Shape[] = pts.map((p, i) => {
+      const q = pts[(i + 1) % 3], r = pts[(i + 2) % 3]
+      return { t: 'seg', a: p, b: { x: (q.x + r.x) / 2, y: (q.y + r.y) / 2 } }
+    })
+    return {
+      kind: 'balance', title: 'Balance point', prompt: 'Place the point where the triangle would balance on a pin.', input: 'point',
+      shapes: [{ t: 'poly', pts }],
+      evaluate: ({ point }) => {
+        const e = dist(point!, g) / longest
+        return { points: pointsFor(e, 0.12), label: '', solution: [...medians, { t: 'dot', p: g }], zone: ring(g, 0.12 * longest) }
+      },
+    }
+  }
+}
+
+/** Where they meet: two line pieces point toward a hidden crossing point; place it. */
+export function whereTheyMeet(rand: Rand): Task {
+  for (;;) {
+    const P = { x: between(rand, 25, 75), y: between(rand, 25, 75) }
+    const a1 = between(rand, 0, 360), a2 = a1 + (rand() < 0.5 ? -1 : 1) * between(rand, 30, 80)
+    const pieces = [a1, a2].map((a) => {
+      const far = between(rand, 45, 70), near = between(rand, 18, 30)
+      return { from: add(P, dirOf(a), far), to: add(P, dirOf(a), near), near }
+    })
+    if (!pieces.every((s) => onBoard(s.from, 5) && onBoard(s.to, 5))) continue
+    const gap = mean(pieces.map((s) => s.near))
+    return {
+      kind: 'meet', title: 'Where the lines cross', prompt: 'Both lines go on beyond their ends. Place the point where they would cross.', input: 'point',
+      shapes: pieces.map((s) => ({ t: 'seg', a: s.from, b: s.to }) as Shape),
+      evaluate: ({ point }) => {
+        const e = dist(point!, P) / gap
+        return {
+          points: pointsFor(e, 0.5),
+          label: '',
+          solution: [...pieces.map((s) => ({ t: 'seg', a: s.to, b: P }) as Shape), { t: 'dot', p: P }],
+          zone: ring(P, 0.5 * gap),
+        }
+      },
+    }
+  }
+}
+
+/** Mirror point: place the mirror image of a dot across a slanted line. */
+export function mirrorPoint(rand: Rand): Task {
+  for (;;) {
+    const angle = between(rand, 15, 75) + (rand() < 0.5 ? 0 : 90) // never (nearly) level or upright
+    const L0 = { x: between(rand, 35, 65), y: between(rand, 35, 65) }
+    const n = dirOf(angle + 90), h = between(rand, 10, 28) * (rand() < 0.5 ? -1 : 1)
+    const base = add(L0, dirOf(angle), between(rand, -18, 18))
+    const D = add(base, n, h), M = add(base, n, -h)
+    if (!onBoard(D) || !onBoard(M)) continue
+    return {
+      kind: 'mirror', title: 'Mirror point', prompt: "Imagine the line is a mirror. Place the point where the dot's reflection would be, straight across the line.", input: 'point',
+      shapes: [{ t: 'line', through: L0, angle }, { t: 'dot', p: D }],
+      evaluate: ({ point }) => {
+        const e = dist(point!, M) / (2 * Math.abs(h))
+        return { points: pointsFor(e, 0.35), label: '', solution: [{ t: 'seg', a: D, b: M }, { t: 'dot', p: M }], zone: ring(M, 0.35 * 2 * Math.abs(h)) }
+      },
+    }
+  }
+}
+
+/** The shapes of Match the size, as unit outlines (circumradius 1, centered on 0, 0). */
+const UNIT_SHAPES: Record<string, Pt[]> = {
+  square: [45, 135, 225, 315].map((a) => dirOf(a)),
+  circle: Array.from({ length: 48 }, (_, i) => dirOf(i * 7.5)),
+  triangle: [90, 210, 330].map((a) => dirOf(a)),
+  star: Array.from({ length: 10 }, (_, i) => ({ ...dirOf(90 + i * 36), r: i % 2 ? 0.45 : 1 })).map(({ x, y, r }) => ({ x: x * r, y: y * r })),
+}
+export const SIZE_SHAPES = Object.keys(UNIT_SHAPES)
+const placeShape = (kind: string, c: Pt, r: number): Pt[] => UNIT_SHAPES[kind].map((p) => add(c, p, r))
+/** Area of a shape of this kind at circumradius r. */
+export const shapeArea = (kind: string, r: number) => polygonArea(UNIT_SHAPES[kind]) * r * r
+
+/** Match the size: 0 points when the area is off by a factor e^0.6 (82 % too big, 45 % too small). */
+export const SIZE_TOLERANCE = 0.6
+/** Match the size: the largest size (circumradius) the handle allows. */
+export const SIZE_MAX = 25
+
+/** Match the size: resize one shape until it has the same area as another, different shape. */
+export function matchSize(rand: Rand): Task {
+  const [refKind, adjKind] = shuffle(SIZE_SHAPES, rand)
+  const refC = { x: 26, y: 50 }, adjC = { x: 70, y: 50 }
+  // The right size (circumradius) must leave room for the "too big" 0 % outline within the handle's reach.
+  let refR: number, target: number, goal: number
+  do {
+    refR = between(rand, 11, 16)
+    target = shapeArea(refKind, refR)
+    goal = Math.sqrt(target / shapeArea(adjKind, 1))
+  } while (goal * Math.exp(SIZE_TOLERANCE / 2) > SIZE_MAX)
+  // Start clearly too small or too big; too big only if that still fits under the handle limit (never capped onto
+  // the goal, so pressing Done right away never scores much).
+  const big = rand() < 0.5 && goal * 1.6 <= SIZE_MAX
+  const start = Math.max(4, goal * (big ? between(rand, 1.3, 1.6) : between(rand, 0.55, 0.75)))
   return {
-    kind: 'split', title: 'Split it in half', prompt: 'Slide the line so it cuts the shape into two parts of equal area.', input: 'offset',
-    shapes: [{ t: 'poly', pts }], pivot: C, dir: normal, initial: { offset: best + (rand() < 0.5 ? -1 : 1) * between(rand, 10, 16) },
-    evaluate: ({ offset }) => {
-      const f = areaFraction(pts, C, normal, offset!)
-      const e = Math.abs(f - 0.5)
+    kind: 'size', title: 'Match the size', prompt: 'Drag to resize the right shape until it has the same area as the left one.', input: 'length',
+    shapes: [{ t: 'poly', pts: placeShape(refKind, refC, refR), solid: true }],
+    pivot: adjC, dir: { x: 1, y: 0 }, lengthRange: [3, SIZE_MAX], initial: { length: start },
+    drawAnswer: ({ length }) => (length === undefined ? [] : [{ t: 'poly', pts: placeShape(adjKind, adjC, length), solid: true }]),
+    evaluate: ({ length }) => {
+      const ratio = shapeArea(adjKind, length!) / target
+      const e = Math.abs(Math.log(ratio))
       return {
-        points: pointsFor(e, 0.1),
-        label: `${(f * 100).toFixed(1)} / ${(100 - f * 100).toFixed(1)} split`,
-        solution: [{ t: 'line', through: add(C, normal, best), angle: lineAng }],
+        // 0 points at an area e^0.6 = 82 % too big or e^−0.6 = 45 % too small (width about 35 % / 26 % off):
+        // area grows with the square of the width, so a stricter limit punishes shapes that only look a bit off
+        points: pointsFor(e, SIZE_TOLERANCE),
+        label: `${Math.abs(ratio * 100 - 100).toFixed(0)} % ${ratio < 1 ? 'too small' : 'too big'}`,
+        solution: [{ t: 'poly', pts: placeShape(adjKind, adjC, goal) }],
+        // the area may be off by a factor e^±SIZE_TOLERANCE, so the outline by half that
+        zone: [-1, 1].map((k) => ({ t: 'poly', pts: placeShape(adjKind, adjC, goal * Math.exp((k * SIZE_TOLERANCE) / 2)) }) as Shape),
       }
     },
   }
 }
 
-export const TASK_MAKERS = [
-  middleOfLine, centerOfCircle, setAngle, guessAngle, bisectAngle,
-  makeParallel, completeSquare, copyLength, equalDistance, splitShape,
-]
+/** The 12 tasks in 4 groups of similar ones; every run takes 2 from each group (8 tasks). */
+export const TASK_GROUPS = {
+  centres: [centerOfCircle, equalDistance, balancePoint],
+  constructions: [whereTheyMeet, completeSquare, mirrorPoint],
+  angles: [setAngle, anglePercent, makeParallel],
+  lengths: [copyLength, middleOfLine, matchSize],
+}
+export const TASKS_PER_GROUP = 2
+export const TASK_MAKERS = Object.values(TASK_GROUPS).flat()
 
-/** One round of every task type, in random order. */
-export const makeTasks = (rand: Rand = Math.random) => shuffle(TASK_MAKERS, rand).map((make) => make(rand))
+/** Tasks per run: 2 from each of the 4 groups, so runs differ but always have the same mix, about 3 minutes. */
+export const TASKS_PER_RUN = Object.keys(TASK_GROUPS).length * TASKS_PER_GROUP
+
+/** A run: TASKS_PER_GROUP random tasks from every group, all in random order. */
+export const makeTasks = (rand: Rand = Math.random) => {
+  const picked = Object.values(TASK_GROUPS).flatMap((group) => shuffle(group, rand).slice(0, TASKS_PER_GROUP))
+  return shuffle(picked, rand).map((make) => make(rand))
+}
 
 export const totalScore = (points: number[]) => round1(mean(points))
 
-/** Short task names for the result chips (10 must fit in two rows). */
-const SHORT: Record<string, string> = {
-  middle: 'Middle', center: 'Center', 'guess-angle': 'Name angle', bisect: 'Half angle', parallel: 'Parallel',
-  square: 'Square', 'copy-length': 'Length', equidistant: 'Equal dist.', split: 'Split',
+/** Short task names for the result chips (all tasks must fit in two rows). */
+/**
+ * Short names for the result chips and the saved results: one per task kind, sharing words with the title, no
+ * numbers (so a task always saves under the same name; "Make X°" is literally X).
+ */
+export const SHORT: Record<string, string> = {
+  center: 'Arc center', equidistant: 'Dots center', balance: 'Balance',
+  meet: 'Crossing', square: 'Square', mirror: 'Mirror',
+  'set-angle': 'Make X°', 'angle-pct': '% of angle', parallel: 'Parallel',
+  'copy-length': 'Length', middle: 'Zigzag', size: 'Size',
 }
 const shortName = (t: Task) => SHORT[t.kind] ?? t.title
 

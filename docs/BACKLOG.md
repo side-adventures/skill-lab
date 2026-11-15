@@ -7,10 +7,12 @@ Ideas and TODOs for later. Not planned yet; move an item into the work when it's
   negative numbers, or a third number in the problem (e.g. 7 × 4 − 9).
 - **Line Tracing: consider a rework.** More levels; lives and failing instead of just allowing another try; keep the
   tracks about equally long (path length now varies about ±9 % between runs, which is layout luck).
-- **Eye for Geometry: fairer scoring across the challenges.** The tasks are scored on different scales; consider a method
-  that weighs them more equally. Its "Split it in half" task now duplicates the Split in Half test (same skill, a
-  different scale, a clashing name): drop it, maybe for a "Balance point" task (mark a shape's centre of mass), see
-  `docs/reviews/2026-11-14-split-half.md`. Changes live Geometry scores.
+- **Eye for Geometry: tune the limits for fairer, more consistent runs.** Each task's 0 % limit is its own design choice
+  (8–50 % of the figure, 10–25°), so some tasks score much higher than others. First data (one player, 10 runs on
+  2026-11-14): Make X° ~95 % (too easy), Size ~51 % and Zigzag ~65 % (too hard, scores swing a lot). Plan: collect 5–10
+  runs of the current version (results were reset on 2026-11-14; per-task % are saved under the fixed short names), then
+  either use one kind of limit per group (e.g. one angle limit for all angle tasks) or tune each task to a similar
+  average (~75 %), or a mix. Then a scoring-reviewer run on the 2-per-group mix.
 
 ## Later
 - **A finer score for every test.** Span tests (Number Memory, Number Order, Sequence Memory, Pattern Memory) score whole
