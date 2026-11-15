@@ -6,12 +6,20 @@ import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { answerStats, fmtMs, type TimedAnswer } from '../../lib/resultFormat'
-import { DURATION_MS, levelFor, makeProblem, operationTable, type Op } from './scoring'
+import { DURATION_MS, MAX_LEVEL, levelFor, makeOpQueue, makeProblem, operationTable, problemKey, type Op } from './scoring'
 
 export default function MentalMathTest({ onFinish }: TestComponentProps) {
-  const [problem, setProblem] = useState(() => makeProblem(0))
+  // Queue and first problem are made together, so a repeated initializer (StrictMode) can't skip an operation.
+  // `seen` holds every problem shown this run, so none comes back.
+  const [{ ops, seen, first }] = useState(() => {
+    const ops = makeOpQueue()
+    const first = makeProblem(0, ops.next())
+    return { ops, seen: new Set([problemKey(first)]), first }
+  })
+  const [problem, setProblem] = useState(first)
   const [input, setInput] = useState('')
   const [correct, setCorrect] = useState(0)
+  const level = levelFor(correct)
   const [flash, signal] = useAnswerFlash()
   // When the current problem appeared, and every answer's time (for the result stats).
   const shownAt = useRef(0)
@@ -21,21 +29,22 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
   const answers = useRef<(TimedAnswer & { task: string; op: Op })[]>([])
 
   const remaining = useCountdown(DURATION_MS, true, () => {
-    // Fastest (correct) and longest answer, with their problem: "7 × 8 = 56 · 1.2 s".
+    // Fastest (correct) and slowest answer, with their problem: "7 × 8 = 56 (1.2 s)".
     const all = answers.current
     const ok = all.filter((a) => a.correct)
-    const show = (a: { task: string; ms: number }) => `${a.task} · ${fmtMs(a.ms)}`
+    const show = (a: { task: string; ms: number }) => `${a.task} (${fmtMs(a.ms)})`
     const fastest = ok.length ? ok.reduce((m, a) => (a.ms < m.ms ? a : m)) : undefined
-    const longest = all.length ? all.reduce((m, a) => (a.ms > m.ms ? a : m)) : undefined
+    const slowest = all.length ? all.reduce((m, a) => (a.ms > m.ms ? a : m)) : undefined
     onFinish({
       score: correct,
       ...(all.length === 0 && { failed: 'No answers — try again!' }), // idle run: shown, not saved
       details: {
         stats: [
+          { label: 'Level reached', value: `${level + 1} / ${MAX_LEVEL + 1}` },
           // Correct is the score itself, Fastest gets the problem below.
           ...answerStats(all).filter((s) => s.label !== 'Fastest answer' && s.label !== 'Correct'),
           ...(fastest ? [{ label: 'Fastest answer', value: show(fastest) }] : []),
-          ...(longest ? [{ label: 'Longest answer', value: show(longest) }] : []),
+          ...(slowest ? [{ label: 'Slowest answer', value: show(slowest) }] : []),
         ],
         ...(all.length > 0 && { extra: operationTable(all) }),
       },
@@ -50,15 +59,18 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
     shownAt.current = now
     const nextCorrect = ok ? correct + 1 : correct
     if (ok) setCorrect(nextCorrect)
+    else ops.retry(problem.op)
     signal(ok)
-    setProblem(makeProblem(levelFor(nextCorrect)))
+    const next = makeProblem(levelFor(nextCorrect), ops.next(), seen, problem)
+    seen.add(problemKey(next))
+    setProblem(next)
     setInput('')
   }
 
   return (
     <>
       <GameInfo
-        left={<InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" />}
+        left={<><InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" /><span className="ml-4"><InfoValue value={`Level ${level + 1}`} of={MAX_LEVEL + 1} /></span></>}
         middle="Type the answer, then Enter"
         right={<InfoValue label="Correct" value={correct} />}
         timer={remaining / DURATION_MS}
