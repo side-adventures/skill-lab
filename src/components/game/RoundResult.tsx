@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useLatest } from '../../lib/hooks'
 import { Button } from '../Button'
 
@@ -19,10 +19,13 @@ export function RoundResult({ value, unit, line, chips, button, onContinue }: {
   onContinue: () => void
 }) {
   const cont = useLatest(onContinue)
+  // Ignore input for the first 300 ms (clicks, keys and the button alike), so a double click or a held key
+  // that ended the round doesn't skip its result unseen.
+  const armed = useRef(false)
   useEffect(() => {
-    let armed = false
-    const arm = window.setTimeout(() => (armed = true), 300)
-    const go = () => armed && cont.current()
+    armed.current = false
+    const arm = window.setTimeout(() => (armed.current = true), 300)
+    const go = () => armed.current && cont.current()
     const onKey = (e: KeyboardEvent) => {
       if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && !e.repeat) {
         e.preventDefault()
@@ -66,7 +69,7 @@ export function RoundResult({ value, unit, line, chips, button, onContinue }: {
         </div>
       )}
       {button ? (
-        <Button onClick={() => cont.current()} className="mt-5 w-full">{button}</Button>
+        <Button onClick={() => armed.current && cont.current()} className="mt-5 w-full">{button}</Button>
       ) : (
         <p className="mt-5 text-xs text-zinc-600">Click anywhere to continue</p>
       )}
