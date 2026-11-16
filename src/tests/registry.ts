@@ -631,7 +631,7 @@ export const PROTOTYPES: TestDefinition[] = [
     ],
     scoring: [
       'Correct answers minus wrong answers, so guessing does not pay off.',
-      'The result also compares your last 20 seconds with your first 20.',
+      'The result also shows your points in the first, middle and last 20 seconds.',
     ],
     durationHint: '60 s',
     scoreLabel: 'Points (correct − wrong)',

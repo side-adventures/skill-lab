@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { KEYS, SYMBOLS, SYMBOL_COUNT, learningGain, makeKey, makeSymbolSource } from './scoring'
+import { KEYS, PART_MS, SYMBOLS, SYMBOL_COUNT, makeKey, makeSymbolSource, partPoints } from './scoring'
 
 describe('symbol code', () => {
   it('has one home-row key per symbol, two groups of three', () => {
@@ -24,13 +24,15 @@ describe('symbol code', () => {
     }
     expect(counts.every((c) => c === 50)).toBe(true)
   })
-  it('compares correct answers in the last vs the first 20 s', () => {
+  it('splits the points into first, middle and last 20 s, adding up to the score', () => {
     const answers = [
-      ...Array.from({ length: 10 }, (_, i) => ({ at: i * 1000, correct: true })),
+      { at: 1000, correct: true },
       { at: 5000, correct: false },
-      ...Array.from({ length: 15 }, (_, i) => ({ at: 41_000 + i * 1000, correct: true })),
+      { at: PART_MS + 10, correct: true },
+      { at: 2 * PART_MS + 500, correct: true },
+      { at: 3 * PART_MS + 50, correct: true }, // an answer in the very last frame counts for the last part
     ]
-    expect(learningGain(answers)).toBeCloseTo(0.5)
-    expect(learningGain([])).toBeUndefined()
+    expect(partPoints(answers)).toEqual([0, 1, 2])
+    expect(partPoints([])).toEqual([0, 0, 0])
   })
 })
