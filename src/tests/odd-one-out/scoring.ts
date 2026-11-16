@@ -53,8 +53,8 @@ export interface RoundResult { size: number; ms: number; wrong: number }
 
 export const roundTime = (r: RoundResult) => r.ms + r.wrong * PENALTY_MS
 
-/** Score: median round time (with penalties), whole ms. */
-export const searchScore = (rounds: RoundResult[]) => Math.round(median(rounds.map(roundTime)))
+/** Score: total time of all rounds, penalties included, whole ms. */
+export const searchScore = (rounds: RoundResult[]) => Math.round(rounds.reduce((s, r) => s + roundTime(r), 0))
 
 /** Median time per set size, and the extra ms per added shape (slope between the smallest and largest size). */
 export function bySize(rounds: RoundResult[]) {

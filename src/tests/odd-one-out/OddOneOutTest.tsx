@@ -57,7 +57,7 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
       details: {
         stats: [
           { label: 'Each extra shape', value: perItem === undefined ? '–' : `${perItem >= 0 ? '+' : '−'}${Math.abs(Math.round(perItem))} ms` },
-          { label: 'Fastest', value: fmtMs(Math.min(...res.map(roundTime))) },
+          { label: 'Fastest round', value: fmtMs(Math.min(...res.map(roundTime))) },
           { label: 'Wrong clicks', value: String(totalWrong) },
         ],
         extra: {
@@ -75,7 +75,7 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
       <GameInfo
         left={<InfoValue value={`Round ${r + 1}`} of={rounds.length} />}
         middle={<>Click the <b className="text-zinc-200">T</b> among the L shapes{wrongAt !== null && <span className="text-rose-300"> · +{PENALTY_MS / 1000} s</span>}</>}
-        right={results.length > 0 && <InfoValue label="Median" value={searchScore(results)} unit="ms" />}
+        right={results.length > 0 && <InfoValue label="Total" value={(searchScore(results) / 1000).toFixed(1)} unit="s" />}
       />
       <SquareLayout>
         <div className={`play-area relative size-full rounded-2xl bg-zinc-900 ${feedbackRing(flash)}`}>

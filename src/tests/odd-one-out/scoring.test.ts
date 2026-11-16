@@ -32,13 +32,13 @@ describe('odd one out rounds', () => {
     }
     expect(Math.max(...q) - Math.min(...q)).toBeLessThanOrEqual(1)
   })
-  it('scores the median time with penalties and the slope per shape', () => {
+  it('scores the total time with penalties and the slope per shape', () => {
     const rounds = [
       { size: 8, ms: 600, wrong: 0 },
       { size: 16, ms: 800, wrong: 0 },
       { size: 32, ms: 1000, wrong: 1 },
     ]
-    expect(searchScore(rounds)).toBe(800)
+    expect(searchScore(rounds)).toBe(600 + 800 + 2000)
     expect(bySize(rounds).perItem).toBeCloseTo((2000 - 600) / 24)
   })
 })
