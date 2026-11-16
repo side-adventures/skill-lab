@@ -641,29 +641,6 @@ export const PROTOTYPES: TestDefinition[] = [
     layout: 'prompt',
     Component: lazyTest(() => import('./symbol-code/SymbolCodeTest')),
   },
-  {
-    id: 'pattern-groove',
-    name: 'Pattern Groove',
-    icon: '🎹',
-    category: 'Speed',
-    tagline: 'Press the lit pad, again and again. Do your fingers learn something?',
-    skill: 'learning a movement pattern',
-    howTo: [
-      'One of 4 pads lights up. Press it as fast as you can: keys D F J K (or 1–4), or click it.',
-      'The next pad lights up right after. 108 presses in all.',
-    ],
-    scoring: [
-      'Part of the run follows a hidden pattern, part of it is random.',
-      'Your score is how much faster you are on the pattern than on the random part: the more your fingers learned, the higher.',
-    ],
-    durationHint: '~1 min',
-    scoreLabel: 'Pattern bonus',
-    higherIsBetter: true,
-    formatScore: (s) => `${s < 0 ? '−' : '+'}${Math.abs(s)} ms`,
-    start: 'quick',
-    layout: 'full',
-    Component: lazyTest(() => import('./pattern-groove/PatternGrooveTest')),
-  },
 ]
 
 export const getTest = (id: string) => TESTS.find((t) => t.id === id) ?? PROTOTYPES.find((t) => t.id === id)
