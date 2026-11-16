@@ -2,11 +2,11 @@ import { shuffle, type Rand } from '../../lib/random'
 import { median } from '../reaction/scoring'
 
 /** Items are placed in a GRID × GRID grid of cells, one per cell, jittered inside it. */
-export const GRID = 6
+export const GRID = 7
 /** Item size as a fraction of a cell. */
 export const ITEM = 0.62
 /** How many shapes each round shows; every size comes ROUNDS_PER_SIZE times, mixed. */
-export const SET_SIZES = [8, 16, 32] as const
+export const SET_SIZES = [16, 24, 36] as const
 export const ROUNDS_PER_SIZE = 5
 /** Added to the round's time for each wrong click. */
 export const PENALTY_MS = 1000
@@ -23,8 +23,14 @@ export interface Round { size: number; items: Item[] }
 
 const ROTS = [0, 90, 180, 270] as const
 
-/** Quadrant (0–3) of a cell. */
-const quadrantOf = (cell: number) => (Math.floor(cell / GRID) < GRID / 2 ? 0 : 2) + ((cell % GRID) < GRID / 2 ? 0 : 1)
+/** Quadrant (0–3) of a cell; -1 for the middle row and column (they belong to no quadrant, never the target). */
+function quadrantOf(cell: number) {
+  const mid = (GRID - 1) / 2
+  const row = Math.floor(cell / GRID)
+  const col = cell % GRID
+  if (row === mid || col === mid) return -1
+  return (row < mid ? 0 : 2) + (col < mid ? 0 : 1)
+}
 
 /**
  * The whole run: every set size ROUNDS_PER_SIZE times in random order, and the target spread over the four

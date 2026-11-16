@@ -3,19 +3,22 @@ import { shuffle, type Rand } from '../../lib/random'
 /** Items sit in a GRID × GRID grid of cells, one per cell, jittered inside it. */
 export const GRID = 5
 export const ITEM = 0.6 // of a cell
-/** Set sizes; each comes TRIALS_PER_SIZE times (half with a change), all mixed. */
-export const SET_SIZES = [4, 6, 8] as const
-export const TRIALS_PER_SIZE = 10
-/** Sizes the capacity score is averaged over (4 items is too easy to say much). */
-export const SCORED_SIZES = [6, 8]
+export const TRIALS = 40
+/**
+ * Staircase (Levitt 1971, "2-down 1-up"): starts at START_SIZE shapes; 2 right answers in a row add a shape, a wrong
+ * answer takes one away. It settles where you are right about 71 % of the time, near your own limit.
+ */
+export const START_SIZE = 4
+export const MIN_SIZE = 2
+export const MAX_SIZE = 12
 export const FIX_MS = 600
 export const SAMPLE_MS = 500
 export const BLANK_MS = 900
 
 /**
- * The 10 kinds of item (more than the largest display, so a change always brings in a kind that isn't on the board
- * and can't be spotted as a duplicate): each color always comes with its own shape, so a change is never a change of color alone
- * (color is never the only cue). Shapes are 24 × 24 paths, drawn filled.
+ * The 14 kinds of item: more than the largest board, so a change always brings in a kind that isn't on the board
+ * and can't be spotted as a duplicate. Each color always comes with its own shape, so a change is never a change of
+ * color alone (color is never the only cue). Shapes are 24 × 24 paths, drawn filled (even-odd).
  */
 export const KINDS = [
   { name: 'red circle', color: '#f87171', path: 'M12 3a9 9 0 1 0 .01 0Z' },
@@ -28,6 +31,10 @@ export const KINDS = [
   { name: 'white half circle', color: '#f4f4f5', path: 'M2 17a10 10 0 0 1 20 0Z' },
   { name: 'pink ring', color: '#f472b6', path: 'M12 2a10 10 0 1 0 .01 0ZM12 7.5a4.5 4.5 0 1 1-.01 0Z' },
   { name: 'lime pentagon', color: '#a3e635', path: 'M12 2l10 7.5-4 12.5H6L2 9.5Z' },
+  { name: 'amber arrow', color: '#fbbf24', path: 'M12 2l9 10h-5v10H8V12H3Z' },
+  { name: 'teal moon', color: '#2dd4bf', path: 'M15 2a10 10 0 1 0 7 15A8 8 0 0 1 15 2Z' },
+  { name: 'rose heart', color: '#fb7185', path: 'M12 21L3.5 12.5A5 5 0 0 1 12 6a5 5 0 0 1 8.5 6.5Z' },
+  { name: 'sky bolt', color: '#7dd3fc', path: 'M14 2L5 14h6l-2 8 10-13h-6Z' },
 ] as const
 
 export interface Item { x: number; y: number; kind: number }
@@ -36,43 +43,103 @@ export interface Trial {
   items: Item[]
   /** Index of the item that changes in the test display, or null for "same". */
   changed: number | null
-  /** The kind it changes into (one not in the display). */
+  /** The kind it changes into (one not on the board). */
   newKind: number
 }
 
-export function makeTrials(rand: Rand = Math.random): Trial[] {
-  const plan = SET_SIZES.flatMap((size) => Array.from({ length: TRIALS_PER_SIZE }, (_, i) => ({ size, change: i < TRIALS_PER_SIZE / 2 })))
-  return shuffle(plan, rand).map(({ size, change }) => {
-    const kinds = shuffle(KINDS.map((_, i) => i), rand)
-    const cells = shuffle(Array.from({ length: GRID * GRID }, (_, i) => i), rand).slice(0, size)
-    const jitter = (1 - ITEM) / 2
-    const items = cells.map((cell, i) => ({
-      x: ((cell % GRID) + 0.5 + (rand() * 2 - 1) * jitter) / GRID,
-      y: (Math.floor(cell / GRID) + 0.5 + (rand() * 2 - 1) * jitter) / GRID,
-      kind: kinds[i],
-    }))
-    // All kinds on the board differ; a change brings in one of the kinds not shown.
-    const free = kinds.slice(size)
-    const changed = change ? Math.floor(rand() * size) : null
-    return { size, items, changed, newKind: free[Math.floor(rand() * free.length)] }
-  })
+/** One trial with `size` shapes; `change` decides whether one of them changes. */
+export function makeTrial(size: number, change: boolean, rand: Rand = Math.random): Trial {
+  const kinds = shuffle(KINDS.map((_, i) => i), rand)
+  const cells = shuffle(Array.from({ length: GRID * GRID }, (_, i) => i), rand).slice(0, size)
+  const jitter = (1 - ITEM) / 2
+  const items = cells.map((cell, i) => ({
+    x: ((cell % GRID) + 0.5 + (rand() * 2 - 1) * jitter) / GRID,
+    y: (Math.floor(cell / GRID) + 0.5 + (rand() * 2 - 1) * jitter) / GRID,
+    kind: kinds[i],
+  }))
+  const free = kinds.slice(size)
+  return { size, items, changed: change ? Math.floor(rand() * size) : null, newKind: free[Math.floor(rand() * free.length)] }
+}
+
+/**
+ * Change or no change, half and half over the run: a shuffled list of TRIALS answers, exactly TRIALS / 2 of each,
+ * decided up front (the staircase only picks the number of shapes).
+ */
+export const makeChangePlan = (rand: Rand = Math.random) =>
+  shuffle(Array.from({ length: TRIALS }, (_, i) => i < TRIALS / 2), rand)
+
+/** Staircase state: shapes on the next trial and right answers in a row at this size. */
+export interface Stair { size: number; streak: number }
+export const START_STAIR: Stair = { size: START_SIZE, streak: 0 }
+
+export function nextStair(s: Stair, correct: boolean): Stair {
+  if (!correct) return { size: Math.max(MIN_SIZE, s.size - 1), streak: 0 }
+  if (s.streak + 1 >= 2) return { size: Math.min(MAX_SIZE, s.size + 1), streak: 0 }
+  return { size: s.size, streak: s.streak + 1 }
 }
 
 export interface Answer { size: number; change: boolean; saidChange: boolean }
 
-/** Cowan's K for one set size: N × (hit rate − false-alarm rate). */
-export function capacity(answers: Answer[], size: number) {
-  const a = answers.filter((x) => x.size === size)
-  const ch = a.filter((x) => x.change)
-  const same = a.filter((x) => !x.change)
-  if (!ch.length || !same.length) return undefined
-  const hit = ch.filter((x) => x.saidChange).length / ch.length
-  const fa = same.filter((x) => x.saidChange).length / same.length
-  return { k: size * (hit - fa), hit, fa }
+/**
+ * Share of answers treated as slips (a blink, a misclick: answered at random). Without it, a mistake on a small board
+ * reads as "can't even hold 4", and two early mistakes cost a strong player ~4 shapes; with it, ~0.1–0.4.
+ */
+export const LAPSE = 0.08
+
+/** Chance of answering "changed" under the model: K shapes held, guess rate g, LAPSE slips. */
+function pChanged(size: number, change: boolean, k: number, g: number) {
+  const held = Math.min(1, k / size)
+  const p = change ? held + (1 - held) * g : g
+  return LAPSE / 2 + (1 - LAPSE) * p
 }
 
-/** Score: K averaged over SCORED_SIZES, at least 0, rounded to 0.1 items. */
+/**
+ * Below this gap between hit rate and false-alarm rate, the answers barely tell changed from unchanged boards apart,
+ * and the score is scaled down towards 0. (When almost every answer is the same, "changed" every time, the model fit
+ * alone can't separate capacity from guessing and would still credit a few shapes.) Real players are far above it
+ * (gap ~0.4–0.8); random clicking averages 0.
+ */
+export const MIN_GAP = 0.25
+
+/**
+ * Capacity: the number of shapes K (0–MAX_SIZE, steps of 0.1) that best explains all answers, with the guess rate
+ * fitted too (maximum likelihood, whole-display model as in Pashler's K, plus slips), scaled down when hit rate −
+ * false-alarm rate is below MIN_GAP. Rounded to 0.1.
+ */
 export function capacityScore(answers: Answer[]) {
-  const ks = SCORED_SIZES.map((s) => capacity(answers, s)?.k ?? 0)
-  return Math.max(0, Math.round((ks.reduce((a, b) => a + b, 0) / ks.length) * 10) / 10)
+  if (!answers.length) return 0
+  const { hit, fa } = rates(answers)
+  const gap = Math.max(0, Math.min(1, (hit - fa) / MIN_GAP))
+  return Math.round(fitK(answers) * gap * 10) / 10
+}
+
+/** The maximum-likelihood K alone (see capacityScore). */
+export function fitK(answers: Answer[]) {
+  let best = -Infinity
+  let bestK = 0
+  for (let k10 = 0; k10 <= MAX_SIZE * 10; k10++) {
+    const k = k10 / 10
+    for (let g = 0.01; g < 1; g += 0.04) {
+      let ll = 0
+      for (const a of answers) {
+        const p = pChanged(a.size, a.change, k, g)
+        ll += Math.log(a.saidChange ? p : 1 - p)
+      }
+      if (ll > best + 1e-9) {
+        best = ll
+        bestK = k
+      }
+    }
+  }
+  return bestK
+}
+
+/** Hit rate (changes spotted) and false-alarm rate ("changed" when nothing changed). */
+export function rates(answers: Answer[]) {
+  const ch = answers.filter((a) => a.change)
+  const same = answers.filter((a) => !a.change)
+  return {
+    hit: ch.length ? ch.filter((a) => a.saidChange).length / ch.length : 0,
+    fa: same.length ? same.filter((a) => a.saidChange).length / same.length : 0,
+  }
 }
