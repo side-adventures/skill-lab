@@ -637,7 +637,7 @@ export const PROTOTYPES: TestDefinition[] = [
     scoreLabel: 'Points (correct − wrong)',
     higherIsBetter: true,
     formatScore: (s) => `${s < 0 ? '−' : ''}${Math.abs(s)} pts`,
-    start: 'countdown',
+    start: 'none',
     layout: 'prompt',
     Component: lazyTest(() => import('./symbol-code/SymbolCodeTest')),
   },

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnswerButtons } from '../../components/game/AnswerButtons'
+import { StartTransition } from '../../components/game/GameFrame'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash } from '../../lib/game'
@@ -26,14 +27,17 @@ export default function SymbolCodeTest({ onFinish }: TestComponentProps) {
   const [correct, setCorrect] = useState(0)
   const [wrong, setWrong] = useState(0)
   const [flash, signal] = useAnswerFlash()
+  // First the empty layout with a 3-2-1 (no symbols yet), so you can put your fingers on the keys; then the minute runs.
+  const [playing, setPlaying] = useState(false)
   const startedAt = useRef(0)
   const shownAt = useRef(0)
   useEffect(() => {
-    startedAt.current = shownAt.current = performance.now()
-  }, [])
+    if (playing) startedAt.current = shownAt.current = performance.now()
+  }, [playing])
+  const go = useCallback(() => setPlaying(true), [])
   const answers = useRef<(Answer & { ms: number })[]>([])
 
-  const remaining = useCountdown(DURATION_MS, true, () => {
+  const remaining = useCountdown(DURATION_MS, playing, () => {
     const gain = learningGain(answers.current)
     onFinish({
       score: symbolScore(correct, wrong),
@@ -48,7 +52,7 @@ export default function SymbolCodeTest({ onFinish }: TestComponentProps) {
   })
 
   const answer = (n: number) => {
-    if (remaining <= 0) return
+    if (!playing || remaining <= 0) return
     const now = performance.now()
     const ok = n === row[0]
     answers.current.push({ at: now - startedAt.current, ms: now - shownAt.current, correct: ok })
@@ -77,7 +81,12 @@ export default function SymbolCodeTest({ onFinish }: TestComponentProps) {
     <AnswerButtons
       columns={HALF}
       disabled={remaining <= 0}
-      options={KEYS.slice(from, from + HALF).map((k, j) => ({ label: k.toUpperCase(), key: k, onPress: () => answer(from + j) }))}
+      options={KEYS.slice(from, from + HALF).map((k, j) => ({
+        label: k.toUpperCase(),
+        key: k,
+        hint: String(from + j + 1),
+        onPress: () => answer(from + j),
+      }))}
     />
   )
 
@@ -85,7 +94,7 @@ export default function SymbolCodeTest({ onFinish }: TestComponentProps) {
     <>
       <GameInfo
         left={<InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" />}
-        middle="Press the key for the first symbol"
+        middle={playing ? 'Press the key for the first symbol' : 'Fingers on S D F and J K L'}
         right={<InfoValue label="Score" value={symbolScore(correct, wrong)} />}
         timer={remaining / DURATION_MS}
       />
@@ -98,17 +107,19 @@ export default function SymbolCodeTest({ onFinish }: TestComponentProps) {
                 <div key={from} className="flex overflow-hidden rounded-xl border border-zinc-700">
                   {key.slice(from, from + HALF).map((s, j) => (
                     <div key={j} className="flex w-16 flex-col items-center border-r border-zinc-700 last:border-r-0">
-                      <Glyph index={s} className="my-2 size-9 text-zinc-200" />
-                      <span className="w-full border-t border-zinc-700 bg-zinc-900 py-1 text-center text-lg font-bold text-zinc-300">
+                      {playing ? <Glyph index={s} className="my-2 size-9 text-zinc-200" /> : <span className="my-2 size-9" />}
+                      <span className="relative w-full border-t border-zinc-700 bg-zinc-900 py-1 text-center text-lg font-bold text-zinc-300">
                         {KEYS[from + j].toUpperCase()}
+                        <span className="absolute top-0.5 right-1.5 text-[11px] font-medium text-zinc-500">{from + j + 1}</span>
                       </span>
                     </div>
                   ))}
                 </div>
               ))}
             </div>
-            <div className="flex items-end gap-3">
-              {row.map((n, i) => (
+            <div className="flex h-24 items-end gap-3">
+              {!playing && <div className="grid h-24 w-[26rem] place-items-center"><StartTransition mode="countdown" onDone={go} /></div>}
+              {playing && row.map((n, i) => (
                 <div
                   key={i}
                   className={`grid place-items-center rounded-xl border-2 ${
