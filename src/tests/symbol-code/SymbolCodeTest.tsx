@@ -7,7 +7,7 @@ import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useCountdown, useLatest } from '../../lib/hooks'
 import { answerStats } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
-import { DURATION_MS, KEYS, ROW_LENGTH, SYMBOLS, learningGain, makeKey, makeSymbolSource, symbolScore, type Answer } from './scoring'
+import { DURATION_MS, KEYS, PART_MS, ROW_LENGTH, SYMBOLS, makeKey, makeSymbolSource, partPoints, symbolScore, type Answer } from './scoring'
 
 const HALF = KEYS.length / 2
 
@@ -38,15 +38,18 @@ export default function SymbolCodeTest({ onFinish }: TestComponentProps) {
   const answers = useRef<(Answer & { ms: number })[]>([])
 
   const remaining = useCountdown(DURATION_MS, playing, () => {
-    const gain = learningGain(answers.current)
     onFinish({
       score: symbolScore(correct, wrong),
       ...(correct + wrong === 0 && { failed: 'No answers — try again!' }),
       details: {
-        stats: [
-          ...answerStats(answers.current),
-          ...(gain === undefined ? [] : [{ label: 'Last 20 s vs first 20 s', value: `${gain >= 0 ? '+' : '−'}${Math.abs(Math.round(gain * 100))} %` }]),
-        ],
+        stats: answerStats(answers.current),
+        chips: {
+          title: 'Each 20 seconds',
+          items: partPoints(answers.current).map((p, i) => ({
+            label: `${(i * PART_MS) / 1000}–${((i + 1) * PART_MS) / 1000} s`,
+            value: `${p < 0 ? '−' : ''}${Math.abs(p)} pts`,
+          })),
+        },
       },
     })
   })

@@ -11,8 +11,8 @@ export const SYMBOL_COUNT = 6
 export const KEYS = ['s', 'd', 'f', 'j', 'k', 'l']
 /** Symbols shown in the code row: the current one and the next ones. */
 export const ROW_LENGTH = 5
-/** The learning stat compares the first and the last this many ms. */
-export const LEARN_WINDOW_MS = 20_000
+/** The result splits the run into parts of this length (first, middle, last 20 s). */
+export const PART_MS = 20_000
 
 /**
  * The symbol pool (24 × 24 paths, drawn as strokes): simple, clearly different shapes, none a digit or letter.
@@ -55,12 +55,11 @@ export const symbolScore = correctMinusWrong
 /** One answer: when it was given (ms since the start) and whether it was right. */
 export interface Answer { at: number; correct: boolean }
 
-/**
- * How much faster you got: correct answers in the last LEARN_WINDOW_MS vs the first, as a fraction (+0.25 = 25 % more).
- * Undefined with no correct answers in the first window.
- */
-export function learningGain(answers: Answer[], durationMs = DURATION_MS) {
-  const first = answers.filter((a) => a.correct && a.at < LEARN_WINDOW_MS).length
-  const last = answers.filter((a) => a.correct && a.at >= durationMs - LEARN_WINDOW_MS).length
-  return first ? last / first - 1 : undefined
+/** Points (correct − wrong) in each PART_MS of the run: first, middle and last 20 s. They add up to the score. */
+export function partPoints(answers: Answer[], durationMs = DURATION_MS) {
+  return Array.from({ length: Math.ceil(durationMs / PART_MS) }, (_, i) =>
+    answers
+      .filter((a) => a.at >= i * PART_MS && (a.at < (i + 1) * PART_MS || i === Math.ceil(durationMs / PART_MS) - 1))
+      .reduce((s, a) => s + (a.correct ? 1 : -1), 0),
+  )
 }
