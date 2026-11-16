@@ -63,7 +63,11 @@ function EmptyStage({ layout, boardAspect, children }: { layout: StageLayout; bo
   }
 }
 
-function StartTransition({ mode, onDone }: { mode: StartMode; onDone: () => void }) {
+/**
+ * The 3-2-1 countdown (or "Ready") itself. Also used inside a test that counts down on its own full layout
+ * (Symbol Code shows its keys first, so you can get your fingers in place).
+ */
+export function StartTransition({ mode, onDone }: { mode: StartMode; onDone: () => void }) {
   const [n, setN] = useState(mode === 'countdown' ? 3 : 0)
   useEffect(() => {
     const t = window.setTimeout(() => (n > 1 ? setN(n - 1) : onDone()), mode === 'countdown' ? COUNT_STEP_MS : QUICK_MS)

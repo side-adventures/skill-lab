@@ -7,6 +7,8 @@ export interface AnswerOption {
   key: string
   onPress: () => void
   primary?: boolean
+  /** A small extra label in the top-right corner, e.g. another key that also works ("1"). */
+  hint?: string
 }
 
 const KEY_LABEL: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', ' ': 'Space' }
@@ -48,11 +50,12 @@ export function AnswerButtons({ options, columns, disabled, wide }: {
             e.preventDefault()
             o.onPress()
           }}
-          className={`flex h-14 items-center ${keyOnly ? 'justify-center' : 'justify-between'} rounded-xl px-5 text-lg font-bold tracking-wider transition-colors active:scale-[0.98] disabled:opacity-40 ${
+          className={`relative flex h-14 items-center ${keyOnly ? 'justify-center' : 'justify-between'} rounded-xl px-5 text-lg font-bold tracking-wider transition-colors active:scale-[0.98] disabled:opacity-40 ${
             o.primary ? 'bg-violet-600 text-white hover:bg-violet-500' : 'border border-zinc-700 bg-zinc-900 text-zinc-100 hover:border-zinc-600'
           }`}
         >
           <span>{o.label}</span>
+          {o.hint && <span className="absolute top-1 right-2 text-[11px] font-medium tracking-normal text-zinc-500">{o.hint}</span>}
           {!keyOnly && (
             <kbd className={`rounded-md border px-1.5 text-xs font-medium ${o.primary ? 'border-white/30 text-white/80' : 'border-zinc-700 text-zinc-500'}`}>
               {keyLabel(o.key)}
