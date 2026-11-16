@@ -6,9 +6,10 @@ import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import { GRID, ITEM, PAUSE_MS, PENALTY_MS, bySize, makeRounds, roundTime, searchScore, type RoundResult } from './scoring'
 
-// Two equal bars: T = the bar meets the middle, L = it meets the end.
+// The same two bars (16 long): a top bar and a stem. T = the stem meets the middle of the bar; the "L" = it meets the bar
+// 20 % in from the end, so the only difference is where the bars meet (the usual T-among-L research setup).
 const T_PATH = 'M4 5h16M12 5v15'
-const L_PATH = 'M5 4v16h15'
+const L_PATH = 'M4 5h16M7.2 5v15'
 
 export default function OddOneOutTest({ onFinish }: TestComponentProps) {
   const [rounds] = useState(makeRounds)
@@ -74,7 +75,7 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
     <>
       <GameInfo
         left={<InfoValue value={`Round ${r + 1}`} of={rounds.length} />}
-        middle={<>Click the <b className="text-zinc-200">T</b> among the L shapes{wrongAt !== null && <span className="text-rose-300"> · +{PENALTY_MS / 1000} s</span>}</>}
+        middle={<>Click the <b className="text-zinc-200">T</b> (bars meet in the middle){wrongAt !== null && <span className="text-rose-300"> · +{PENALTY_MS / 1000} s</span>}</>}
         right={results.length > 0 && <InfoValue label="Total" value={(searchScore(results) / 1000).toFixed(1)} unit="s" />}
       />
       <SquareLayout>
