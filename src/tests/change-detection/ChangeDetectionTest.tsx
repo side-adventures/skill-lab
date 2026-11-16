@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnswerButtons } from '../../components/game/AnswerButtons'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
-import { SquarePanelLayout } from '../../components/game/layouts'
+import { PromptLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import { fmtPct } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
@@ -13,7 +13,7 @@ import {
 type Stage = 'fix' | 'sample' | 'blank' | 'test' | 'feedback'
 
 const PHASE: Record<Stage, string> = {
-  fix: 'Get ready',
+  fix: '',
   sample: 'Remember them',
   blank: 'Remember them',
   test: 'Did one of them change?',
@@ -53,18 +53,21 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
         setT(t + 1)
       })
     }
-    const a = answers.current
-    const { hit, fa } = rates(a)
-    onFinish({
-      score: capacityScore(a),
-      details: {
-        stats: [
-          { label: 'Changes spotted', value: fmtPct(hit) },
-          { label: 'False alarms', value: fmtPct(fa) },
-          { label: 'Most shapes', value: String(Math.max(...a.map((x) => x.size))) },
-          { label: 'Shapes at the end', value: String(a[a.length - 1].size) },
-        ],
-      },
+    // Last trial: let its flash show, then the result.
+    later(400, () => {
+      const a = answers.current
+      const { hit, fa } = rates(a)
+      onFinish({
+        score: capacityScore(a),
+        details: {
+          stats: [
+            { label: 'Changed boards right', value: fmtPct(hit) },
+            { label: 'Same boards right', value: fmtPct(1 - fa) },
+            { label: 'Most shapes', value: String(Math.max(...a.map((x) => x.size))) },
+            { label: 'Shapes at the end', value: String(a[a.length - 1].size) },
+          ],
+        },
+      })
     })
   }
 
@@ -76,11 +79,10 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
         left={<InfoValue value={`Trial ${t + 1}`} of={TRIALS} />}
         middle={PHASE[stage]}
       />
-      <SquarePanelLayout
-        boardClassName={feedbackRing(flash)}
-        board={
-          <>
-            {stage === 'fix' && <div className="grid size-full place-items-center text-5xl text-zinc-600">+</div>}
+      <PromptLayout
+        displayClassName={feedbackRing(flash)}
+        display={
+          <div className="play-area relative aspect-square h-full">
             {visible &&
               trial.items.map((it, i) => {
                 const kind = KINDS[stage !== 'sample' && i === trial.changed ? trial.newKind : it.kind]
@@ -96,20 +98,16 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
                   </svg>
                 )
               })}
-          </>
-        }
-        panel={
-          <div className="flex h-full flex-col justify-end gap-3">
-            <p className="text-sm text-zinc-400">Same shapes in the same places, or did one turn into a different one?</p>
-            <AnswerButtons
-              columns={1}
-              disabled={stage !== 'test'}
-              options={[
-                { label: 'Same', key: 's', onPress: () => answer(false) },
-                { label: 'Changed', key: 'c', onPress: () => answer(true) },
-              ]}
-            />
           </div>
+        }
+        answers={
+          <AnswerButtons
+            disabled={stage !== 'test'}
+            options={[
+              { label: 'Same', key: 'ArrowLeft', onPress: () => answer(false) },
+              { label: 'Changed', key: 'ArrowRight', onPress: () => answer(true) },
+            ]}
+          />
         }
       />
     </>

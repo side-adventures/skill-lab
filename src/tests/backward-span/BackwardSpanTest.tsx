@@ -97,9 +97,9 @@ export default function BackwardSpanTest({ onFinish }: TestComponentProps) {
         left={<><InfoValue value={digits} unit="digits" /><Lives left={lives} total={LIVES} /></>}
         middle={
           <span className={phase === 'wrong' ? 'text-rose-300' : ''}>
-            {phase === 'intro' ? 'Get ready'
+            {phase === 'intro' ? ''
               : phase === 'show' ? 'Remember the digits'
-              : phase === 'input' ? 'Type them in reverse order, then Enter'
+              : phase === 'input' ? 'Last digit first, then Enter'
               : phase === 'correct' ? 'Correct'
               : lives > 0 ? 'Not quite · new digits, same length next' : 'Out of lives'}
           </span>
@@ -110,16 +110,11 @@ export default function BackwardSpanTest({ onFinish }: TestComponentProps) {
         displayClassName={feedbackRing(flash)}
         display={
           <div className="w-full px-8 text-center">
-            {phase === 'intro' && (
-              <>
-                <p className="text-3xl font-bold text-zinc-100">Memorize the digits</p>
-                <p className="mt-2 text-zinc-400">They appear one at a time. Then type them in reverse order.</p>
-              </>
-            )}
+            {phase === 'intro' && <p className="text-3xl font-bold text-zinc-100">Memorize the digits</p>}
             {phase === 'show' && <p className="font-mono text-8xl font-bold text-zinc-50">{shown === null ? '' : seq[shown]}</p>}
             {(phase === 'input' || phase === 'correct') && (
               <>
-                <p className="mb-3 text-zinc-500">Last digit first</p>
+                <p className="mb-3 text-zinc-500">Type the digits backwards</p>
                 <p className={`${big} min-h-14 text-violet-300`}>{input || <span className="text-zinc-700">_</span>}</p>
               </>
             )}
