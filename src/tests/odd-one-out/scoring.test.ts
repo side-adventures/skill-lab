@@ -34,11 +34,11 @@ describe('odd one out rounds', () => {
   })
   it('scores the total time with penalties and the slope per shape', () => {
     const rounds = [
-      { size: 8, ms: 600, wrong: 0 },
-      { size: 16, ms: 800, wrong: 0 },
-      { size: 32, ms: 1000, wrong: 1 },
+      { size: 16, ms: 600, wrong: 0 },
+      { size: 24, ms: 800, wrong: 0 },
+      { size: 36, ms: 1000, wrong: 1 },
     ]
     expect(searchScore(rounds)).toBe(600 + 800 + 2000)
-    expect(bySize(rounds).perItem).toBeCloseTo((2000 - 600) / 24)
+    expect(bySize(rounds).perItem).toBeCloseTo((2000 - 600) / 20)
   })
 })

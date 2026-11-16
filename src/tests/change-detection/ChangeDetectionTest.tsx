@@ -6,7 +6,8 @@ import { feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import { fmtPct } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import {
-  BLANK_MS, FIX_MS, GRID, ITEM, KINDS, SAMPLE_MS, SCORED_SIZES, SET_SIZES, capacity, capacityScore, makeTrials, type Answer,
+  BLANK_MS, FIX_MS, GRID, ITEM, KINDS, SAMPLE_MS, START_STAIR, TRIALS, capacityScore, makeChangePlan, makeTrial, nextStair, rates,
+  type Answer,
 } from './scoring'
 
 type Stage = 'fix' | 'sample' | 'blank' | 'test' | 'feedback'
@@ -20,8 +21,10 @@ const PHASE: Record<Stage, string> = {
 }
 
 export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
-  const [trials] = useState(makeTrials)
+  const [plan] = useState(makeChangePlan)
+  const [stair, setStair] = useState(START_STAIR)
   const [t, setT] = useState(0)
+  const [trial, setTrial] = useState(() => makeTrial(START_STAIR.size, plan[0]))
   const [stage, setStage] = useState<Stage>('fix')
   const answers = useRef<Answer[]>([])
   const [flash, signal] = useAnswerFlash()
@@ -34,38 +37,33 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
     later(FIX_MS + SAMPLE_MS + BLANK_MS, () => setStage('test'))
   }, [t, later])
 
-  const trial = trials[t]
-
   const answer = (saidChange: boolean) => {
     if (stage !== 'test') return
     const change = trial.changed !== null
+    const correct = change === saidChange
     answers.current.push({ size: trial.size, change, saidChange })
-    signal(change === saidChange)
+    signal(correct)
     setStage('feedback')
-    if (t + 1 < trials.length) return later(400, () => {
-      setStage('fix')
-      setT(t + 1)
-    })
+    if (t + 1 < TRIALS) {
+      const next = nextStair(stair, correct)
+      return later(400, () => {
+        setStair(next)
+        setTrial(makeTrial(next.size, plan[t + 1]))
+        setStage('fix')
+        setT(t + 1)
+      })
+    }
     const a = answers.current
-    const correct = a.filter((x) => x.change === x.saidChange).length
+    const { hit, fa } = rates(a)
     onFinish({
       score: capacityScore(a),
       details: {
         stats: [
-          { label: 'Correct', value: `${correct} / ${a.length}` },
-          { label: 'Accuracy', value: fmtPct(correct / a.length) },
+          { label: 'Changes spotted', value: fmtPct(hit) },
+          { label: 'False alarms', value: fmtPct(fa) },
+          { label: 'Most shapes', value: String(Math.max(...a.map((x) => x.size))) },
+          { label: 'Shapes at the end', value: String(a[a.length - 1].size) },
         ],
-        extra: {
-          kind: 'table',
-          columns: ['Items', 'Changes seen', 'False alarms', 'Capacity'],
-          rows: SET_SIZES.map((s) => {
-            const c = capacity(a, s)!
-            return {
-              cells: [String(s), fmtPct(c.hit), fmtPct(c.fa), Math.max(0, c.k).toFixed(1)],
-              dim: !SCORED_SIZES.includes(s), // not in the score
-            }
-          }),
-        },
       },
     })
   }
@@ -75,9 +73,8 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={<InfoValue value={`Trial ${t + 1}`} of={trials.length} />}
+        left={<InfoValue value={`Trial ${t + 1}`} of={TRIALS} />}
         middle={PHASE[stage]}
-        right={<InfoValue value={trial.size} unit="items" />}
       />
       <SquarePanelLayout
         boardClassName={feedbackRing(flash)}
@@ -103,7 +100,7 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
         }
         panel={
           <div className="flex h-full flex-col justify-end gap-3">
-            <p className="text-sm text-zinc-400">Same items in the same places, or did one turn into a different one?</p>
+            <p className="text-sm text-zinc-400">Same shapes in the same places, or did one turn into a different one?</p>
             <AnswerButtons
               columns={1}
               disabled={stage !== 'test'}
