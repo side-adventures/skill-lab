@@ -5,6 +5,8 @@ export const LIVES = 2
 /** Each digit is on screen this long, then a short gap before the next one. */
 export const DIGIT_MS = 800
 export const GAP_MS = 250
+/** "Memorize the digits" before the first sequence of a run (not before later ones). */
+export const INTRO_MS = 2000
 
 /**
  * A sequence of digits 1–9 (as in the WAIS Digit Span) where neighbours are never equal and never one apart,

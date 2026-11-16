@@ -555,10 +555,10 @@ export const PROTOTYPES: TestDefinition[] = [
     name: 'Odd One Out',
     icon: '🔍',
     category: 'Focus',
-    tagline: 'Find the one T among the look-alike shapes.',
+    tagline: 'Find the one T among the L shapes.',
     skill: 'visual search',
     howTo: [
-      'The board fills with shapes made of the same two bars, turned every which way. In one, the T, the bars meet in the middle. Click it.',
+      'The board fills with L shapes turned every which way, and one T. Click the T.',
       '15 rounds, with 16, 24 or 36 shapes.',
     ],
     scoring: [
