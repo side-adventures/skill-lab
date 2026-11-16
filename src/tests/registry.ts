@@ -590,7 +590,7 @@ export const PROTOTYPES: TestDefinition[] = [
     scoreLabel: 'Longest reversed',
     higherIsBetter: true,
     formatScore: (s) => `${s} digits`,
-    start: 'quick',
+    start: 'none',
     layout: 'prompt',
     Component: lazyTest(() => import('./backward-span/BackwardSpanTest')),
   },
@@ -603,7 +603,7 @@ export const PROTOTYPES: TestDefinition[] = [
     skill: 'visual working memory',
     howTo: [
       'Colored shapes flash for half a second, then disappear for about a second.',
-      'They come back in the same places. Did one of them turn into a different shape? Click Same or Changed (or S / C).',
+      'They come back in the same places. Did one of them turn into a different shape? Click Same or Changed (or ← / →).',
       '40 trials, half of them with a change. It starts with 4 shapes; 2 right answers in a row add a shape, a wrong one takes one away.',
     ],
     scoring: [
@@ -614,7 +614,7 @@ export const PROTOTYPES: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} shapes`,
     start: 'quick',
-    layout: 'panel',
+    layout: 'prompt',
     Component: lazyTest(() => import('./change-detection/ChangeDetectionTest')),
   },
   {
