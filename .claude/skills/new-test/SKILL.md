@@ -24,7 +24,7 @@ Propose the test as one short table, nothing built yet:
 | Name · category | e.g. "Split in Half · Estimation" (category: one of `CATEGORIES` in `src/tests/types.ts`) |
 | What you do | one or two sentences, in the player's words |
 | Rounds / levels | how many, how difficulty changes, how a run ends (time, rounds, lives) |
-| Input | click / drag / keys; mouse first, keyboard a bonus |
+| Input | click / drag / keys; the mouse must always work, keyboard optional (say if it's recommended) |
 | Layout | `full`, `prompt`, `square` or `panel` (see "Test screens" in the spec) |
 | Score | what it counts, the unit, higher or lower is better; rough is fine |
 | Randomness | what is random and how runs stay comparable (fixed mix per run, semi-random values) |

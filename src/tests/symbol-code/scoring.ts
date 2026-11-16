@@ -2,8 +2,13 @@ import { correctMinusWrong } from '../../lib/scoring'
 import { shuffle, type Rand } from '../../lib/random'
 
 export const DURATION_MS = 60_000
-/** Symbols in a run (numbers 1–6): few enough to start learning the key within the minute. */
+/** Symbols in a run: few enough to start learning the key within the minute. */
 export const SYMBOL_COUNT = 6
+/**
+ * The answer keys, left to right: S D F · J K L, where the fingers rest on the home row (number keys 1–6 work too, in
+ * the same order). The key strip and the pad show these letters.
+ */
+export const KEYS = ['s', 'd', 'f', 'j', 'k', 'l']
 /** Symbols shown in the code row: the current one and the next ones. */
 export const ROW_LENGTH = 5
 /** The learning stat compares the first and the last this many ms. */
@@ -25,11 +30,11 @@ export const SYMBOLS: string[] = [
   'M5 4v16h14', // corner
 ]
 
-/** key[d - 1] = the symbol (index into SYMBOLS) for number d: SYMBOL_COUNT symbols from the pool, shuffled. */
+/** key[i] = the symbol (index into SYMBOLS) for answer key KEYS[i]: SYMBOL_COUNT symbols from the pool, shuffled. */
 export const makeKey = (rand: Rand = Math.random) => shuffle(SYMBOLS.map((_, i) => i), rand).slice(0, SYMBOL_COUNT)
 
 /**
- * The next number whose symbol is shown (0-based): from a shuffled bag of all SYMBOL_COUNT (so each shows equally
+ * The next answer (index into KEYS) whose symbol is shown: from a shuffled bag of all SYMBOL_COUNT (so each shows equally
  * often), never the same one twice in a row (also across bags).
  */
 export function makeSymbolSource(rand: Rand = Math.random) {

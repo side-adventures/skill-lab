@@ -625,8 +625,8 @@ export const PROTOTYPES: TestDefinition[] = [
     tagline: 'Learn the code: match each symbol to its number.',
     skill: 'processing speed',
     howTo: [
-      'A key at the top pairs 6 symbols with the numbers 1–6; it is new every run.',
-      'A row of symbols comes by: click the number for the first one, or type it.',
+      'A key at the top pairs 6 symbols with the keys S D F and J K L; it is new every run.',
+      'A row of symbols comes by: press the key for the first one, or click it below. Keyboard recommended: rest your fingers on S D F and J K L (1–6 work too).',
       'You have 60 seconds: answer as many as you can.',
     ],
     scoring: [

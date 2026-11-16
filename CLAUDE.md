@@ -6,7 +6,9 @@ Ideas and TODOs for later: `docs/BACKLOG.md`.
 ## Hard rules
 - **Frontend only.** No backend, no network/API calls. Deployed to GitHub Pages from `dist/`.
 - **Current focus: desktop + dark theme only.** The site is always dark (`class="dark"` on `<html>` in
-  `index.html`, no toggle). Desktop with mouse is the target; keyboard is a bonus, never required.
+  `index.html`, no toggle). Desktop with mouse is the target: **every test must be fully playable with the mouse
+  alone.** Keyboard is optional; in some tests (typing, fast key answers) it's an advantage, and the rules may say so
+  or recommend it.
   Mobile / touch and a light theme may come back later, so don't break them needlessly: keep using
   `dark:` variants for dark colors, `onPointerDown` for input, and avoid fixed desktop-only widths, but
   don't spend effort testing or polishing them.
@@ -61,8 +63,8 @@ Design rules for every test:
   is the exception, because color is the task itself.
 - **Lives work the same everywhere**: a lost life replays the same level / round with a new layout, `<Lives>` in the
   info row, "Out of lives" ends the run, and the score is still the best level reached.
-- **Rules mention options, not tips**: say what is possible ("type it on your keyboard, or click the keypad"), never
-  which way is faster or how to play well.
+- **Rules mention options, not tips**: say what is possible ("type it on your keyboard, or click the keypad"), not
+  how to play well. Exception: where the keyboard is a clear advantage, the rules may say so ("keyboard recommended").
 - **The main score is in units a player can read on their own** ("9 tiles", "312 ms"), not internal counters
   ("level 7").
 
