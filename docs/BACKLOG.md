@@ -37,8 +37,8 @@ Ideas and TODOs for later. Not planned yet; move an item into the work when it's
   shown, then you "confirm" it by typing it. Each round the password gets more complex (longer; then mixed case, digits,
   symbols; maybe word-like parts that can be chunked vs random strings). Open: a fun but fair difficulty curve (how
   much length vs character mix per round), how long it's shown, scoring in readable units (e.g. longest password /
-  characters), and keyboard vs on-screen input (typing is needed, so a keyboard is required: an exception to the
-  "keyboard is a bonus" rule, or an on-screen keyboard).
+  characters), and keyboard vs on-screen input (the mouse must always work, so an on-screen keyboard, with the physical
+  keyboard recommended).
 
 - **Spot the Difference** (idea, 2026-11-16): two pictures side by side, one (or a few) things differ; click the
   change as fast as you can. Research: comparative visual search (Pomplun et al.) and, as a variant, the flicker

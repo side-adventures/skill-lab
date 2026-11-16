@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { SYMBOLS, SYMBOL_COUNT, learningGain, makeKey, makeSymbolSource } from './scoring'
+import { KEYS, SYMBOLS, SYMBOL_COUNT, learningGain, makeKey, makeSymbolSource } from './scoring'
 
 describe('symbol code', () => {
-  it('the key pairs every number with a different symbol from the pool', () => {
+  it('has one home-row key per symbol, two groups of three', () => {
+    expect(KEYS).toEqual(['s', 'd', 'f', 'j', 'k', 'l'])
+    expect(KEYS).toHaveLength(SYMBOL_COUNT)
+  })
+  it('the key pairs every answer key with a different symbol from the pool', () => {
     const key = makeKey()
     expect(key).toHaveLength(SYMBOL_COUNT)
     expect(new Set(key).size).toBe(SYMBOL_COUNT)

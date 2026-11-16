@@ -67,7 +67,7 @@ Scores should spread out across players, so a large share of people don't end on
 - Hand-made versions of shared pieces (own buttons, own timers, own grids, own flash) are drift unless there's a reason.
 
 ### 6. Keyboard
-Mouse is primary; keyboard is a bonus, but when it exists it must be predictable.
+The mouse must always work; keyboard is optional (recommended in some tests, e.g. Symbol Code), and when it exists it must be predictable.
 - **Space / Enter = the primary action** wherever there is one (start, continue, submit, next): via `useActionKey` or the same key check. Flag places where Space and Enter do different things, only one of them works, or one triggers something unexpected (e.g. Space activating a focused button *and* the primary action).
 - Answer keys: 1–4 for multiple choice, ← / → for two-choice, digits + Backspace + Enter on `NumberPad`, shown inside the button. Same mapping for the same kind of choice in every test.
 - Escape closes overlays and dialogs everywhere; key repeat (`e.repeat`) is ignored where a held key would cheat.

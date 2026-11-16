@@ -55,7 +55,7 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
    - The top bar (test name, Best, "?") is visible in every phase.
    - No errors in `read_console_messages`.
    - **Result screen** (see "Result screen" in `docs/SPEC.md`): check every stat against your inputs; "Attempt N" / "Not counted"; Rules / Stats links; Share · Try again · Next test (and which test Next picks); Enter / Space / N; nothing overflows the stage, even with many chips.
-6. **Keyboard extras:** answer buttons show their key inside (1–4, ← / → for two-choice tests, Space for N-Back MATCH); Enter / Space continue a round result. Keyboard is a bonus: report broken keys, never missing ones.
+6. **Keyboard extras:** answer buttons show their key inside (1–4, ← / → for two-choice tests, Space for N-Back MATCH); Enter / Space continue a round result. The mouse must always work; keys are optional (where a test recommends the keyboard, all its keys must work): report broken keys, never missing ones.
 
 **Your runs are saved like real ones** (localStorage of the built-in browser on localhost): they change "First score",
 best scores and the stats graph there. Say in the report which tests you played, so nobody mistakes those results for
