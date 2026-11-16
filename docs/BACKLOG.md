@@ -40,6 +40,13 @@ Ideas and TODOs for later. Not planned yet; move an item into the work when it's
   characters), and keyboard vs on-screen input (typing is needed, so a keyboard is required: an exception to the
   "keyboard is a bonus" rule, or an on-screen keyboard).
 
+- **Spot the Difference** (idea, 2026-11-16): two pictures side by side, one (or a few) things differ; click the
+  change as fast as you can. Research: comparative visual search (Pomplun et al.) and, as a variant, the flicker
+  paradigm of change blindness (Rensink et al. 1997: one picture alternates with its changed version, a blank between).
+  Tests search and comparison speed, not memory (both pictures stay visible), so Focus. Open: generated scenes (shapes
+  on a grid) vs drawn ones, keeping difficulty even between runs (time depends a lot on the scene, so luck), how many
+  rounds, and the overlap with Odd One Out (also visual search).
+
 ## New test ideas
 From the test-auditor sweep (2026-11-13), each a well-known paradigm no test covers yet
 (prototyped 2026-11-15; Choice reaction and Flanker dropped after play-testing, Task switching became the Advent
