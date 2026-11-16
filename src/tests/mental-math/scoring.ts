@@ -26,7 +26,7 @@ const twoDigit = (rand: Rand) => notRound(11, 99, rand)
 
 /**
  * An addition x + y for a level (0-based); y is the smaller part:
- * 0: anything from 2 up + a 1-digit number, sum at most 99 (carry or not) · 1: 2-digit + 2-digit, no carry ·
+ * 0: anything from 2 up + a 1-digit number, sum at most 99 (carry or not) · 1: 2-digit + 2-digit, carry or not, under 100 ·
  * 2: 2-digit + 2-digit, carry, under 100 · 3: 2-digit + 2-digit, carry, over 100 ·
  * 4: 3-digit + 2-digit, at least one carry, under 1000. Never a multiple of 10 above 9 (30 + 5 is too easy).
  */
@@ -45,7 +45,7 @@ export function addition(level: number, rand: Rand = Math.random): [number, numb
     }
     const x = twoDigit(rand), y = twoDigit(rand)
     const carry = ones(x) + ones(y) >= 10
-    if (level === 1 && !carry && tens(x) + tens(y) <= 9) return [x, y]
+    if (level === 1 && x + y < 100) return [x, y]
     if (level === 2 && carry && x + y < 100) return [x, y]
     if (level === 3 && carry && x + y > 100) return [x, y]
   }
@@ -60,11 +60,11 @@ export function multiplication(level: number, rand: Rand = Math.random): { x: nu
     case 0: return { x: randInt(2, 6, rand), y: randInt(2, 6, rand), either: true }
     case 1: return { x: randInt(3, 9, rand), y: randInt(6, 9, rand), either: true }
     case 2: return { x: randInt(11, 15, rand), y: randInt(3, 9, rand), either: false }
-    case 3: return { x: randInt(12, 19, rand), y: randInt(3, 9, rand), either: false }
+    case 3: return { x: randInt(16, 19, rand), y: randInt(3, 9, rand), either: false }
     default:
-      return rand() < 0.5
+      return rand() < 0.6 // 60 % 2-digit × 1-digit, 40 % teens × teens
         ? { x: randInt(21, 29, rand), y: randInt(3, 9, rand), either: false }
-        : { x: randInt(11, 15, rand), y: randInt(11, 15, rand), either: true }
+        : { x: randInt(12, 16, rand), y: randInt(12, 16, rand), either: true }
   }
 }
 

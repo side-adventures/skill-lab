@@ -140,12 +140,11 @@ export const TESTS: TestDefinition[] = [
     howTo: [
       'Solve simple + − × ÷ problems. Every answer is a whole number.',
       'Type the answer on your keyboard, or click it on the keypad, then press Enter or OK.',
-      'Each level has one problem of each operation, in random order. Solve all four to move up.',
-      'The problems get a little harder with every level.',
+      'The problems get harder as you go.',
     ],
     scoring: [
       'The number of correct answers in 60 seconds.',
-      'A wrong answer doesn\'t count; that operation comes back at the end of the level.',
+      'A wrong answer does not count.',
     ],
     durationHint: '60 s',
     scoreLabel: 'Correct answers',

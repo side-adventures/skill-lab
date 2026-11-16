@@ -70,7 +70,7 @@ export default function MentalMathTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={<><InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" /><span className="ml-4"><InfoValue value={`Level ${level + 1}`} of={MAX_LEVEL + 1} /></span></>}
+        left={<><InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" /><InfoValue value={`Level ${level + 1}`} of={MAX_LEVEL + 1} /></>}
         middle="Type the answer, then Enter"
         right={<InfoValue label="Correct" value={correct} />}
         timer={remaining / DURATION_MS}

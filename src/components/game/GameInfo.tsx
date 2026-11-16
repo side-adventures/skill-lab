@@ -4,7 +4,8 @@ import { useGameFrame } from '../../lib/game'
 
 /**
  * The info row above the stage: left = where you are (time, round, level, lives), middle = what to do
- * now (phase), right = how you're doing (score). `timer` (0–1, remaining) draws the thin line below.
+ * now (phase), right = how you're doing (score). Several values on the left (time + level, round + lives) are
+ * spaced by the row itself. `timer` (0–1, remaining) draws the thin line below.
  * Render exactly one per test, anywhere in its tree.
  */
 export function GameInfo({ left, middle, right, timer }: {
@@ -18,7 +19,7 @@ export function GameInfo({ left, middle, right, timer }: {
   return createPortal(
     <div className="flex h-full flex-col justify-end">
       <div className="grid grid-cols-[1fr_auto_1fr] items-baseline gap-3">
-        <div className="justify-self-start">{left}</div>
+        <div className="flex items-baseline gap-3 justify-self-start">{left}</div>
         <div className="text-center text-sm text-zinc-400">{middle}</div>
         <div className="justify-self-end">{right}</div>
       </div>
@@ -46,7 +47,7 @@ export function InfoValue({ label, value, unit, of }: { label?: string; value: R
 export function Lives({ left, total }: { left: number; total: number }) {
   const l = Math.max(0, left)
   return (
-    <span className="ml-2 text-sm" aria-label={`${l} of ${total} lives left`}>
+    <span className="text-sm" aria-label={`${l} of ${total} lives left`}>
       <span className="text-rose-400">{'♥ '.repeat(l)}</span>
       <span className="text-zinc-700">{'♥ '.repeat(total - l)}</span>
     </span>

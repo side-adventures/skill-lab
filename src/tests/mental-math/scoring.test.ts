@@ -27,7 +27,7 @@ describe('mental math', () => {
     const carry = (x: number, y: number) => ones(x) + ones(y) >= 10
     const tensCarry = (x: number, y: number) => (Math.floor(x / 10) % 10) + (Math.floor(y / 10) % 10) >= 10
     check(0, (x, y) => digits(y) === 1 && x + y <= 99)
-    check(1, (x, y) => digits(y) === 2 && !carry(x, y) && x + y < 100)
+    check(1, (x, y) => digits(y) === 2 && x + y < 100)
     check(2, (x, y) => digits(y) === 2 && carry(x, y) && x + y < 100)
     check(3, (x, y) => digits(y) === 2 && carry(x, y) && x + y > 100)
     check(4, (x, y) => digits(x) === 3 && digits(y) === 2 && (carry(x, y) || tensCarry(x, y)) && x + y < 1000)
@@ -54,7 +54,7 @@ describe('mental math', () => {
 
   it('subtractions borrow exactly where the matching addition carries', () => {
     const borrow = (a: number, b: number) => ones(a) < ones(b)
-    for (const [level, wanted] of [[1, false], [2, true], [3, true]] as const)
+    for (const [level, wanted] of [[2, true], [3, true]] as const)
       for (const { a, b } of many(level, '−')) expect(borrow(a, b)).toBe(wanted)
   })
 
@@ -66,17 +66,18 @@ describe('mental math', () => {
     fits(0, (x, y) => inRange(x, 2, 6) && inRange(y, 2, 6))
     fits(1, (x, y) => inRange(x, 3, 9) && inRange(y, 6, 9))
     fits(2, (x, y) => inRange(x, 11, 15) && inRange(y, 3, 9))
-    fits(3, (x, y) => inRange(x, 12, 19) && inRange(y, 3, 9))
-    fits(4, (x, y) => (inRange(x, 21, 29) && inRange(y, 3, 9)) || (inRange(x, 11, 15) && inRange(y, 11, 15)))
-    const kinds = new Set(times(200, () => multiplication(4).x > 20))
-    expect(kinds).toEqual(new Set([true, false]))
+    fits(3, (x, y) => inRange(x, 16, 19) && inRange(y, 3, 9))
+    fits(4, (x, y) => (inRange(x, 21, 29) && inRange(y, 3, 9)) || (inRange(x, 12, 16) && inRange(y, 12, 16)))
+    const big = times(5000, () => multiplication(4).x > 20).filter(Boolean).length / 5000
+    expect(big).toBeGreaterThan(0.56)
+    expect(big).toBeLessThan(0.64)
   })
 
-  it('divides by a factor of the level: 1-digit, or 11–15 in the 11–15 × 11–15 problems', () => {
+  it('divides by a factor of the level: 1-digit, or 12–16 in the 12–16 × 12–16 problems', () => {
     for (let level = 0; level <= MAX_LEVEL; level++)
       for (const { a, b } of many(level, '÷')) {
-        expect((b >= 2 && b <= 9) || (level === 4 && b >= 11 && b <= 15)).toBe(true)
-        if (b >= 11) expect(a / b >= 11 && a / b <= 15).toBe(true)
+        expect((b >= 2 && b <= 9) || (level === 4 && b >= 12 && b <= 16)).toBe(true)
+        if (b >= 12) expect(a / b >= 12 && a / b <= 16).toBe(true)
       }
   })
 
