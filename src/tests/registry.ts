@@ -558,7 +558,7 @@ export const PROTOTYPES: TestDefinition[] = [
     tagline: 'Find the one T among the L shapes.',
     skill: 'visual search',
     howTo: [
-      'The board fills with L shapes turned every which way, and one T. Click the T.',
+      'The board fills with L shapes and one T, all turned every which way. Click the T.',
       '15 rounds, with 16, 24 or 36 shapes.',
     ],
     scoring: [
