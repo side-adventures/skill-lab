@@ -38,7 +38,8 @@ Note the result of each point, even when it's fine.
 
 ### 1. Rules and explanation
 - Registry text follows the same shape for every test: one-sentence `tagline`, `skill` as "Tests …", `howTo` = what you see → what you do → what ends it, `scoring` = what the score is → penalties / tie-breaks.
-- Same words for the same things: round / level / trial, "click" (not tap / press), "wrong" vs "mistake", "No score", lives, seconds vs "s". Build a short glossary from the majority and list deviations.
+- Same words for the same things: round / level / trial, "click" (not tap / press), "wrong" vs "mistake", "No score", lives, seconds vs "s". Build a short glossary from the majority and list deviations. Current conventions (2026-11): "round" rather than "trial"; answer-button labels in capitals (SAME / CHANGED, MATCH); lives under `scoring`, not `howTo`. A deviation with a reason stated in the SPEC is fine.
+- Info row vs play area: the info row's middle text is a short current state ("Type it, then Enter"); instructions and hints belong in the play area. Flag the same instruction shown in both places.
 - Same number and unit style: `formatScore` units, real minus sign `−`, singular / plural (`count()` helper), ms vs s thresholds, `%`.
 - Similar length across tests.
 
@@ -69,7 +70,7 @@ Scores should spread out across players, so a large share of people don't end on
 ### 6. Keyboard
 The mouse must always work; keyboard is optional (recommended in some tests, e.g. Symbol Code), and when it exists it must be predictable.
 - **Space / Enter = the primary action** wherever there is one (start, continue, submit, next): via `useActionKey` or the same key check. Flag places where Space and Enter do different things, only one of them works, or one triggers something unexpected (e.g. Space activating a focused button *and* the primary action).
-- Answer keys: 1–4 for multiple choice, ← / → for two-choice, digits + Backspace + Enter on `NumberPad`, shown inside the button. Same mapping for the same kind of choice in every test.
+- Answer keys: 1–4 for multiple choice, ← / → for two-choice below the board, ↑ / ↓ for two stacked buttons in the side panel (Change Detection), digits + Backspace + Enter on `NumberPad`, home-row letters with number hints where the keyboard is recommended (Symbol Code), shown inside the button. Same mapping for the same kind of choice in every test.
 - Escape closes overlays and dialogs everywhere; key repeat (`e.repeat`) is ignored where a held key would cheat.
 - Report broken or inconsistent keys, never missing keyboard support.
 

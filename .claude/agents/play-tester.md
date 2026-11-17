@@ -15,7 +15,8 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
 - whether this test looks and works like the other tests → `consistency-reviewer`.
 
 ## Setup
-- **Localhost only.** Start the dev server with `preview_start` using the config name `dev` (from `.claude/launch.json`, port 5173). If a server is already running, it is reused.
+- **Localhost only.** Start the dev server with `preview_start` using the config name `dev` (from `.claude/launch.json`, port 5173). If a server is already running, it is reused. If the main session says the server is already running, don't call `preview_start` at all.
+- **Tabs:** the user may be playing in their own tab at the same time. If the main session gives you a `tabId`, pass it to every browser call and never touch any other tab. You can't open tabs yourself; if you have no tab of your own and the only tab looks like the user's, stop and ask instead of using it.
 - **Never open the LAN IP or the live site.** Every action on a non-local host asks the user for permission.
 - Test URLs: `http://localhost:5173/#/test/<id>`; the home page is `#/`. Test ids are in `src/tests/registry.ts`.
 - Before playing a test, read its row in `docs/SPEC.md` (test table + the "Playing" section) and its registry entry. That's the expected behaviour.
@@ -55,7 +56,11 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
    - The top bar (test name, Best, "?") is visible in every phase.
    - No errors in `read_console_messages`.
    - **Result screen** (see "Result screen" in `docs/SPEC.md`): check every stat against your inputs; "Attempt N" / "Not counted"; Rules / Stats links; Share · Try again · Next test (and which test Next picks); Enter / Space / N; nothing overflows the stage, even with many chips.
-6. **Keyboard extras:** answer buttons show their key inside (1–4, ← / → for two-choice tests, Space for N-Back MATCH); Enter / Space continue a round result. The mouse must always work; keys are optional (where a test recommends the keyboard, all its keys must work): report broken keys, never missing ones.
+6. **Feedback and getting stuck:** every click or key should do something visible (a flash, a change, a hint), never
+   nothing at all. Try to get stuck on purpose: lose track (e.g. click things you already used), mash wrong answers,
+   press keys during transitions. Report any state where input is silently ignored or a player can't tell what to do
+   next. Known case: Advent Calendar ignored clicks on opened doors, so round 2 felt frozen.
+7. **Keyboard extras:** answer buttons show their key inside (1–4, ← / → for two-choice tests, Space for N-Back MATCH); Enter / Space continue a round result. The mouse must always work; keys are optional (where a test recommends the keyboard, all its keys must work): report broken keys, never missing ones.
 
 **Your runs are saved like real ones** (localStorage of the built-in browser on localhost): they change "First score",
 best scores and the stats graph there. Say in the report which tests you played, so nobody mistakes those results for

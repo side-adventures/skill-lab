@@ -68,6 +68,22 @@ Design rules for every test:
 - **The main score is in units a player can read on their own** ("9 tiles", "312 ms"), not internal counters
   ("level 7").
 
+Design defaults (learned while building tests; **defaults, not hard rules**: a test may deviate when that serves it —
+note why in its SPEC row). Concrete examples of how each was solved are in `docs/LESSONS.md`.
+- **Every input gets visible feedback, and nobody gets stuck**: no click or key that silently does nothing; after a
+  mistake, if a player could lose track, show what comes next.
+- **Give time to read mistakes**: error screens wait for click / Enter / Space (`useContinue`); the last answer's flash
+  shows before the result.
+- **Texts**: the info row says the current state in a few words; instructions and hints go in the play area. Rules
+  leave out what play makes obvious.
+- **Stimuli**: stay close to the research setup unless there's a reason not to, and check a full board that the target
+  doesn't stand out by accident.
+- **Fair random setups**: balance positions, keep effort comparable between layouts, avoid easy patterns.
+- **Results**: only stats a player can read and that are steady from run to run; leave out single noisy numbers.
+- **The score holds up** (check with simulations, see the scoring-reviewer): random or button-mashing play scores
+  poorly, a mistake costs about the same wherever it happens, answering style (cautious vs bold) doesn't swing it, and
+  there's no ceiling within realistic play.
+
 ## Subagents (`.claude/agents/`)
 Four reviewers, each answering one question with its own kind of evidence. They report back and never edit app code;
 the main session decides and applies fixes. They can run in parallel.

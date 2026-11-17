@@ -63,13 +63,15 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
   const [flash, signal] = useAnswerFlash()
   const { later } = useLater()
 
-  // A running clock for the info row while a round is played.
+  // A running clock for the info row while a round is played; it stops on the last door (the round's time is fixed
+  // then, so the clock must not keep counting through the last door's flash).
+  const roundOver = next >= layout.order.length
   useEffect(() => {
-    if (between) return
+    if (between || roundOver) return
     startedAt.current = performance.now()
     const id = window.setInterval(() => setNow(performance.now() - startedAt.current), 100)
     return () => window.clearInterval(id)
-  }, [between, round])
+  }, [between, round, roundOver])
 
   const click = (cell: number) => {
     if (between || next >= layout.order.length) return
@@ -89,6 +91,7 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
     if (next + 1 < layout.order.length) return setNext(next + 1)
     // Round done.
     const res = { ms: performance.now() - startedAt.current, wrong }
+    setNow(res.ms) // the clock shows the exact round time
     setNext(next + 1)
     signal(true)
     if (round === 0) {
