@@ -531,7 +531,7 @@ export const PROTOTYPES: TestDefinition[] = [
     name: 'Advent Calendar',
     icon: '🎄',
     category: 'Focus',
-    tagline: 'Open the 24 doors in order, as fast as you can.',
+    tagline: 'Open the 24 doors in order, then again, switching between stars and trees.',
     skill: 'visual scanning and switching',
     howTo: [
       'Round 1: click the doors in order, 1 → 2 → 3 … 24. A door opens for a moment, then closes again.',
@@ -540,7 +540,7 @@ export const PROTOTYPES: TestDefinition[] = [
     ],
     scoring: [
       'Your total time for both rounds, plus 1 s for each wrong door.',
-      'The result also shows how much the switching costs per door.',
+      'The result also shows how much slower the switching round is, per door and in total.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Total time',
@@ -581,15 +581,18 @@ export const PROTOTYPES: TestDefinition[] = [
     tagline: 'Remember the digits, then type them back to front.',
     skill: 'working memory',
     howTo: [
-      'Digits appear one at a time. Then type them in reverse order: last digit first.',
-      'Type on your keyboard, or click the keypad. Enter or OK to submit.',
-      'Starts with 2 digits; each correct answer adds one. 2 lives: a mistake gives new digits of the same length.',
+      'Digits appear one at a time, about one per second. Then type them in reverse order: last digit first.',
+      'Type the answer on your keyboard, or click it on the keypad, then press Enter or OK.',
+      'It starts with 2 digits; each correct answer adds one.',
     ],
-    scoring: ['The longest sequence you reversed correctly (0 if none).'],
+    scoring: [
+      'The longest sequence you reversed correctly (0 if none).',
+      'You have 2 lives: a mistake costs one, and you get new digits of the same length.',
+    ],
     durationHint: '~2 min',
     scoreLabel: 'Longest reversed',
     higherIsBetter: true,
-    formatScore: (s) => `${s} digits`,
+    formatScore: (s) => count(s, 'digit'),
     start: 'none',
     layout: 'prompt',
     Component: lazyTest(() => import('./backward-span/BackwardSpanTest')),
@@ -597,17 +600,18 @@ export const PROTOTYPES: TestDefinition[] = [
   {
     id: 'change-detection',
     name: 'Change Detection',
-    icon: '🔄',
+    icon: '🔷',
     category: 'Memory',
     tagline: 'A glance at some shapes: did one of them change?',
     skill: 'visual working memory',
     howTo: [
       'Colored shapes flash for half a second, then disappear for about a second.',
-      'They come back in the same places. Did one of them turn into a different shape? Click Same or Changed (or ↑ / ↓).',
-      '40 trials, half of them with a change. It starts with 4 shapes; 2 right answers in a row add a shape, a wrong one takes one away.',
+      'They come back in the same places. Did one of them turn into a different shape (and color)? Click SAME or CHANGED (or ↑ / ↓).',
+      '40 rounds, half of them with a change. It starts with 4 shapes; 2 right answers in a row add a shape, a wrong one takes one away.',
     ],
     scoring: [
       'How many shapes you hold at a glance, estimated from all your answers (guessing is taken into account).',
+      'The first rounds count a bit less while you warm up.',
     ],
     durationHint: '~2 min',
     scoreLabel: 'Capacity',
@@ -626,7 +630,8 @@ export const PROTOTYPES: TestDefinition[] = [
     skill: 'processing speed',
     howTo: [
       'The code at the top pairs 6 symbols with the keys S D F and J K L; it is new every run.',
-      'A row of symbols comes by: press the key for the first one, or click its button below. Keyboard recommended: rest your fingers on S D F and J K L (1–6 work too).',
+      'A row of symbols comes by: press the key for the first one, or click its button below.',
+      'Keyboard recommended: rest your fingers on S D F and J K L (1–6 work too).',
       'You have 60 seconds: answer as many as you can.',
     ],
     scoring: [

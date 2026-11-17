@@ -39,6 +39,6 @@ describe('odd one out rounds', () => {
       { size: 36, ms: 1000, wrong: 1 },
     ]
     expect(searchScore(rounds)).toBe(600 + 800 + 2000)
-    expect(bySize(rounds).perItem).toBeCloseTo((2000 - 600) / 20)
+    expect(bySize(rounds).perItem).toBeCloseTo(4000 / 202.67, 1) // least-squares slope over (16, 600), (24, 800), (36, 1000): no penalty
   })
 })

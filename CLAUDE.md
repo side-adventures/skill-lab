@@ -87,8 +87,9 @@ the main session decides and applies fixes. They can run in parallel.
   Later (once there are real users), a change that makes old scores incomparable bumps that test's
   `scoreVersion` in the registry (stores results under a new key, see `storageId` in `types.ts`).
 - Keep components small; shared UI goes in `src/components/` (game frame + layouts + AnswerButtons / TileGrid / RoundResult / GameInfo in `components/game/`, NumberPad, Button, ShareButton, TestIcon, CategoryChips, AttemptGraph, ComingSoonButton)
-  and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `useLater`, `useAnswerFlash`, `correctMinusWrong`, `spreadInts`, `shuffle`,
-  `slowdown` for "X ms slower" pairs …). TileGrid's `instant` turns off the tile fade (a tile flashing twice in a row);
+  and shared hooks/helpers in `src/lib/` (`useCountdown`, `useActionKey`, `useLater`, `useAnswerFlash`, `useContinue` (click / Enter / Space to
+  go on, ignored for 300 ms), `correctMinusWrong`, `spreadInts`, `shuffle`, `slowdown` for "X ms slower" pairs …). AnswerButtons options take a
+  `hint` (a small second key in the corner, e.g. Symbol Code's 1–6); `StartTransition` (the 3-2-1) can run inside a test on its own layout. TileGrid's `instant` turns off the tile fade (a tile flashing twice in a row);
   `OrderGame` takes `lives`.
 - **Past reviews** (test audits and other agent reports) are kept in `docs/reviews/<date>-<topic>.md`. Check them
   before reworking a test, so earlier findings and decisions aren't redone.

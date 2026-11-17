@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { START_DIGITS, makeSequence, reversed, spanScore } from './scoring'
 
 describe('backward span', () => {
-  it('makes sequences of 1–9 without repeats or neighbours one apart', () => {
+  it('makes sequences of 1–9 without repeats, neighbours one apart or A B A patterns', () => {
     for (let len = 2; len <= 12; len++) {
       for (let k = 0; k < 50; k++) {
         const s = makeSequence(len)
         expect(s).toMatch(new RegExp(`^[1-9]{${len}}$`))
         for (let i = 1; i < s.length; i++) expect(Math.abs(+s[i] - +s[i - 1])).toBeGreaterThan(1)
+        for (let i = 2; i < s.length; i++) expect(s[i]).not.toBe(s[i - 2])
       }
     }
   })

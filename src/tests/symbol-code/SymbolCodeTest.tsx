@@ -47,7 +47,7 @@ export default function SymbolCodeTest({ onFinish }: TestComponentProps) {
           title: 'Each 20 seconds',
           items: partPoints(answers.current).map((p, i) => ({
             label: `${(i * PART_MS) / 1000}–${((i + 1) * PART_MS) / 1000} s`,
-            value: `${p < 0 ? '−' : ''}${Math.abs(p)} pts`,
+            value: `${p < 0 ? '−' : ''}${Math.abs(p)} ${Math.abs(p) === 1 ? 'pt' : 'pts'}`,
           })),
         },
       },
