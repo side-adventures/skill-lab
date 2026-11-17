@@ -6,7 +6,7 @@ import { feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import { fmtMs, slowdown } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import {
-  COLS, OPEN_MS, PENALTY_MS, ROWS, calendarScore, makeLayout, roundTime, switchCostPerDoor, type Door, type RoundResult as Result,
+  COLS, OPEN_MS, PENALTY_MS, ROUNDS, ROWS, calendarScore, makeLayout, roundTime, switchCostPerDoor, type Door, type RoundResult as Result,
 } from './scoring'
 
 const STAR = 'M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6Z'
@@ -39,6 +39,11 @@ const SWITCH_TASK: ReactNode = (
   <>Alternate: <Star />1 → <Tree />12 → <Star />2 → <Tree />11 …</>
 )
 
+/** A door's name for the hint: "13", or a star / tree icon and its number. */
+const DoorName = ({ door }: { door: Door }) => (
+  <b className="text-zinc-100">{door.kind === 'star' ? <Star /> : door.kind === 'tree' ? <Tree /> : null}{door.n}</b>
+)
+
 /** "1 wrong door (+1 s)", "2 wrong doors (+2 s)". */
 const wrongDoors = (n: number) => `${n} wrong ${n === 1 ? 'door' : 'doors'} (+${(n * PENALTY_MS) / 1000} s)`
 
@@ -48,6 +53,8 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
   const [next, setNext] = useState(0) // how many doors are done
   const [wrong, setWrong] = useState(0)
   const [wrongAt, setWrongAt] = useState<number | null>(null)
+  // After a wrong door, the info row says which door comes next, until it's opened (so nobody gets stuck).
+  const [hint, setHint] = useState(false)
   const [openAt, setOpenAt] = useState<number | null>(null)
   const [first, setFirst] = useState<Result | null>(null)
   const [between, setBetween] = useState(false)
@@ -67,14 +74,17 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
   const click = (cell: number) => {
     if (between || next >= layout.order.length) return
     if (cell !== layout.order[next]) {
-      if (layout.order.indexOf(cell) < next) return // an already opened door: ignored
+      // The door just opened again (a double click): ignored. Any other door, opened before or not, is a wrong door.
+      if (next > 0 && cell === layout.order[next - 1]) return
       setWrong(wrong + 1)
+      setHint(true)
       setWrongAt(cell)
       signal(false)
       later(350, () => setWrongAt((w) => (w === cell ? null : w)))
       return
     }
     setOpenAt(cell)
+    setHint(false)
     later(OPEN_MS, () => setOpenAt((o) => (o === cell ? null : o)))
     if (next + 1 < layout.order.length) return setNext(next + 1)
     // Round done.
@@ -111,6 +121,7 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
     setLayout(makeLayout(1))
     setNext(0)
     setWrong(0)
+    setHint(false)
     setNow(0)
     setOpenAt(null)
     setBetween(false)
@@ -120,7 +131,12 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
     <>
       <GameInfo
         left={<InfoValue value={`Round ${round + 1}`} of={2} />}
-        middle={between ? '' : round === 0 ? 'Open the doors in order: 1 → 2 → 3 …' : SWITCH_TASK}
+        middle={
+          between ? ''
+          : hint ? <span className="text-rose-300">Next door: <DoorName door={ROUNDS[round][next]} /></span>
+          : round === 0 ? 'Open the doors in order: 1 → 2 → 3 …'
+          : SWITCH_TASK
+        }
         right={!between && <InfoValue label="Time" value={((now + wrong * PENALTY_MS) / 1000).toFixed(1)} unit="s" />}
       />
       <FullLayout className={`grid place-items-center ${BOARD} ${feedbackRing(flash)}`}>

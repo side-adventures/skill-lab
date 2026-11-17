@@ -534,9 +534,9 @@ export const PROTOTYPES: TestDefinition[] = [
     tagline: 'Open the 24 doors in order, then again, switching between stars and trees.',
     skill: 'visual scanning and switching',
     howTo: [
-      'Round 1: click the doors in order, 1 → 2 → 3 … 24. A door opens for a moment, then closes again.',
+      'Round 1: click the doors in order, 1 → 2 → 3 … 24.',
       'Round 2: star doors and tree doors, 1–12 each. Alternate: stars counting up, trees counting down (★1 → 🌲12 → ★2 → 🌲11 …).',
-      'A wrong door flashes red; keep going with the right one.',
+      'A wrong door (also one you already opened) flashes red and shows which door comes next.',
     ],
     scoring: [
       'Your total time for both rounds, plus 1 s for each wrong door.',
