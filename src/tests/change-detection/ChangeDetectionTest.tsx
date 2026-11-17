@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnswerButtons } from '../../components/game/AnswerButtons'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
-import { PromptLayout } from '../../components/game/layouts'
+import { SquarePanelLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import { fmtPct } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
@@ -79,10 +79,10 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
         left={<InfoValue value={`Trial ${t + 1}`} of={TRIALS} />}
         middle={PHASE[stage]}
       />
-      <PromptLayout
-        displayClassName={feedbackRing(flash)}
-        display={
-          <div className="play-area relative aspect-square h-full">
+      <SquarePanelLayout
+        boardClassName={feedbackRing(flash)}
+        board={
+          <>
             {visible &&
               trial.items.map((it, i) => {
                 const kind = KINDS[stage !== 'sample' && i === trial.changed ? trial.newKind : it.kind]
@@ -98,16 +98,23 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
                   </svg>
                 )
               })}
-          </div>
+          </>
         }
-        answers={
-          <AnswerButtons
-            disabled={stage !== 'test'}
-            options={[
-              { label: 'Same', key: 'ArrowLeft', onPress: () => answer(false) },
-              { label: 'Changed', key: 'ArrowRight', onPress: () => answer(true) },
-            ]}
-          />
+        panel={
+          <div className="flex h-full flex-col justify-between">
+            <p className="text-sm text-zinc-400">Same shapes in the same places, or did one turn into a different shape?</p>
+            {/* Wrapped in a block so the buttons stretch to the panel's full width. */}
+            <div>
+              <AnswerButtons
+                columns={1}
+                disabled={stage !== 'test'}
+                options={[
+                  { label: 'Same', key: 'ArrowUp', onPress: () => answer(false) },
+                  { label: 'Changed', key: 'ArrowDown', onPress: () => answer(true) },
+                ]}
+              />
+            </div>
+          </div>
         }
       />
     </>
