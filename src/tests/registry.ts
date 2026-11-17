@@ -586,8 +586,8 @@ export const PROTOTYPES: TestDefinition[] = [
       'It starts with 2 digits; each correct answer adds one.',
     ],
     scoring: [
-      'The longest sequence you reversed correctly (0 if none).',
-      'You have 2 lives: a mistake costs one, and you get new digits of the same length.',
+      'The longest sequence you reversed correctly.',
+      'You have 2 lives: a mistake costs one.',
     ],
     durationHint: '~2 min',
     scoreLabel: 'Longest reversed',
