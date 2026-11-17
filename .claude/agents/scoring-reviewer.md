@@ -58,6 +58,18 @@ Work through each point and note the result, even when it's fine.
      - a few more rounds.
      Keep runs short and fun: don't propose doubling the length for a small gain.
    - When asked about several tests, rank them from luckiest to most stable.
+   - **Standard player battery** (run it for every new or reworked test, then judge the numbers for *that* test; these
+     are checks, not fixed thresholds):
+     - *Early vs late mistakes:* the cost of two extra mistakes in rounds 1–5, 6–10, … and the last ones. Similar costs
+       are the default; a much higher cost at the start (settling in) is worth flagging. Known case: Change Detection,
+       where two early slips cost ~0.7 shapes until rounds 1–10 were weighted 0.4 → 1.
+     - *Answering style:* a cautious and a bold player of the same skill (e.g. one who says "same" when unsure vs one
+       who says "changed"): mean score and spread. A style that leaves the mean alone but widens the spread still pays
+       off, because only the best run is kept: report the **mean best of 10 runs** too.
+     - *Ceiling and floor:* does a near-perfect player hit a cap within realistic play? Do weak honest players still
+       score clearly above the degenerate strategies?
+     - *Simpler alternatives:* when a score is complex (a model fit, weights), compare it with the obvious simple version
+       (average, median, trimmed mean) on the same numbers, so the choice is visible.
 4. **Edge cases.**
    - Zero input, the first round failed, the maximum level reached.
    - Division by zero and NaN.
@@ -80,6 +92,10 @@ Work through each point and note the result, even when it's fine.
 - Never run vitest with `--root /` (it runs out of memory). Run it from the project folder.
 - Every number you write in a comment or report (a sum, a share, a time) comes from a test or simulation, not mental math. A comment once said 6 rising penalties add 6.3 s; the real sum was 8.1 s.
 - Leave the demonstrating tests in place, so the main session can keep or adapt them. Say which ones fail on purpose.
+- Keep each review simulation fast (well under ~2 s in the full suite; seed it, and use a few hundred runs rather than
+  thousands where that's enough): they run in every `npm test`, and `npm run build` type-checks them. A slow one timed out
+  once and a mistyped one broke the build. Run `npm test`, `npm run lint` and `npm run build` at the end and report the
+  exit codes.
 
 ## Report
 Keep it short and in plain language, ordered by severity:
