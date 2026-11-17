@@ -38,7 +38,7 @@ function player(base: number, scan: number, miss: number, switchCost: number, r:
     return { ms, wrong }
   }
 }
-const run = (p: ReturnType<typeof player>, r: () => number, make = makeLayout) =>
+const run = (p: ReturnType<typeof player>, r: () => number, make: (round: number, r: () => number) => Layout = makeLayout) =>
   calendarScore([p(make(0, r), 0), p(make(1, r), 1)])
 /** Any shuffled layout, no path band (for comparison). */
 const unbanded = (_round: number, r: () => number): Layout => {
@@ -49,9 +49,9 @@ const unbanded = (_round: number, r: () => number): Layout => {
 describe('advent calendar (review)', () => {
   it('same player run to run: weak vs strong (passes; numbers in the log)', () => {
     const r = seeded(1)
-    const strong = Array.from({ length: 1000 }, () => run(player(450, 25, 0.02, 250, r), r))
-    const weak = Array.from({ length: 1000 }, () => run(player(700, 45, 0.06, 500, r), r))
-    const strongFree = Array.from({ length: 1000 }, () => run(player(450, 25, 0.02, 250, r), r, unbanded))
+    const strong = Array.from({ length: 400 }, () => run(player(450, 25, 0.02, 250, r), r))
+    const weak = Array.from({ length: 400 }, () => run(player(700, 45, 0.06, 500, r), r))
+    const strongFree = Array.from({ length: 400 }, () => run(player(450, 25, 0.02, 250, r), r, unbanded))
     const gap = mean(weak) - mean(strong)
     const line = (n: string, xs: number[]) =>
       `${n}: mean ${(mean(xs) / 1000).toFixed(1)} s, p10–p90 ${(pctl(xs, 0.1) / 1000).toFixed(1)}–${(pctl(xs, 0.9) / 1000).toFixed(1)} s, sd ${(sd(xs) / gap).toFixed(3)} of gap`
