@@ -6,10 +6,11 @@ import { fmtMs, slowdown } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import { GRID, ITEM, PAUSE_MS, PENALTY_MS, bySize, makeRounds, roundTime, searchScore, type RoundResult } from './scoring'
 
-// The same two bars (16 long): a top bar and a stem. T = the stem meets the middle of the bar, L = it meets the end
-// (a true L, the classic T-among-L search; an offset L was tried and read as a lopsided T).
+// The same two bars (16 long): a top bar and a stem. T = the stem meets the middle of the bar; L = it meets the bar 10 %
+// in from the end, so the bar sticks out a little past the corner (the offset L used in most T-among-L studies: no clean
+// corner to spot, you have to check where the bars meet). 20 % read as a lopsided T; a true L let the T stand out.
 const T_PATH = 'M4 5h16M12 5v15'
-const L_PATH = 'M4 5h16M4 5v15'
+const L_PATH = 'M4 5h16M5.6 5v15'
 
 export default function OddOneOutTest({ onFinish }: TestComponentProps) {
   const [rounds] = useState(makeRounds)
@@ -86,9 +87,8 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
       />
       <SquareLayout>
         <div className={`play-area relative size-full rounded-2xl bg-zinc-900 ${feedbackRing(flash)}`}>
-          {!showing ? (
-            <div className="grid size-full place-items-center text-5xl text-zinc-600">+</div>
-          ) : (
+          {/* Between rounds the board is empty for a moment. */}
+          {showing &&
             round.items.map((it, i) => (
               <button
                 key={`${r}-${i}`}
@@ -102,8 +102,7 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
                   <path d={it.target ? T_PATH : L_PATH} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-            ))
-          )}
+            ))}
         </div>
       </SquareLayout>
     </>
