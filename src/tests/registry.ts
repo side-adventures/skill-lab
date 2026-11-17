@@ -519,13 +519,6 @@ export const TESTS: TestDefinition[] = [
     layout: 'panel',
     Component: lazyTest(() => import('./split-half/SplitHalfTest')),
   },
-]
-
-/**
- * Prototypes: new tests being tried out (see the new-test skill). When there are any, they get their own section
- * at the bottom of the home page and are left out of the test count, "Next test", stats and sharing.
- */
-export const PROTOTYPES: TestDefinition[] = [
   {
     id: 'advent-calendar',
     name: 'Advent Calendar',
@@ -626,7 +619,7 @@ export const PROTOTYPES: TestDefinition[] = [
     name: 'Symbol Code',
     icon: '🔣',
     category: 'Speed',
-    tagline: 'Press the key that goes with each symbol, as fast as you can.',
+    tagline: 'Decode the symbols as fast as you can.',
     skill: 'processing speed',
     howTo: [
       'The code at the top pairs 6 symbols with the keys S D F and J K L; it is new every run.',
@@ -647,5 +640,11 @@ export const PROTOTYPES: TestDefinition[] = [
     Component: lazyTest(() => import('./symbol-code/SymbolCodeTest')),
   },
 ]
+
+/**
+ * Prototypes: new tests being tried out (see the new-test skill). When there are any, they get their own section
+ * at the bottom of the home page and are left out of the test count, "Next test", stats and sharing. Empty for now.
+ */
+export const PROTOTYPES: TestDefinition[] = []
 
 export const getTest = (id: string) => TESTS.find((t) => t.id === id) ?? PROTOTYPES.find((t) => t.id === id)
