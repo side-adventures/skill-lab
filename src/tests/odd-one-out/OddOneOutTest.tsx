@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { SquareLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
-import { fmtMs } from '../../lib/resultFormat'
+import { fmtMs, slowdown } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import { GRID, ITEM, PAUSE_MS, PENALTY_MS, bySize, makeRounds, roundTime, searchScore, type RoundResult } from './scoring'
 
@@ -28,9 +28,13 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
       wrong.current = 0
       setWrongAt(null)
       setShowing(true)
-      requestAnimationFrame(() => (shownAt.current = performance.now()))
     })
   }, [r, later])
+
+  // The round's clock starts when its shapes are committed to the screen (clicks from then on count).
+  useLayoutEffect(() => {
+    if (showing) shownAt.current = performance.now()
+  }, [showing, r])
 
   const round = rounds[r]
 
@@ -40,6 +44,7 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
       wrong.current++
       setWrongAt(i)
       signal(false)
+      later(350, () => setWrongAt((w) => (w === i ? null : w)))
       return
     }
     const res = [...results, { size: round.size, ms: performance.now() - shownAt.current, wrong: wrong.current }]
@@ -53,11 +58,12 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
     }
     const { rows, perItem } = bySize(res)
     const totalWrong = res.reduce((s, x) => s + x.wrong, 0)
-    onFinish({
+    // Let the last click's flash show, then the result.
+    later(400, () => onFinish({
       score: searchScore(res),
       details: {
         stats: [
-          { label: 'Each extra shape', value: perItem === undefined ? '–' : `${perItem >= 0 ? '+' : '−'}${Math.abs(Math.round(perItem))} ms` },
+          { label: 'Each extra shape', value: perItem === undefined ? '–' : slowdown(perItem) },
           { label: 'Fastest round', value: fmtMs(Math.min(...res.map(roundTime))) },
           { label: 'Wrong clicks', value: String(totalWrong) },
         ],
@@ -67,7 +73,7 @@ export default function OddOneOutTest({ onFinish }: TestComponentProps) {
           rows: rows.map((x) => ({ cells: [String(x.size), x.median === undefined ? '–' : fmtMs(x.median), String(x.wrong)] })),
         },
       },
-    })
+    }))
   }
 
   const size = `${(ITEM / GRID) * 100}%`

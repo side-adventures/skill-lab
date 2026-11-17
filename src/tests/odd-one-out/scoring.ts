@@ -62,14 +62,20 @@ export const roundTime = (r: RoundResult) => r.ms + r.wrong * PENALTY_MS
 /** Score: total time of all rounds, penalties included, whole ms. */
 export const searchScore = (rounds: RoundResult[]) => Math.round(rounds.reduce((s, r) => s + roundTime(r), 0))
 
-/** Median time per set size, and the extra ms per added shape (slope between the smallest and largest size). */
+/**
+ * Median time per set size (penalties included, as in the score), and the extra ms per added shape: the least-squares
+ * slope of search time (without penalties) against the number of shapes, over all rounds (steadier than two medians).
+ */
 export function bySize(rounds: RoundResult[]) {
   const rows = SET_SIZES.map((size) => {
     const rs = rounds.filter((r) => r.size === size)
     return { size, median: rs.length ? median(rs.map(roundTime)) : undefined, wrong: rs.reduce((s, r) => s + r.wrong, 0) }
   })
-  const lo = rows[0].median
-  const hi = rows[rows.length - 1].median
-  const perItem = lo !== undefined && hi !== undefined ? (hi - lo) / (SET_SIZES[SET_SIZES.length - 1] - SET_SIZES[0]) : undefined
+  const xs = rounds.map((r) => r.size)
+  const ys = rounds.map((r) => r.ms) // search time only: a 1 s penalty would distort the slope
+  const mx = xs.reduce((a, b) => a + b, 0) / (xs.length || 1)
+  const my = ys.reduce((a, b) => a + b, 0) / (ys.length || 1)
+  const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0)
+  const perItem = sxx > 0 ? xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / sxx : undefined
   return { rows, perItem }
 }

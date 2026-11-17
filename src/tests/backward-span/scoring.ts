@@ -9,8 +9,8 @@ export const GAP_MS = 250
 export const INTRO_MS = 2000
 
 /**
- * A sequence of digits 1–9 (as in the WAIS Digit Span) where neighbours are never equal and never one apart,
- * so there are no repeats and no easy runs like 3-4-5.
+ * A sequence of digits 1–9 (as in the WAIS Digit Span) where neighbours are never equal and never one apart, and a digit
+ * never repeats the one two places back: no repeats, no easy runs like 3-4-5, no easy-to-chunk patterns like 3-7-3-7.
  */
 export function makeSequence(length: number, rand: Rand = Math.random): string {
   const out: number[] = []
@@ -18,6 +18,7 @@ export function makeSequence(length: number, rand: Rand = Math.random): string {
     const d = randInt(1, 9, rand)
     const prev = out[out.length - 1]
     if (prev !== undefined && Math.abs(d - prev) <= 1) continue
+    if (d === out[out.length - 2]) continue
     out.push(d)
   }
   return out.join('')

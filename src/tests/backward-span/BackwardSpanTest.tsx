@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { PromptLayout } from '../../components/game/layouts'
 import { NumberPad } from '../../components/NumberPad'
-import { END_MOMENT_MS, feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
+import { END_MOMENT_MS, feedbackRing, useAnswerFlash, useContinue, useLater } from '../../lib/game'
 import type { TestComponentProps } from '../types'
-import { useLatest } from '../../lib/hooks'
-import { DIGIT_MS, GAP_MS, INTRO_MS, LIVES, START_DIGITS, makeSequence, reversed, spanScore } from './scoring'
+import { DIGIT_MS, GAP_MS, INTRO_MS, LIVES, START_DIGITS, makeSequence, reversed } from './scoring'
 
 /** 'intro' = "Memorize the digits" before the very first sequence, so its first digit isn't mistaken for a countdown. */
 type Phase = 'intro' | 'show' | 'input' | 'correct' | 'wrong'
@@ -19,6 +18,8 @@ export default function BackwardSpanTest({ onFinish }: TestComponentProps) {
   const [input, setInput] = useState('')
   const [answer, setAnswer] = useState('')
   const [lives, setLives] = useState(LIVES)
+  // Longest sequence reversed so far (the score), updated right when an answer is correct.
+  const [best, setBest] = useState(0)
   const [flash, signal] = useAnswerFlash()
   const { later } = useLater()
 
@@ -37,7 +38,7 @@ export default function BackwardSpanTest({ onFinish }: TestComponentProps) {
     later(seq.length * step + GAP_MS, () => setPhase('input'))
   }, [phase, seq, later])
 
-  const score = spanScore(digits)
+  const score = best
 
   const play = (length: number) => {
     setDigits(length)
@@ -53,6 +54,7 @@ export default function BackwardSpanTest({ onFinish }: TestComponentProps) {
     const ok = value === reversed(seq)
     signal(ok)
     if (ok) {
+      setBest(digits)
       setPhase('correct')
       later(900, () => play(digits + 1))
       return
@@ -64,30 +66,10 @@ export default function BackwardSpanTest({ onFinish }: TestComponentProps) {
     later(END_MOMENT_MS, () => onFinish({ score, details: { extra: { kind: 'digits', target: reversed(seq), typed: value } } }))
   }
 
-  // Continue after a mistake with a life left. Input in the first 300 ms is ignored, so the Enter that submitted the
-  // wrong answer doesn't skip it unseen.
+  // Continue after a mistake with a life left: click anywhere, Enter or Space (ignored for the first 300 ms, so the Enter
+  // that submitted the wrong answer doesn't skip it unseen).
   const waiting = phase === 'wrong' && lives > 0
-  const retry = useLatest(() => play(digits))
-  const armed = useRef(false)
-  useEffect(() => {
-    if (!waiting) return
-    armed.current = false
-    const arm = window.setTimeout(() => (armed.current = true), 300)
-    const go = () => armed.current && retry.current()
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && !e.repeat) {
-        e.preventDefault()
-        go()
-      }
-    }
-    window.addEventListener('pointerdown', go)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.clearTimeout(arm)
-      window.removeEventListener('pointerdown', go)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [waiting, retry])
+  useContinue(() => play(digits), { enabled: waiting })
 
   const big = 'font-mono text-5xl font-bold tracking-[0.18em] break-all'
   const target = reversed(seq)

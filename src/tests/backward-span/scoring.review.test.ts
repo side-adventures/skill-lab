@@ -50,7 +50,7 @@ describe('backward span (review)', () => {
     expect(mean(clean) - mean(early)).toBeLessThan(1)
   })
 
-  it('sequences: ~7 % of 6-digit and ~9 % of 7-digit ones contain an easy A B A B run, ~half an A B A (demonstrates)', () => {
+  it('sequences: no A B A (or A B A B) patterns since 2026-11-17, digits still evenly used (passes; was ~7–9 % A B A B)', () => {
     const r = seeded(3)
     const counts = Array(10).fill(0)
     const N = 20_000
@@ -71,7 +71,7 @@ describe('backward span (review)', () => {
     const shares = counts.slice(1).map((c) => c / (N * 6))
     console.log(`[backward-span] digit shares 1–9 (6 digits): ${shares.map((x) => (x * 100).toFixed(1)).join(' ')} %\n${rows.join('\n')}`)
     expect(Math.min(...shares)).toBeGreaterThan(0.08)
-    expect(share[6]).toBeGreaterThan(0.05)
+    expect(share[6]).toBe(0)
   })
 
   it('failing the first length twice scores 0, a played run, saved (passes)', () => {

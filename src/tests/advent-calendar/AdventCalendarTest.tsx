@@ -3,6 +3,7 @@ import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
+import { fmtMs, slowdown } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import {
   COLS, OPEN_MS, PENALTY_MS, ROWS, calendarScore, makeLayout, roundTime, switchCostPerDoor, type Door, type RoundResult as Result,
@@ -38,7 +39,8 @@ const SWITCH_TASK: ReactNode = (
   <>Alternate: <Star />1 → <Tree />12 → <Star />2 → <Tree />11 …</>
 )
 
-const secs = (ms: number) => `${(ms / 1000).toFixed(1)} s`
+/** "1 wrong door (+1 s)", "2 wrong doors (+2 s)". */
+const wrongDoors = (n: number) => `${n} wrong ${n === 1 ? 'door' : 'doors'} (+${(n * PENALTY_MS) / 1000} s)`
 
 export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
   const [round, setRound] = useState(0)
@@ -85,21 +87,23 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
     }
     const a = first!
     const cost = switchCostPerDoor(a, res)
-    onFinish({
+    // Let the last door's flash show, then the result.
+    later(400, () => onFinish({
       score: calendarScore([a, res]),
       details: {
         stats: [
           { label: 'Wrong doors, round 1', value: String(a.wrong) },
           { label: 'Wrong doors, round 2', value: String(res.wrong) },
+          { label: 'Round 2 vs round 1', value: `×${(roundTime(res) / roundTime(a)).toFixed(1)}` },
         ],
         extra: {
           kind: 'pair',
-          a: { label: 'In order', value: secs(roundTime(a)) },
-          b: { label: 'Alternating', value: secs(roundTime(res)) },
-          diff: { label: 'Switching cost', value: `${cost >= 0 ? '+' : '−'}${Math.abs(Math.round(cost))} ms per door` },
+          a: { label: 'In order', value: fmtMs(roundTime(a)) },
+          b: { label: 'Alternating', value: fmtMs(roundTime(res)) },
+          diff: { label: 'Switching cost', value: `${slowdown(cost)} per door` },
         },
       },
-    })
+    }))
   }
 
   const startRound2 = () => {
@@ -117,14 +121,19 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
       <GameInfo
         left={<InfoValue value={`Round ${round + 1}`} of={2} />}
         middle={between ? '' : round === 0 ? 'Open the doors in order: 1 → 2 → 3 …' : SWITCH_TASK}
-        right={!between && <InfoValue value={((now + wrong * PENALTY_MS) / 1000).toFixed(1)} unit="s" />}
+        right={!between && <InfoValue label="Time" value={((now + wrong * PENALTY_MS) / 1000).toFixed(1)} unit="s" />}
       />
       <FullLayout className={`grid place-items-center ${BOARD} ${feedbackRing(flash)}`}>
         {between && first ? (
           <RoundResult
             value={(roundTime(first) / 1000).toFixed(1)}
             unit="s"
-            line={<>Round 1 done · next, alternate: <Star />1 → <Tree />12 → <Star />2 → <Tree />11 …</>}
+            line={
+              <>
+                {first.wrong > 0 && <>{wrongDoors(first.wrong)} · </>}
+                Next, alternate: <Star />1 → <Tree />12 → <Star />2 → <Tree />11 …
+              </>
+            }
             onContinue={startRound2}
           />
         ) : (

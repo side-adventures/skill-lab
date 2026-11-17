@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLatest } from './hooks'
 
 /** How long the "end moment" (what went wrong) stays before the result screen. */
 export const END_MOMENT_MS = 1500
@@ -53,6 +54,36 @@ export function useLater() {
     timers.current.delete(id)
   }, [])
   return { later, cancel }
+}
+
+/**
+ * "Continue" after a round or a mistake: Enter / Space, and (with `pointer`) a click anywhere on the page. Input in the
+ * first 300 ms is ignored, so a double click or the key that ended the round doesn't skip the screen unseen.
+ * Returns `armed`, for a button that continues the same way (check `armed.current` in its handler).
+ */
+export function useContinue(onContinue: () => void, { enabled = true, pointer = true }: { enabled?: boolean; pointer?: boolean } = {}) {
+  const cont = useLatest(onContinue)
+  const armed = useRef(false)
+  useEffect(() => {
+    if (!enabled) return
+    armed.current = false
+    const arm = window.setTimeout(() => (armed.current = true), 300)
+    const go = () => armed.current && cont.current()
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && !e.repeat) {
+        e.preventDefault()
+        go()
+      }
+    }
+    if (pointer) window.addEventListener('pointerdown', go)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.clearTimeout(arm)
+      window.removeEventListener('pointerdown', go)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [cont, enabled, pointer])
+  return armed
 }
 
 export type Flash = 'ok' | 'bad' | null

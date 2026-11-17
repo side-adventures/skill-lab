@@ -86,6 +86,16 @@ export interface Answer { size: number; change: boolean; saidChange: boolean }
  */
 export const LAPSE = 0.08
 
+/**
+ * Warm-up weighting: round 1 counts WEIGHT_START, rising evenly to full weight at round WEIGHT_FULL_AT, all later rounds
+ * count fully. Slips while you settle in cost little (two wrong answers in rounds 1–5: ~0.2 shapes instead of ~0.5), and
+ * a disastrous start can't sink the run (~0.5 instead of ~1.7 shapes for four wrong answers), without "useless" practice
+ * rounds. (Chosen 2026-11-17 from simulations; see docs/reviews/2026-11-17-new-tests.md.)
+ */
+export const WEIGHT_START = 0.4
+export const WEIGHT_FULL_AT = 10
+export const roundWeight = (i: number) => Math.min(1, WEIGHT_START + ((1 - WEIGHT_START) * i) / (WEIGHT_FULL_AT - 1))
+
 /** Chance of answering "changed" under the model: K shapes held, guess rate g, LAPSE slips. */
 function pChanged(size: number, change: boolean, k: number, g: number) {
   const held = Math.min(1, k / size)
@@ -102,7 +112,8 @@ function pChanged(size: number, change: boolean, k: number, g: number) {
 export const MIN_GAP = 0.25
 
 /**
- * Capacity: the number of shapes K (0–MAX_SIZE, steps of 0.1) that best explains all answers, with the guess rate
+ * Capacity: the number of shapes K (0–MAX_SIZE, steps of 0.1) that best explains all answers (the first rounds weighted
+ * less, see roundWeight), with the guess rate
  * fitted too (maximum likelihood, whole-display model as in Pashler's K, plus slips), scaled down when hit rate −
  * false-alarm rate is below MIN_GAP. Rounded to 0.1.
  */
@@ -121,10 +132,10 @@ export function fitK(answers: Answer[]) {
     const k = k10 / 10
     for (let g = 0.01; g < 1; g += 0.04) {
       let ll = 0
-      for (const a of answers) {
+      answers.forEach((a, i) => {
         const p = pChanged(a.size, a.change, k, g)
-        ll += Math.log(a.saidChange ? p : 1 - p)
-      }
+        ll += roundWeight(i) * Math.log(a.saidChange ? p : 1 - p)
+      })
       if (ll > best + 1e-9) {
         best = ll
         bestK = k
@@ -132,6 +143,12 @@ export function fitK(answers: Answer[]) {
     }
   }
   return bestK
+}
+
+/** Average number of shapes over the last `n` rounds (where the staircase has settled near your limit). */
+export const avgLastShapes = (answers: Answer[], n = 20) => {
+  const last = answers.slice(-n)
+  return last.length ? last.reduce((s, a) => s + a.size, 0) / last.length : 0
 }
 
 /** Hit rate (changes spotted) and false-alarm rate ("changed" when nothing changed). */

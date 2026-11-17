@@ -1,5 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react'
-import { useLatest } from '../../lib/hooks'
+import type { ReactNode } from 'react'
+import { useContinue } from '../../lib/game'
 import { Button } from '../Button'
 
 /**
@@ -18,28 +18,9 @@ export function RoundResult({ value, unit, line, chips, button, onContinue }: {
   button?: string
   onContinue: () => void
 }) {
-  const cont = useLatest(onContinue)
-  // Ignore input for the first 300 ms (clicks, keys and the button alike), so a double click or a held key
-  // that ended the round doesn't skip its result unseen.
-  const armed = useRef(false)
-  useEffect(() => {
-    armed.current = false
-    const arm = window.setTimeout(() => (armed.current = true), 300)
-    const go = () => armed.current && cont.current()
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && !e.repeat) {
-        e.preventDefault()
-        go()
-      }
-    }
-    if (!button) window.addEventListener('pointerdown', go)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.clearTimeout(arm)
-      window.removeEventListener('pointerdown', go)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [cont, button])
+  // Click anywhere (or the button), Enter or Space; ignored for the first 300 ms so the click that ended the round
+  // doesn't skip it.
+  const armed = useContinue(onContinue, { pointer: !button })
 
   return (
     <div className="text-center">
@@ -69,7 +50,7 @@ export function RoundResult({ value, unit, line, chips, button, onContinue }: {
         </div>
       )}
       {button ? (
-        <Button onClick={() => armed.current && cont.current()} className="mt-5 w-full">{button}</Button>
+        <Button onClick={() => armed.current && onContinue()} className="mt-5 w-full">{button}</Button>
       ) : (
         <p className="mt-5 text-xs text-zinc-600">Click anywhere to continue</p>
       )}

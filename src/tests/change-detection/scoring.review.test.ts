@@ -104,16 +104,13 @@ describe('change detection capacity (review)', { timeout: 30_000 }, () => {
     console.log('[change-detection] MIN_GAP\n' + rows.join('\n'))
   })
 
-  it('two early mistakes (trials 1–2) cost a K=4 player ~0.7 shapes; leaving the first 4 trials out of the fit removes it (demonstrates)', () => {
+  it('two early mistakes (rounds 1–2) cost a K=4 player little since the warm-up weighting (passes; was ~0.7 before 2026-11-17)', () => {
     const base = human(4)
     const early: Strategy = (size, change, i, p, r) => (i < 2 ? !change : base(size, change, i, p, r))
-    const runs = (st: Strategy, f: (a: Answer[]) => number) => { const r = seeded(51); return Array.from({ length: RUNS / 2 }, () => f(play(st, r))) }
-    const now = [runs(base, capacityScore), runs(early, capacityScore)]
-    const skip4 = [runs(base, (a) => capacityScore(a.slice(4))), runs(early, (a) => capacityScore(a.slice(4)))]
-    console.log(`[change-detection] K=4 now: clean ${mean(now[0]).toFixed(2)} (sd ${sd(now[0]).toFixed(2)}), two early mistakes ${mean(now[1]).toFixed(2)}; ` +
-      `fit without trials 1–4: clean ${mean(skip4[0]).toFixed(2)} (sd ${sd(skip4[0]).toFixed(2)}), two early mistakes ${mean(skip4[1]).toFixed(2)}`)
-    expect(mean(now[0]) - mean(now[1])).toBeGreaterThan(0.5)
-    expect(Math.abs(mean(skip4[0]) - mean(skip4[1]))).toBeLessThan(0.2)
+    const runs = (st: Strategy) => { const r = seeded(51); return Array.from({ length: RUNS / 2 }, () => capacityScore(play(st, r))) }
+    const [clean, slipped] = [runs(base), runs(early)]
+    console.log(`[change-detection] K=4 with warm-up weights: clean ${mean(clean).toFixed(2)} (sd ${sd(clean).toFixed(2)}), two early mistakes ${mean(slipped).toFixed(2)}`)
+    expect(mean(clean) - mean(slipped)).toBeLessThan(0.4)
   })
 
   it('guessing "changed" liberally when unsure raises the spread, and with it the best of 10 runs (demonstrates)', () => {

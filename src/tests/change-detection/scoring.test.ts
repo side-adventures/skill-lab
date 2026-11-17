@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  GRID, ITEM, KINDS, MAX_SIZE, MIN_SIZE, START_STAIR, TRIALS, capacityScore, makeChangePlan, makeTrial, nextStair, type Answer,
+  GRID, ITEM, KINDS, MAX_SIZE, MIN_SIZE, START_STAIR, TRIALS, WEIGHT_FULL_AT, WEIGHT_START, avgLastShapes, capacityScore, makeChangePlan,
+  makeTrial, nextStair, roundWeight, type Answer,
 } from './scoring'
 
 /** Small seeded generator, so the simulations below are the same on every run. */
@@ -92,10 +93,24 @@ describe('capacity score', () => {
     const early = seeded(3)
     const a = mean(Array.from({ length: 40 }, () => capacityScore(simulate(5, clean))))
     const b = mean(Array.from({ length: 40 }, () => capacityScore(simulate(5, early, { earlyErrors: 2 }))))
-    expect(a - b).toBeLessThan(0.8)
+    expect(a - b).toBeLessThan(0.4)
   })
   it('answering "changed" every time scores 0', () => {
     const answers = Array.from({ length: TRIALS }, (_, i) => ({ size: 4, change: i % 2 === 0, saidChange: true }))
     expect(capacityScore(answers)).toBeLessThan(0.5)
+  })
+})
+
+describe('warm-up weighting and result stats', () => {
+  it('ramps from WEIGHT_START at round 1 to full weight at WEIGHT_FULL_AT, full after', () => {
+    expect(roundWeight(0)).toBeCloseTo(WEIGHT_START)
+    expect(roundWeight(WEIGHT_FULL_AT - 1)).toBe(1)
+    expect(roundWeight(39)).toBe(1)
+    for (let i = 1; i < WEIGHT_FULL_AT; i++) expect(roundWeight(i)).toBeGreaterThan(roundWeight(i - 1))
+  })
+  it('averages the shapes of the last 20 rounds', () => {
+    const answers = Array.from({ length: 40 }, (_, i) => ({ size: i < 20 ? 3 : 7, change: true, saidChange: true }))
+    expect(avgLastShapes(answers)).toBe(7)
+    expect(avgLastShapes([])).toBe(0)
   })
 })

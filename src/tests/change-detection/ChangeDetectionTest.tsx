@@ -6,7 +6,7 @@ import { feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import { fmtPct } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
 import {
-  BLANK_MS, FIX_MS, GRID, ITEM, KINDS, SAMPLE_MS, START_STAIR, TRIALS, capacityScore, makeChangePlan, makeTrial, nextStair, rates,
+  BLANK_MS, FIX_MS, GRID, ITEM, KINDS, SAMPLE_MS, START_STAIR, TRIALS, avgLastShapes, capacityScore, makeChangePlan, makeTrial, nextStair, rates,
   type Answer,
 } from './scoring'
 
@@ -63,8 +63,7 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
           stats: [
             { label: 'Changed boards right', value: fmtPct(hit) },
             { label: 'Same boards right', value: fmtPct(1 - fa) },
-            { label: 'Most shapes', value: String(Math.max(...a.map((x) => x.size))) },
-            { label: 'Shapes at the end', value: String(a[a.length - 1].size) },
+            { label: 'Average shapes, last 20 rounds', value: avgLastShapes(a).toFixed(1) },
           ],
         },
       })
@@ -76,7 +75,7 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={<InfoValue value={`Trial ${t + 1}`} of={TRIALS} />}
+        left={<InfoValue value={`Round ${t + 1}`} of={TRIALS} />}
         middle={PHASE[stage]}
       />
       <SquarePanelLayout
@@ -102,15 +101,15 @@ export default function ChangeDetectionTest({ onFinish }: TestComponentProps) {
         }
         panel={
           <div className="flex h-full flex-col justify-between">
-            <p className="text-sm text-zinc-400">Same shapes in the same places, or did one turn into a different shape?</p>
+            <p className="text-sm text-zinc-400">Same shapes in the same places, or did one turn into a different shape (and color)?</p>
             {/* Wrapped in a block so the buttons stretch to the panel's full width. */}
             <div>
               <AnswerButtons
                 columns={1}
                 disabled={stage !== 'test'}
                 options={[
-                  { label: 'Same', key: 'ArrowUp', onPress: () => answer(false) },
-                  { label: 'Changed', key: 'ArrowDown', onPress: () => answer(true) },
+                  { label: 'SAME', key: 'ArrowUp', onPress: () => answer(false) },
+                  { label: 'CHANGED', key: 'ArrowDown', onPress: () => answer(true) },
                 ]}
               />
             </div>
