@@ -68,20 +68,20 @@ export default function BackwardSpanTest({ onFinish }: TestComponentProps) {
     setLives(lives - 1)
   }
 
-  const finish = () =>
+  const finish = () => {
+    // The lengths you missed (the rest went up one by one): "4, 6 digits".
+    const missed = tries.filter((t) => !t.ok).map((t) => t.length)
     onFinish({
       score,
       details: {
-        // The longest sequence you got right, in both orders.
-        ...(bestSeq && {
-          stats: [
-            { label: 'Longest, shown', value: bestSeq },
-            { label: 'You typed', value: reversed(bestSeq) },
-          ],
-        }),
-        chips: { title: 'Each try', items: tries.map((t) => ({ label: `${t.length} digits`, value: t.ok ? '✓' : '✗' })) },
+        stats: [
+          // The longest sequence you got right, in both orders.
+          ...(bestSeq ? [{ label: 'Longest, shown', value: bestSeq }, { label: 'You typed', value: reversed(bestSeq) }] : []),
+          { label: 'Missed at', value: `${missed.join(', ')} digits` },
+        ],
       },
     })
+  }
 
   // After a mistake the comparison stays until you continue (click anywhere, Enter or Space; ignored for the first
   // 300 ms, so the Enter that submitted the wrong answer doesn't skip it unseen): new digits, or the result when out of lives.
