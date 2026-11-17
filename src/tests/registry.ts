@@ -626,7 +626,7 @@ export const PROTOTYPES: TestDefinition[] = [
     name: 'Symbol Code',
     icon: '🔣',
     category: 'Speed',
-    tagline: 'Crack the code: press the key that goes with each symbol.',
+    tagline: 'Press the key that goes with each symbol, as fast as you can.',
     skill: 'processing speed',
     howTo: [
       'The code at the top pairs 6 symbols with the keys S D F and J K L; it is new every run.',
