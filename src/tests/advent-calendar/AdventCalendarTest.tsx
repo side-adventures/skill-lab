@@ -19,11 +19,18 @@ function KindIcon({ kind, className }: { kind: 'star' | 'tree'; className: strin
   )
 }
 
+/**
+ * The calendar look: dark red board with a light snow pattern, doors with a thin gold edge and a little knob, numbers
+ * in a serif. Round 2's star and tree doors differ by a small icon and a faint tint (warm brown vs dark green), so the
+ * two sets are easy to tell apart without bright fills.
+ */
+const BOARD = 'bg-[#2a0d12] bg-[radial-gradient(rgba(255,255,255,0.13)_1px,transparent_1.5px)] bg-[length:26px_26px]'
 const KIND_LOOK: Record<Door['kind'], string> = {
-  plain: 'border-zinc-600 bg-zinc-800 text-zinc-100',
-  star: 'border-amber-400/70 bg-amber-950/50 text-amber-100',
-  tree: 'border-emerald-400/70 bg-emerald-950/50 text-emerald-100',
+  plain: 'border-amber-600/40 bg-[#4a1a20] text-[#f5e6c8]',
+  star: 'border-amber-500/30 bg-[#4d2a16] text-[#f5e6c8]',
+  tree: 'border-emerald-500/30 bg-[#1f3a26] text-[#e6f2e6]',
 }
+const ICON_LOOK = { star: 'text-amber-300/90', tree: 'text-emerald-300/90' } as const
 
 const Star = () => <KindIcon kind="star" className="inline size-4 -translate-y-px text-amber-300" />
 const Tree = () => <KindIcon kind="tree" className="inline size-4 -translate-y-px text-emerald-300" />
@@ -112,7 +119,7 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
         middle={between ? '' : round === 0 ? 'Open the doors in order: 1 → 2 → 3 …' : SWITCH_TASK}
         right={!between && <InfoValue value={((now + wrong * PENALTY_MS) / 1000).toFixed(1)} unit="s" />}
       />
-      <FullLayout className={`grid place-items-center bg-zinc-900 ${feedbackRing(flash)}`}>
+      <FullLayout className={`grid place-items-center ${BOARD} ${feedbackRing(flash)}`}>
         {between && first ? (
           <RoundResult
             value={(roundTime(first) / 1000).toFixed(1)}
@@ -133,16 +140,21 @@ export default function AdventCalendarTest({ onFinish }: TestComponentProps) {
                   type="button"
                   aria-label={`${door.kind === 'plain' ? 'Door' : door.kind === 'star' ? 'Star door' : 'Tree door'} ${door.n}`}
                   onPointerDown={(e) => e.button === 0 && click(cell)}
-                  className={`relative grid cursor-pointer place-items-center rounded-lg border-2 ${
+                  className={`relative grid cursor-pointer place-items-center rounded-md border ${
                     cell === wrongAt ? 'border-rose-400 bg-rose-700 text-white'
-                    : open ? 'border-violet-400/60 bg-zinc-950 text-violet-300/50'
+                    : open ? 'border-amber-600/30 bg-[#1a0a0c]'
                     : `${KIND_LOOK[door.kind]} hover:brightness-125`
                   }`}
                 >
                   {door.kind !== 'plain' && !open && (
-                    <KindIcon kind={door.kind} className={`absolute top-1.5 left-1.5 size-5 ${door.kind === 'star' ? 'text-amber-300' : 'text-emerald-300'}`} />
+                    <KindIcon kind={door.kind} className={`absolute top-1.5 left-1.5 size-4 ${ICON_LOOK[door.kind]}`} />
                   )}
-                  {open ? <span className="size-6 rounded-full bg-violet-400/70" /> : <span className="text-3xl font-bold tabular-nums">{door.n}</span>}
+                  {!open && cell !== wrongAt && <span className="absolute top-1/2 right-2 size-1.5 -translate-y-1/2 rounded-full bg-amber-400/70" aria-hidden />}
+                  {open ? (
+                    <KindIcon kind="star" className="size-7 text-amber-300" />
+                  ) : (
+                    <span className="font-serif text-3xl font-semibold tabular-nums">{door.n}</span>
+                  )}
                 </button>
               )
             })}

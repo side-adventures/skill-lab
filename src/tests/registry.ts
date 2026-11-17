@@ -603,7 +603,7 @@ export const PROTOTYPES: TestDefinition[] = [
     skill: 'visual working memory',
     howTo: [
       'Colored shapes flash for half a second, then disappear for about a second.',
-      'They come back in the same places. Did one of them turn into a different shape? Click Same or Changed (or ← / →).',
+      'They come back in the same places. Did one of them turn into a different shape? Click Same or Changed (or ↑ / ↓).',
       '40 trials, half of them with a change. It starts with 4 shapes; 2 right answers in a row add a shape, a wrong one takes one away.',
     ],
     scoring: [
@@ -614,7 +614,7 @@ export const PROTOTYPES: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => `${s.toFixed(1)} shapes`,
     start: 'quick',
-    layout: 'prompt',
+    layout: 'panel',
     Component: lazyTest(() => import('./change-detection/ChangeDetectionTest')),
   },
   {
@@ -622,11 +622,11 @@ export const PROTOTYPES: TestDefinition[] = [
     name: 'Symbol Code',
     icon: '🔣',
     category: 'Speed',
-    tagline: 'Learn the code: match each symbol to its number.',
+    tagline: 'Crack the code: press the key that goes with each symbol.',
     skill: 'processing speed',
     howTo: [
-      'A key at the top pairs 6 symbols with the keys S D F and J K L; it is new every run.',
-      'A row of symbols comes by: press the key for the first one, or click it below. Keyboard recommended: rest your fingers on S D F and J K L (1–6 work too).',
+      'The code at the top pairs 6 symbols with the keys S D F and J K L; it is new every run.',
+      'A row of symbols comes by: press the key for the first one, or click its button below. Keyboard recommended: rest your fingers on S D F and J K L (1–6 work too).',
       'You have 60 seconds: answer as many as you can.',
     ],
     scoring: [
