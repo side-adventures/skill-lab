@@ -675,7 +675,7 @@ export const PROTOTYPES: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => count(s, 'bit'),
     start: 'quick',
-    layout: 'prompt',
+    layout: 'full',
     Component: lazyTest(() => import('./password-memory/PasswordMemoryTest')),
   },
 ]

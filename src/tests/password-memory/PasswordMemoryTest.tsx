@@ -1,22 +1,35 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
-import { PromptLayout } from '../../components/game/layouts'
+import { FullLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash, useContinue, useLater } from '../../lib/game'
-import { useCountdown, useLatest } from '../../lib/hooks'
+import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { LIVES, crackTime, passwordFor, scoreBits, showMs, strengthLabel, type Password } from './scoring'
 
 type Phase = 'show' | 'input' | 'correct' | 'wrong'
 
-/** A space is hard to see in the comparison after a mistake, so it is drawn as ␣ there. */
+/** A space is hard to see when comparing, so it is drawn as ␣ there. */
 const visible = (c: string) => (c === ' ' ? '␣' : c)
+
+const TEXT = 'font-mono text-3xl font-semibold tracking-[0.08em] whitespace-pre'
+
+/** A labelled box that looks like a form field. */
+function Field({ label, children, tone = '' }: { label: string; children: ReactNode; tone?: string }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-sm font-medium text-zinc-400">{label}</p>
+      <div className={`flex h-16 items-center overflow-hidden rounded-xl border bg-zinc-950 px-4 transition-colors ${tone || 'border-zinc-700'}`}>
+        {children}
+      </div>
+    </div>
+  )
+}
 
 export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
   const [level, setLevel] = useState(1)
   const [password, setPassword] = useState<Password>(() => passwordFor(1))
   const [phase, setPhase] = useState<Phase>('show')
   const [input, setInput] = useState('')
-  const [answer, setAnswer] = useState('')
   const [lives, setLives] = useState(LIVES)
   const [capsLock, setCapsLock] = useState(false)
   // Strongest password confirmed so far (the score is its strength in whole bits).
@@ -25,6 +38,7 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
   const [missed, setMissed] = useState<number[]>([])
   const [flash, signal] = useAnswerFlash()
   const { later } = useLater()
+  const field = useRef<HTMLInputElement>(null)
 
   const target = password.text
   const showFor = showMs(target)
@@ -38,18 +52,9 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
     setPhase('show')
   }
 
-  // The typed text, tracked synchronously so fast typing between renders all counts.
-  const typed = useRef('')
-  const setTyped = (v: string) => {
-    typed.current = v
-    setInput(v)
-  }
-
   const submit = () => {
-    const value = typed.current
-    if (phase !== 'input' || value === '') return
-    setAnswer(value)
-    const ok = value === target
+    if (phase !== 'input' || input === '') return
+    const ok = input === target
     signal(ok)
     if (ok) {
       if (!best || password.bits > best.bits) setBest(password)
@@ -62,25 +67,16 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
     setPhase('wrong')
   }
 
-  const onKey = useLatest((e: KeyboardEvent) => {
-    if (typeof e.getModifierState === 'function') setCapsLock(e.getModifierState('CapsLock'))
+  // The confirm field has the focus while you type; a key pressed elsewhere puts it back there.
+  useEffect(() => {
     if (phase !== 'input') return
-    // Leave browser shortcuts alone (AltGr arrives as Ctrl + Alt on Windows, so that still types).
-    if (e.metaKey || (e.ctrlKey && !e.altKey)) return
-    if (e.key === 'Enter' || e.key === 'NumpadEnter') submit()
-    else if (e.key === 'Backspace') setTyped(typed.current.slice(0, -1))
-    else if (e.key.length === 1 && typed.current.length < target.length + 5) setTyped(typed.current + e.key)
-    else return
-    e.preventDefault()
-  })
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => onKey.current(e)
-    window.addEventListener('keydown', h)
-    return () => window.removeEventListener('keydown', h)
-  }, [onKey])
-  // Start every password with an empty field.
-  useEffect(() => {
-    if (phase === 'show') typed.current = ''
+    field.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      setCapsLock(e.getModifierState?.('CapsLock') ?? false)
+      if (document.activeElement !== field.current) field.current?.focus()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [phase])
 
   const finish = () => {
@@ -101,86 +97,103 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
     })
   }
 
-  // After a mistake the comparison stays until you continue (click, Enter or Space; ignored for 300 ms so the Enter
-  // that confirmed the wrong password doesn't skip it): a new password of the same level, or the result.
+  // After a mistake both passwords stay until you continue (click, Enter or Space; ignored for 300 ms so the Enter
+  // that saved the wrong password doesn't skip it): a new password of the same level, or the result.
   useContinue(() => (lives > 0 ? play(level) : finish()), { enabled: phase === 'wrong' })
 
-  const size = target.length > 14 ? 'text-4xl' : 'text-5xl'
-  const mono = `font-mono ${size} font-bold tracking-[0.12em] whitespace-pre`
+  const heading = phase === 'show' ? 'Memorize the password'
+    : phase === 'input' ? 'Confirm the password'
+    : phase === 'correct' ? 'Password saved'
+    : 'Passwords do not match'
+  const message = phase === 'wrong'
+    ? <span className="text-zinc-500">{lives > 0 ? 'Click anywhere to try a new password' : 'Click anywhere to see your result'}</span>
+    : phase === 'input' && capsLock ? <span className="text-amber-300">Caps Lock is on</span>
+    : null
+
   return (
     <>
       <GameInfo
         left={<><InfoValue value={scoreBits(password.bits)} unit="bits" /><Lives left={lives} total={LIVES} /></>}
         middle={
           <span className={phase === 'wrong' ? 'text-rose-300' : ''}>
-            {phase === 'show' ? 'Memorize the password'
+            {phase === 'show' ? 'Memorize'
               : phase === 'input' ? 'Type it, then Enter'
-              : phase === 'correct' ? 'Confirmed'
-              : lives > 0 ? 'Passwords do not match · new password, same strength' : 'Out of lives'}
+              : phase === 'correct' ? 'Saved'
+              : lives > 0 ? 'No match · new password, same strength' : 'Out of lives'}
           </span>
         }
         right={<InfoValue label="Score" value={score} unit="bits" />}
         timer={phase === 'show' ? showLeft / showFor : undefined}
       />
-      <PromptLayout
-        displayClassName={feedbackRing(flash)}
-        display={
-          <div className="w-full px-8 text-center">
-            {phase === 'show' && (
-              <>
-                <p className="mb-3 text-zinc-500">Password</p>
-                <p className={`${mono} text-zinc-50`}>{target}</p>
-              </>
-            )}
+      <FullLayout className={`flex flex-col items-center border border-zinc-800 bg-zinc-900/85 px-10 py-8 ${feedbackRing(flash)}`}>
+        <p className={`text-2xl font-semibold ${phase === 'wrong' ? 'text-rose-300' : phase === 'correct' ? 'text-emerald-300' : 'text-zinc-100'}`}>
+          {heading}
+        </p>
+
+        <div className="mt-8 w-full max-w-xl space-y-5">
+          <Field label="Password" tone={phase === 'wrong' ? 'border-zinc-500' : ''}>
+            {phase === 'show' && <span className={`${TEXT} text-zinc-50`}>{target}</span>}
+            {phase === 'wrong' && <span className={`${TEXT} text-zinc-50`}>{[...target].map(visible).join('')}</span>}
             {(phase === 'input' || phase === 'correct') && (
-              <>
-                <p className="mb-3 text-zinc-500">Confirm password</p>
-                <p className={`${mono} min-h-14 text-violet-300`}>
-                  {input}
-                  {phase === 'input' && <span className="animate-pulse text-zinc-600">|</span>}
-                </p>
-                <p className={`mt-4 h-5 text-sm text-amber-300 ${capsLock && phase === 'input' ? '' : 'invisible'}`}>Caps Lock is on</p>
-              </>
+              <span className="text-2xl tracking-[0.25em] text-zinc-400">{'●'.repeat(target.length)}</span>
             )}
-            {phase === 'wrong' && (
-              <div className={`font-mono ${target.length > 14 ? 'text-3xl' : 'text-4xl'} font-bold whitespace-pre`}>
-                {/* Labels in their own column, so both rows line up character by character. */}
-                <div className="mx-auto grid w-fit grid-cols-[auto_auto] items-baseline gap-x-4 gap-y-3 text-left">
-                  <span className="text-right font-sans text-sm font-normal text-zinc-500">Password</span>
-                  <span>{[...target].map(visible).join('')}</span>
-                  <span className="text-right font-sans text-sm font-normal text-zinc-500">You</span>
-                  <span>
-                    {[...answer].map((c, i) => (
-                      <span key={i} className={c === target[i] ? '' : 'text-rose-400 line-through'}>{visible(c)}</span>
-                    ))}
-                    {/* Characters you left out, as gaps. */}
-                    <span className="text-rose-400/70">{'_'.repeat(Math.max(0, target.length - answer.length))}</span>
-                  </span>
-                </div>
-                <p className="pt-5 font-sans text-xs font-normal text-zinc-600">
-                  {lives > 0 ? 'Click anywhere to continue' : 'Click anywhere to see your result'}
-                </p>
-              </div>
+          </Field>
+
+          <Field
+            label="Confirm password"
+            tone={phase === 'input' ? 'border-violet-500' : phase === 'correct' ? 'border-emerald-500' : phase === 'wrong' ? 'border-rose-500' : ''}
+          >
+            {phase === 'wrong' ? (
+              <span className={TEXT}>
+                {[...input].map((c, i) => (
+                  <span key={i} className={c === target[i] ? 'text-zinc-50' : 'text-rose-400 line-through'}>{visible(c)}</span>
+                ))}
+                {/* Characters you left out, as gaps. */}
+                <span className="text-rose-400/70">{'_'.repeat(Math.max(0, target.length - input.length))}</span>
+              </span>
+            ) : (
+              <input
+                ref={field}
+                value={input}
+                disabled={phase !== 'input'}
+                maxLength={target.length + 5}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    submit()
+                  }
+                }}
+                // No typing into the field while the rules are open over the game, and no pasting.
+                onBeforeInput={(e) => {
+                  if (document.querySelector('[role="dialog"]')) e.preventDefault()
+                }}
+                onPaste={(e) => e.preventDefault()}
+                onDrop={(e) => e.preventDefault()}
+                aria-label="Confirm password"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className={`${TEXT} w-full bg-transparent text-violet-200 caret-violet-400 outline-none select-text disabled:text-emerald-200`}
+              />
             )}
-          </div>
-        }
-        answers={
-          <div className={`flex items-center gap-3 ${phase === 'input' ? '' : 'opacity-40'}`}>
-            <p className="flex-1 text-sm text-zinc-500">Type with your keyboard. Backspace deletes.</p>
-            <button
-              type="button"
-              disabled={phase !== 'input'}
-              onPointerDown={(e) => {
-                e.preventDefault()
-                submit()
-              }}
-              className="h-14 w-40 rounded-xl bg-violet-600 text-xl font-semibold text-white active:bg-violet-700 disabled:opacity-60"
-            >
-              Confirm
-            </button>
-          </div>
-        }
-      />
+          </Field>
+          <p className="h-5 text-sm">{message}</p>
+        </div>
+
+        <button
+          type="button"
+          disabled={phase === 'show' || phase === 'correct' || (phase === 'input' && input === '')}
+          onPointerDown={(e) => {
+            e.preventDefault() // keep the focus in the field
+            submit()
+          }}
+          className="mt-auto h-12 w-48 rounded-xl bg-violet-600 text-lg font-semibold text-white active:bg-violet-700 disabled:opacity-40"
+        >
+          {phase === 'wrong' ? 'Continue' : 'Save password'}
+        </button>
+      </FullLayout>
     </>
   )
 }
