@@ -210,7 +210,7 @@ export const TESTS: TestDefinition[] = [
     name: 'Sequence Memory',
     icon: '🔁',
     category: 'Memory',
-    tagline: 'Repeat the pattern of flashing tiles.',
+    tagline: 'Repeat the flashing tiles in order.',
     skill: 'remembering a growing sequence of positions',
     howTo: [
       'Tiles on a 3×3 grid light up one after another. A tile can light up more than once, even twice in a row.',
@@ -310,7 +310,7 @@ export const TESTS: TestDefinition[] = [
     name: 'N-Back',
     icon: '🧠',
     category: 'Memory',
-    tagline: 'Was the square here N steps ago?',
+    tagline: 'How many steps back can you keep track of?',
     skill: 'working memory',
     howTo: [
       'A square lights up on a 3×3 grid, in a new spot every 2.5 seconds.',
@@ -478,7 +478,7 @@ export const TESTS: TestDefinition[] = [
     name: 'Eye for Geometry',
     icon: '📐',
     category: 'Estimation',
-    tagline: 'Middles, angles, centers — by eye.',
+    tagline: 'Eyeball it: centers, angles and lengths.',
     skill: 'judging shapes and angles by eye',
     howTo: [
       '8 rounds, each a short task, such as finding the balance point of a triangle or the middle of a zigzag line.',
@@ -527,7 +527,7 @@ export const TESTS: TestDefinition[] = [
     name: 'Advent Calendar',
     icon: '🎄',
     category: 'Focus',
-    tagline: 'Open the 24 doors in order, then again, switching between stars and trees.',
+    tagline: 'Open all 24 doors as fast as you can, then again with a twist.',
     skill: 'visual scanning and switching',
     howTo: [
       'Round 1: click the doors in order, 1 → 2 → 3 … 24.',
@@ -601,7 +601,7 @@ export const TESTS: TestDefinition[] = [
     name: 'Change Detection',
     icon: '🔷',
     category: 'Memory',
-    tagline: 'A glance at some shapes: did one of them change?',
+    tagline: 'Glance at the shapes: did one of them change?',
     skill: 'visual working memory',
     howTo: [
       'Colored shapes flash for half a second, then disappear for about a second.',
