@@ -649,8 +649,35 @@ export const TESTS: TestDefinition[] = [
 
 /**
  * Prototypes: new tests being tried out (see the new-test skill). When there are any, they get their own section
- * at the bottom of the home page and are left out of the test count, "Next test", stats and sharing. Empty for now.
+ * at the bottom of the home page and are left out of the test count, "Next test", stats and sharing.
  */
-export const PROTOTYPES: TestDefinition[] = []
+export const PROTOTYPES: TestDefinition[] = [
+  {
+    id: 'password-memory',
+    name: 'Password Memory',
+    icon: '🔑',
+    category: 'Memory',
+    tagline: 'Remember a password, then confirm it.',
+    skill: 'short-term memory for words and small changes',
+    howTo: [
+      'A password appears for a moment, then disappears: a word with some letters changed, plus digits or symbols.',
+      'Type it back exactly, then press Enter. Keyboard only.',
+      'Every round the password gets stronger: more changed letters, more characters, later two words.',
+      'You have 2 lives: a mistake costs one.',
+      'Out of lives ends the test.',
+    ],
+    scoring: [
+      'Your strongest password confirmed, in bits: how hard it is to guess, knowing how the passwords here are made.',
+      'The result also shows how long it would take to crack at 1,000 guesses a second.',
+    ],
+    durationHint: '~3 min',
+    scoreLabel: 'Strongest password',
+    higherIsBetter: true,
+    formatScore: (s) => count(s, 'bit'),
+    start: 'quick',
+    layout: 'prompt',
+    Component: lazyTest(() => import('./password-memory/PasswordMemoryTest')),
+  },
+]
 
 export const getTest = (id: string) => TESTS.find((t) => t.id === id) ?? PROTOTYPES.find((t) => t.id === id)
