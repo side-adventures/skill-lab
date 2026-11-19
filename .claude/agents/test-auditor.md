@@ -39,11 +39,12 @@ Note the result of each point, even when it's fine.
 ### A. Presentation
 1. **Name.** Short, catchy, says what you do. Not misleading (e.g. "Memory" in the name of a test that is mostly speed). Use the established name when players might know it (Stroop, N-Back), otherwise a plain one. No clash or near-duplicate with another test's name.
 2. **Icon.** Hints at the task itself (not just the category), is distinct from the other icons, readable at 18 px, follows the README style. Also check the registry emoji used in share text fits.
-3. **Tagline + skill.** The tagline is one sentence a newcomer understands, matching the actual task. The `skill` line ("Tests …") names what is really measured; check it against the closest research construct (part B).
+3. **Tagline + skill.** The tagline is one sentence a newcomer understands: it says what the test does and makes them want to try it (its form may vary), and promises nothing the test doesn't do. The `skill` line ("Tests …") names what is really measured; check it against the closest research construct (part B).
 4. **Rules (`howTo`, `scoring`).**
    - Accurate to the code: numbers of rounds, durations, lives, what ends the run (the scoring formula itself is the scoring-reviewer's check).
    - Complete: nothing a player needs to know is missing; nothing surprising happens that the rules don't mention.
-   - Clear and short; says "click"; fits the 768 × 512 rules stage without scrolling.
+   - Only what affects how you play: flag details that wouldn't change what a player does.
+   - Clear and short; follows "Rules texts" in `CLAUDE.md` (order, wording, shared phrasing); fits the 768 × 512 rules stage without scrolling.
    - The `scoreLabel` and `formatScore` unit match what the score means.
 5. **Category.** Pick the category the test mainly loads on (Speed, Memory, Focus, Thinking, Estimation, Motor). If it fits two, say which dominates and why. Judge each test on its own: how many tests a category has doesn't matter, and never suggest a category change to balance the counts.
 

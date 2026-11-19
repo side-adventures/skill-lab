@@ -82,7 +82,10 @@ export interface TestDefinition {
   skill: string
   /** How to play: one short line per step, as many as the test needs. */
   howTo: string[]
-  /** How the score works: usually 1–2 short lines (what counts, penalties, lives, what ends it). */
+  /**
+   * How the score works: usually 1–2 short lines (what the score is, in its unit, and why; penalties; a result stat
+   * only when it needs explaining). Lives and what ends a run go in `howTo`.
+   */
   scoring: string[]
   durationHint: string
   /** e.g. "Average reaction time" */

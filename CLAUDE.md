@@ -51,14 +51,8 @@ prototype → play and tune (gameplay only) → polish → agent review → user
 3. Add an entry in `src/tests/registry.ts` with `Component: lazyTest(() => import('./<id>/<Name>Test'))`,
    a `category` (one of `CATEGORIES`; its color comes from `CATEGORY_COLORS` in `types.ts`), a `start` mode
    (`countdown` | `quick` | `none`, see "Starting a run" below), the `layout` it uses (`StageLayout`, drawn empty
-   during the countdown; `boardAspect` for a non-square board), and the rules:
-   `tagline` (one sentence, also on the home card), `skill` ("Tests …"), `howTo` and `scoring` (short lines,
-   as many as needed; say "click", keep it accurate to the code). Check the rules fit the 3:2 stage (768 × 512).
-   What goes where:
-   - `howTo`: what you do, how a run goes and how it ends — rounds, time limit, **lives / attempts and what a mistake
-     costs**, fail conditions.
-   - `scoring`: what the score is, in its unit, and what that means (e.g. why the median, why correct − wrong); a
-     line on a result stat only when it needs explaining.
+   during the countdown; `boardAspect` for a non-square board), and the rules: `tagline`, `skill`, `howTo` and
+   `scoring`, written by "Rules texts" below.
 4. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
    for timing-sensitive input; clear timers / rAF in effect cleanups.
 5. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
@@ -85,8 +79,6 @@ Design rules for every test:
   info row, "Out of lives" ends the run, and the score is still the best level reached. **How many** lives is up to
   the test: more lives smooth out luck and a single slip, fewer keep a run short and tense. Pick what fits; there's
   no site-wide number.
-- **Rules mention options, not tips**: say what is possible ("type it on your keyboard, or click the keypad"), not
-  how to play well. Exception: where the keyboard is a clear advantage, the rules may say so ("keyboard recommended").
 - **The main score is in units a player can read on their own** ("9 tiles", "312 ms"), not internal counters
   ("level 7"). Use the number that makes the most sense for that test: scoring styles may differ between tests
   (correct − wrong, a median, an average error, time with penalties, the longest level). Later the plan is to show
@@ -101,7 +93,7 @@ note why in its SPEC row). Concrete examples of how each was solved are in `docs
   (`END_MOMENT_MS`) and goes on by itself; when there's something to read (several lines, numbers to compare, as in
   Backward Span), it waits for click / Enter / Space (`useContinue`). The last answer's flash shows before the result.
 - **Texts**: the info row says the current state in a few words; instructions and hints go in the play area. Rules
-  leave out what play makes obvious.
+  texts: see below.
 - **Stimuli**: stay close to the research setup unless there's a reason not to, and check a full board that the target
   doesn't stand out by accident.
 - **Fair random setups**: balance positions, keep effort comparable between layouts, avoid easy patterns.
@@ -109,6 +101,48 @@ note why in its SPEC row). Concrete examples of how each was solved are in `docs
 - **The score holds up** (check with simulations, see the scoring-reviewer): random or button-mashing play scores
   poorly, a mistake costs about the same wherever it happens, answering style (cautious vs bold) doesn't swing it, and
   there's no ceiling within realistic play.
+
+## Rules texts
+The rules screen shows the `tagline` as headline, "Tests <`skill`>", a **How to play** list (`howTo`) and a **Score**
+list (`scoring`); the "?" overlay while playing shows the same. All of it fits the 3:2 stage (768 × 512) without
+scrolling.
+- **Tagline**: one sentence, also on the home card (2 lines max). It says what the test does and hooks the player to
+  try it; the form may vary (an instruction, a question, a challenge), but it never promises something the test
+  doesn't do.
+- **Skill** ("Tests …"): what is really measured, lowercase start ("reaction speed", "working memory").
+- **How to play**, in this order: what you see → what you do → how a run goes (rounds, time limit, what gets harder)
+  → lives, fail conditions and what ends it.
+- **Score**: what the score is, in its unit, and why that measure when it helps (why the median, why correct − wrong);
+  then penalties; then a result stat only when it needs explaining.
+
+Content:
+- Accurate to the code, and complete: nothing that changes how you'd play goes unmentioned.
+- **Only what affects how you play.** Leave out details that wouldn't change what a player does, and what play makes
+  obvious (e.g. "you replay with a new pattern" after a lost life, "a door opens for a moment").
+- **Options, not tips**: say what is possible, not how to play well. Exception: where the keyboard is a clear
+  advantage, the rules may say so ("keyboard recommended"). That you can also click the on-screen keys or keypad is
+  obvious and needn't be said (fine when it fits the sentence).
+- No wording that suggests a diagnosis, an IQ or a clinical measure.
+- **Trivia** is an allowed exception: always the last line, clearly not a rule ("Fun fact: …"), and short (Flash
+  Order).
+
+Wording:
+- "click" for mouse input; keys named as keys (Enter, ← / →).
+- Same word for the same thing: *round* (not trial), *test* for the whole run ("ends the test"), answer-button labels
+  in capitals as on the buttons (SAME / CHANGED, MATCH).
+- Prefer one idea per line, about one sentence (a guideline, not a hard rule).
+- Score lines start with "Your …".
+- Numbers as digits ("3 lives"); run lengths in words ("45 seconds"), short values with units ("0.8 s", "1 s").
+- No contractions; real minus `−`.
+
+Lines that come back in many tests use the same phrasing:
+- Time limit: "You have 60 seconds: answer as many as you can."
+- Rounds: "5 rounds, …"
+- Lives: "You have 3 lives: a mistake costs one." (or "a wrong tile costs one")
+- End: "Out of lives ends the test." · "One mistake ends the test." · "… ends the test without a score."
+- Correct − wrong: "Correct answers minus wrong answers, so guessing does not pay off."
+- Penalty: "Each wrong click adds 1 s."
+- Result stat: "The result also shows …"
 
 ## Subagents (`.claude/agents/`)
 Four reviewers, each answering one question with its own kind of evidence. They report back and never edit app code;
