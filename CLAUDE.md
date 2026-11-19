@@ -140,7 +140,7 @@ Lines that come back in many tests use the same phrasing:
 - Rounds: "5 rounds, …"
 - Lives: "You have 3 lives: a mistake costs one." (or "a wrong tile costs one")
 - End: "Out of lives ends the test." · "One mistake ends the test." · "… ends the test without a score."
-- Correct − wrong: "Correct answers minus wrong answers, so guessing does not pay off."
+- Correct − wrong: "Your correct answers minus wrong answers, so guessing does not pay off."
 - Penalty: "Each wrong click adds 1 s."
 - Result stat: "The result also shows …"
 
