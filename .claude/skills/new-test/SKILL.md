@@ -73,7 +73,7 @@ The step ends when the user says the gameplay is right.
 
 ## 5. Polish (you)
 Make the prototype a finished test, still in `PROTOTYPES`, so the reviewers and the user see the real thing:
-- final `tagline`, `skill`, `howTo`, `scoring` (accurate to the code, fits the 768 × 512 rules stage), `scoreLabel`,
+- final `tagline`, `skill`, `howTo`, `scoring` (by "Rules texts" in `CLAUDE.md`: accurate to the code, fits the 768 × 512 rules stage), `scoreLabel`,
   `durationHint`, `start`, `layout` (rules for these in `CLAUDE.md`);
 - info-row texts, feedback on every input, result stats, keys, edge cases (stuck states, double clicks, the end of a run);
 - a real icon (style rules in `src/icons/README.md`; propose a few and let the user pick, the only stop in this step);

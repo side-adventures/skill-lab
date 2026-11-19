@@ -37,7 +37,7 @@ You review Skill Lab for consistency. Skill Lab is a static site of short skill 
 Note the result of each point, even when it's fine.
 
 ### 1. Rules and explanation
-- Registry text follows the same shape for every test: one-sentence `tagline`, `skill` as "Tests …", `howTo` = what you see → what you do → what ends it, `scoring` = what the score is → penalties / tie-breaks.
+- Registry text follows "Rules texts" in `CLAUDE.md` for every test: one-sentence `tagline` (its form may vary), `skill` as "Tests …", `howTo` = what you see → what you do → how a run goes → what ends it, `scoring` = what the score is → penalties → result stat. Recurring lines (time limit, lives, end, correct − wrong, penalty, "The result also shows") use the shared phrasing.
 - Same words for the same things: round / level / trial, "click" (not tap / press), "wrong" vs "mistake", "No score", lives, seconds vs "s". Build a short glossary from the majority and list deviations. Current conventions (2026-11): "round" rather than "trial"; answer-button labels in capitals (SAME / CHANGED, MATCH); lives and fail conditions under `howTo`, not `scoring` (since 2026-11-19). A deviation with a reason stated in the SPEC is fine.
 - Info row vs play area: the info row's middle text is a short current state ("Type it, then Enter"); instructions and hints belong in the play area. Flag the same instruction shown in both places.
 - Same number and unit style: `formatScore` units, real minus sign `−`, singular / plural (`count()` helper), ms vs s thresholds, `%`.
