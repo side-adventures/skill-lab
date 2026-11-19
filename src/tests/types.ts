@@ -50,8 +50,9 @@ export type ResultExtra =
   | { kind: 'digits'; target: string; typed: string }
 
 /**
- * How a run starts: 'countdown' = 3-2-1 (you must be ready the moment it starts), 'quick' = a short
- * "Ready", 'none' = your own first action starts it (Tap Speed, Line Tracing, Circle Chase).
+ * How a run starts: 'countdown' = 3-2-1 (time matters from the first moment), 'quick' = a short "Ready"
+ * (you first look at something, then answer without time pressure), 'none' = the test shows at once
+ * (nothing is timed, or your own first action starts it). Rules in CLAUDE.md, "Starting a run".
  */
 export type StartMode = 'countdown' | 'quick' | 'none'
 

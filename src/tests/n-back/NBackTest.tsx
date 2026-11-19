@@ -4,13 +4,16 @@ import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
 import { TileGrid } from '../../components/game/TileGrid'
-import { feedbackRing, useAnswerFlash } from '../../lib/game'
+import { END_MOMENT_MS, feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { GRID, ITEM_MS, LIT_MS, LIVES, START_N, afterBlock, blockCounts, isMatch, makeBlock, runResult, type BlockResult } from './scoring'
 
-/** 'between': the round result after a block (passed → next level, or lives lost → same level again). */
-type Phase = 'running' | 'between'
+/**
+ * 'between': the round result after a block (passed → next level, or lives lost → same level again).
+ * 'over': out of lives; that block's result shows for END_MOMENT_MS, then the result screen.
+ */
+type Phase = 'running' | 'between' | 'over'
 
 export default function NBackTest({ onFinish }: TestComponentProps) {
   const [n, setN] = useState(START_N)
@@ -23,6 +26,7 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
   const [flash, signal] = useAnswerFlash()
   const tapped = useRef<boolean[]>([])
   const results = useRef<BlockResult[]>([])
+  const { later } = useLater()
 
   // Run a block: one item every ITEM_MS, lit for LIT_MS.
   useEffect(() => {
@@ -45,9 +49,13 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
       const mistakes = counts.missed + counts.wrong
       const step = afterBlock(mistakes, lives)
       results.current.push({ n, clicked: tapped.current.some(Boolean), mistakes, lost: step.lost, ...counts })
-      if (step.over) return onFinish(runResult(results.current))
       setFeedback(null) // the last item's message doesn't belong to the round result
-      setLives(step.livesLeft)
+      setLives(Math.max(0, step.livesLeft))
+      if (step.over) {
+        setPhase('over')
+        later(END_MOMENT_MS, () => onFinish(runResult(results.current)))
+        return
+      }
       setPhase('between')
     }, seq.length * ITEM_MS + 600))
     return () => timers.forEach((t) => window.clearTimeout(t))
@@ -89,19 +97,21 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
           />
         }
         panel={
-          phase === 'between' && last ? (
+          phase !== 'running' && last ? (
             <div className="grid flex-1 place-items-center">
               <RoundResult
                 value={last.mistakes}
                 unit={last.mistakes === 1 ? 'mistake' : 'mistakes'}
                 line={
-                  last.lost === 0 ? (
+                  phase === 'over' ? (
+                    <span className="text-rose-300">Out of lives</span>
+                  ) : last.lost === 0 ? (
                     `${last.n}-back passed · next: ${last.n + 1}-back`
                   ) : (
                     <span className="text-rose-300">−{last.lost} {last.lost === 1 ? 'life' : 'lives'} · {last.n}-back again</span>
                   )
                 }
-                onContinue={() => startBlock(last.lost === 0 ? n + 1 : n)}
+                onContinue={phase === 'between' ? () => startBlock(last.lost === 0 ? n + 1 : n) : undefined}
               />
             </div>
           ) : (
@@ -109,8 +119,8 @@ export default function NBackTest({ onFinish }: TestComponentProps) {
               <p className="text-3xl font-bold">{n}-back</p>
               <p className="mt-2 text-zinc-400">Click MATCH when the lit square is in the same spot as {n} steps before.</p>
               <div className="mt-auto">
-                {/* Space via the button's key; Enter also works (useActionKey). A double press is ignored by tapMatch. */}
-                <AnswerButtons columns={1} options={[{ label: 'MATCH', key: ' ', onPress: tapMatch }]} disabled={phase !== 'running'} />
+                {/* The main action: Space via the button's key (not shown), Enter via useActionKey. A double press is ignored by tapMatch. */}
+                <AnswerButtons columns={1} options={[{ label: 'MATCH', key: ' ', hideKey: true, onPress: tapMatch }]} disabled={phase !== 'running'} />
               </div>
             </>
           )

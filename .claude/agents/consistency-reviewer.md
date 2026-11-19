@@ -38,14 +38,14 @@ Note the result of each point, even when it's fine.
 
 ### 1. Rules and explanation
 - Registry text follows the same shape for every test: one-sentence `tagline`, `skill` as "Tests …", `howTo` = what you see → what you do → what ends it, `scoring` = what the score is → penalties / tie-breaks.
-- Same words for the same things: round / level / trial, "click" (not tap / press), "wrong" vs "mistake", "No score", lives, seconds vs "s". Build a short glossary from the majority and list deviations. Current conventions (2026-11): "round" rather than "trial"; answer-button labels in capitals (SAME / CHANGED, MATCH); lives under `scoring`, not `howTo`. A deviation with a reason stated in the SPEC is fine.
+- Same words for the same things: round / level / trial, "click" (not tap / press), "wrong" vs "mistake", "No score", lives, seconds vs "s". Build a short glossary from the majority and list deviations. Current conventions (2026-11): "round" rather than "trial"; answer-button labels in capitals (SAME / CHANGED, MATCH); lives and fail conditions under `howTo`, not `scoring` (since 2026-11-19). A deviation with a reason stated in the SPEC is fine.
 - Info row vs play area: the info row's middle text is a short current state ("Type it, then Enter"); instructions and hints belong in the play area. Flag the same instruction shown in both places.
 - Same number and unit style: `formatScore` units, real minus sign `−`, singular / plural (`count()` helper), ms vs s thresholds, `%`.
-- Similar length across tests.
+- Length: 1–2 min is ideal, up to 5 min when the test needs it (reason in its SPEC row). Flag only a long test without a reason.
 
 ### 2. Scoring
-- Similar mechanics are scored the same way: answer tests with correct − wrong (`correctMinusWrong`), span tests by level reached, timed tests by average time, etc. A different rule needs a reason tied to the test.
-- Similar tests handle mistakes alike: lives, a retry, or the run ends at the first slip. A different rule needs a reason tied to the test.
+- Each test uses the score that makes the most sense for it, so scoring styles may differ. Flag only where two very similar tests are scored differently without a reason, or where a test's number doesn't fit what it measures.
+- Lives behave the same everywhere (a lost life replays with a new layout, `<Lives>` in the info row, "Out of lives" ends the run). The *number* of lives is the test's choice (luck vs. length and tension); don't flag different counts.
 - Same handling of edge cases: a run with no meaningful result ends with `failed: '…'` ("No score"), never a fake 0; first-round fail treated alike across span / order tests.
 - `higherIsBetter`, `scoreLabel` and the result stats follow the same conventions.
 

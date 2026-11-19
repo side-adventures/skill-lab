@@ -52,7 +52,7 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
 4. **Scope:** the current focus is desktop and the dark theme only (the site is always dark). Don't test phone widths or a light theme unless asked. If you changed the viewport, reset it with `resize_window` preset `desktop`.
 5. **Flow:**
    - The "?" button while playing opens the rules overlay; the game keeps running underneath. Restart starts a fresh run, "Back to start" returns to the rules screen; ✕, a click outside or Escape close it.
-   - "Try again" on the result screen starts a fresh run; the result screen ignores input for 0.8 s.
+   - "Try again" (or R) on the result screen starts a fresh run, N opens the next test, Enter / Space alone do nothing there; the result screen ignores input for 0.8 s.
    - The top bar (test name, Best, "?") is visible in every phase.
    - No errors in `read_console_messages`.
    - **Result screen** (see "Result screen" in `docs/SPEC.md`): check every stat against your inputs; "Attempt N" / "Not counted"; Rules / Stats links; Share · Try again · Next test (and which test Next picks); Enter / Space / N; nothing overflows the stage, even with many chips.
@@ -60,7 +60,7 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
    nothing at all. Try to get stuck on purpose: lose track (e.g. click things you already used), mash wrong answers,
    press keys during transitions. Report any state where input is silently ignored or a player can't tell what to do
    next. Known case: Advent Calendar ignored clicks on opened doors, so round 2 felt frozen.
-7. **Keyboard extras:** answer buttons show their key inside (1–4, ← / → for two-choice tests, Space for N-Back MATCH); Enter / Space continue a round result. The mouse must always work; keys are optional (where a test recommends the keyboard, all its keys must work): report broken keys, never missing ones.
+7. **Keyboard extras:** answer buttons show their key inside (1–4, ← / → for two-choice tests, N-Back's MATCH is the main action: Space / Enter, key not shown); Enter / Space continue a round result. The mouse must always work; keys are optional (where a test recommends the keyboard, all its keys must work): report broken keys, never missing ones.
 
 **Your runs are saved like real ones** (localStorage of the built-in browser on localhost): they change "First score",
 best scores and the stats graph there. Say in the report which tests you played, so nobody mistakes those results for
