@@ -18,7 +18,8 @@ const MAX_CHIPS = 10
 /**
  * The result screen: a 3:2 stage like the rules screen. Score (or the reason there is none) with its
  * stats in the middle, Rules / Stats links at the top, and a footer with Share · Try again · Next test.
- * Enter / Space = Try again, N = next test.
+ * R = Try again, N = next test, both shown on their buttons. Enter / Space start nothing on their own (only a
+ * focused button), so going on is always a choice between the two (CLAUDE.md, "Keys").
  */
 export function ResultScreen({ test, result, isBest, previousBest, onRetry, onRules }: {
   test: TestDefinition
@@ -42,12 +43,9 @@ export function ResultScreen({ test, result, isBest, previousBest, onRetry, onRu
     const onKey = (e: KeyboardEvent) => {
       const { armed, onRetry, next } = keys.current
       if (!armed || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return
-      // A focused button or link handles Enter / Space itself.
-      if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && !(e.target as Element).closest?.('button, a')) {
-        e.preventDefault()
-        onRetry()
-      }
-      if (e.key.toLowerCase() === 'n' && next) navigate(`/test/${next.id}`)
+      const key = e.key.toLowerCase()
+      if (key === 'r') onRetry()
+      if (key === 'n' && next) navigate(`/test/${next.id}`)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -102,7 +100,9 @@ export function ResultScreen({ test, result, isBest, previousBest, onRetry, onRu
             />
           )}
         </div>
-        <Button onClick={onRetry} className="w-48">Try again</Button>
+        <Button onClick={onRetry} className="flex w-48 items-center justify-center gap-2.5">
+          Try again <KeyCap className="border-white/30 text-white/80">R</KeyCap>
+        </Button>
         <div className="flex justify-end">{next && <NextTestLink test={next} />}</div>
       </div>
     </div>
@@ -120,9 +120,14 @@ function NextTestLink({ test }: { test: TestDefinition }) {
         <span className="text-xs text-zinc-500">Next test</span>
         <span className="font-semibold text-zinc-100">{test.name}</span>
       </span>
-      <span className="ml-1 text-zinc-500">›</span>
+      <KeyCap className="ml-1 border-zinc-700 text-zinc-500">N</KeyCap>
     </Link>
   )
+}
+
+/** A key shown on a button, styled like the keys on AnswerButtons. */
+function KeyCap({ children, className }: { children: string; className: string }) {
+  return <kbd className={`rounded-md border px-1.5 text-xs font-medium ${className}`}>{children}</kbd>
 }
 
 /** Stats row, then the test's special block, then chips. */

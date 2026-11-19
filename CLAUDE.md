@@ -6,9 +6,9 @@ Ideas and TODOs for later: `docs/BACKLOG.md`.
 ## Hard rules
 - **Frontend only.** No backend, no network/API calls. Deployed to GitHub Pages from `dist/`.
 - **Current focus: desktop + dark theme only.** The site is always dark (`class="dark"` on `<html>` in
-  `index.html`, no toggle). Desktop with mouse is the target: **every test must be fully playable with the mouse
-  alone.** Keyboard is optional; in some tests (typing, fast key answers) it's an advantage, and the rules may say so
-  or recommend it.
+  `index.html`, no toggle). Desktop is the target. **Inputs are mouse and / or keyboard, and the mouse is always
+  supported:** every test is fully playable with the mouse alone. Where the keyboard is an advantage (typing, fast
+  key answers) the rules may say so or recommend it.
   Mobile / touch and a light theme may come back later, so don't break them needlessly: keep using
   `dark:` variants for dark colors, `onPointerDown` for input, and avoid fixed desktop-only widths, but
   don't spend effort testing or polishing them.
@@ -35,7 +35,7 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
 
 ## Adding a test
 New tests follow the process in the `new-test` skill (`.claude/skills/new-test/SKILL.md`): idea → design sketch →
-prototype → play and tune → review → promote, with the user's OK between steps. The technical rules:
+prototype → play and tune (gameplay only) → polish → agent review → user review → promote, with the user's OK between steps. The technical rules:
 1. Create `src/tests/<id>/` with:
    - `<Name>Test.tsx` — default export, props `TestComponentProps` (`onFinish({ score, details })`;
      `details` is a `ResultDetails`: stats row, optional special block, optional chips — pick what's interesting for this test).
@@ -50,30 +50,56 @@ prototype → play and tune → review → promote, with the user's OK between s
 2. Add an icon `src/icons/<id>.svg` (style rules in `src/icons/README.md`; `icons.test.ts` fails without one).
 3. Add an entry in `src/tests/registry.ts` with `Component: lazyTest(() => import('./<id>/<Name>Test'))`,
    a `category` (one of `CATEGORIES`; its color comes from `CATEGORY_COLORS` in `types.ts`), a `start` mode
-   (`countdown` | `quick` | `none`, see `StartMode` in `types.ts`), the `layout` it uses (`StageLayout`, drawn empty
+   (`countdown` | `quick` | `none`, see "Starting a run" below), the `layout` it uses (`StageLayout`, drawn empty
    during the countdown; `boardAspect` for a non-square board), and the rules:
    `tagline` (one sentence, also on the home card), `skill` ("Tests …"), `howTo` and `scoring` (short lines,
    as many as needed; say "click", keep it accurate to the code). Check the rules fit the 3:2 stage (768 × 512).
+   What goes where:
+   - `howTo`: what you do, how a run goes and how it ends — rounds, time limit, **lives / attempts and what a mistake
+     costs**, fail conditions.
+   - `scoring`: what the score is, in its unit, and what that means (e.g. why the median, why correct − wrong); a
+     line on a result stat only when it needs explaining.
 4. Use `className="play-area"` on interactive surfaces (no tap-zoom / text selection); use `onPointerDown`
    for timing-sensitive input; clear timers / rAF in effect cleanups.
 5. Verify by actually playing it in the browser preview (desktop viewport), not just by building.
 
+Starting a run (`start`):
+- `countdown` (3-2-1) when **time matters from the first moment**: a clock runs, or stimuli come on their own
+  (Stroop, Go / No-Go, Aim Trainer).
+- `quick` ("Ready") when the player first **has to look at something but can then answer without time pressure**
+  (a pattern flashes, then you click it back). Also fine between rounds.
+- `none` (the test shows directly) when nothing is timed, or the player's own first action starts it.
+- A test may deviate when a 3-2-1 or "Ready" would confuse (Backward Span: the countdown digits look like the
+  sequence, so it shows "Memorize the digits" instead); note why in its SPEC row.
+
 Design rules for every test:
+- **Keys:** the obvious main action (Start, Submit, Next, Continue, Done) also works with Enter / Space; its button
+  doesn't show that. Every other action button shows its key on the button (a `hint` in `AnswerButtons`); default to
+  the arrow keys where they fit (two choices: ← / →, or ↑ / ↓ when stacked), otherwise keys that match the layout.
+  Exception: the result screen has no main action, so going on is a choice: R = Try again, N = Next test, both shown.
+- **Length:** 1–2 minutes is ideal. Up to 5 minutes is fine when the test needs it to give a usable score, is worth
+  the time, and a shorter version wouldn't work; say why in its SPEC row.
 - **Never use color as the only cue**: add a shape, text or position (Go / No-Go: green circle vs red square). Stroop
   is the exception, because color is the task itself.
 - **Lives work the same everywhere**: a lost life replays the same level / round with a new layout, `<Lives>` in the
-  info row, "Out of lives" ends the run, and the score is still the best level reached.
+  info row, "Out of lives" ends the run, and the score is still the best level reached. **How many** lives is up to
+  the test: more lives smooth out luck and a single slip, fewer keep a run short and tense. Pick what fits; there's
+  no site-wide number.
 - **Rules mention options, not tips**: say what is possible ("type it on your keyboard, or click the keypad"), not
   how to play well. Exception: where the keyboard is a clear advantage, the rules may say so ("keyboard recommended").
 - **The main score is in units a player can read on their own** ("9 tiles", "312 ms"), not internal counters
-  ("level 7").
+  ("level 7"). Use the number that makes the most sense for that test: scoring styles may differ between tests
+  (correct − wrong, a median, an average error, time with penalties, the longest level). Later the plan is to show
+  where a score stands among other players (a percentile), so it should be a number that can be compared that way.
 
 Design defaults (learned while building tests; **defaults, not hard rules**: a test may deviate when that serves it —
 note why in its SPEC row). Concrete examples of how each was solved are in `docs/LESSONS.md`.
 - **Every input gets visible feedback, and nobody gets stuck**: no click or key that silently does nothing; after a
   mistake, if a player could lose track, show what comes next.
-- **Give time to read mistakes**: error screens wait for click / Enter / Space (`useContinue`); the last answer's flash
-  shows before the result.
+- **Give time to read mistakes**: a mistake that costs a life or ends the run always stays on screen first. When
+  it's obvious at a glance (a wrong tile, a missed block, too many early clicks), the game freezes on it for 1.5 s
+  (`END_MOMENT_MS`) and goes on by itself; when there's something to read (several lines, numbers to compare, as in
+  Backward Span), it waits for click / Enter / Space (`useContinue`). The last answer's flash shows before the result.
 - **Texts**: the info row says the current state in a few words; instructions and hints go in the play area. Rules
   leave out what play makes obvious.
 - **Stimuli**: stay close to the research setup unless there's a reason not to, and check a full board that the target

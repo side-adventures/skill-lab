@@ -9,6 +9,8 @@ export interface AnswerOption {
   primary?: boolean
   /** A small extra label in the top-right corner, e.g. another key that also works ("1"). */
   hint?: string
+  /** Don't show the key: for the obvious main action on Enter / Space (CLAUDE.md, "Keys"). */
+  hideKey?: boolean
 }
 
 const KEY_LABEL: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', ' ': 'Space' }
@@ -39,7 +41,7 @@ export function AnswerButtons({ options, columns, disabled, wide }: {
     <div className={`mx-auto grid gap-3 ${wide ? '' : 'max-w-xl'}`} style={{ gridTemplateColumns: `repeat(${columns ?? options.length}, minmax(0, 1fr))` }}>
       {options.map((o) => {
         // A button whose label is its key ("1") shows it once, centered.
-        const keyOnly = keyLabel(o.key) === o.label
+        const keyOnly = o.hideKey || keyLabel(o.key) === o.label
         return (
         <button
           key={o.label}

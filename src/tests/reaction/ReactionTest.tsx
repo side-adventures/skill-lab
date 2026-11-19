@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
 import { RoundResult } from '../../components/game/RoundResult'
-import { useLater } from '../../lib/game'
+import { END_MOMENT_MS, useLater } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { MAX_TOO_SOON, ROUNDS, isTooFast, randomDelay, summarize } from './scoring'
@@ -12,6 +12,7 @@ type State =
   | { name: 'waiting' } // red, timer running
   | { name: 'go' }      // green, measuring
   | { name: 'early' }   // clicked too soon
+  | { name: 'out' }     // too many early clicks: shown for a moment, then the run ends
   | { name: 'shown'; ms: number }
 
 const VIEW: Record<Exclude<State['name'], 'shown'>, { bg: string; title: string; phase: string }> = {
@@ -19,6 +20,7 @@ const VIEW: Record<Exclude<State['name'], 'shown'>, { bg: string; title: string;
   waiting: { bg: 'bg-rose-900', title: 'Wait for green…', phase: 'Wait for green' },
   go: { bg: 'bg-emerald-700', title: 'Click!', phase: 'Click!' },
   early: { bg: 'bg-amber-800', title: 'Too soon!', phase: 'Too soon · click to retry' },
+  out: { bg: 'bg-amber-800', title: 'Too soon!', phase: 'Too many early clicks' },
 }
 
 export default function ReactionTest({ onFinish }: TestComponentProps) {
@@ -47,11 +49,15 @@ export default function ReactionTest({ onFinish }: TestComponentProps) {
   const early = () => {
     tooSoon.current++
     if (tooSoon.current > MAX_TOO_SOON) {
-      return onFinish({
-        score: 0,
-        failed: 'Too many early clicks',
-        details: { stats: [{ label: 'Rounds done', value: `${times.length} / ${ROUNDS}` }, { label: 'Too soon', value: `${tooSoon.current}×` }] },
-      })
+      setState({ name: 'out' })
+      later(END_MOMENT_MS, () =>
+        onFinish({
+          score: 0,
+          failed: 'Too many early clicks',
+          details: { stats: [{ label: 'Rounds done', value: `${times.length} / ${ROUNDS}` }, { label: 'Too soon', value: `${tooSoon.current}×` }] },
+        }),
+      )
+      return
     }
     setState({ name: 'early' })
   }

@@ -7,7 +7,7 @@ player can share and compare with friends.
 ## Constraints
 
 - **Frontend only.** No backend, no API calls. Must deploy as static files to GitHub Pages.
-- **For now: desktop and dark theme only.** Mouse always works: every test is fully playable with the mouse alone. Keyboard is optional, and in some tests
+- **For now: desktop and dark theme only.** Inputs are mouse and / or keyboard; the mouse is always supported (every test is fully playable with the mouse alone). In some tests the keyboard is
   faster (the rules then say so, or recommend it).
   Phone / touch support and a light theme are postponed, not dropped.
 - Scores are stored **locally** (`localStorage`), one record per test (`skill-lab:v2:test:<id>`): the personal
@@ -116,9 +116,15 @@ all best scores in one message.
   Escape.
 - **Playing** (`components/game/`): `GameFrame` draws the info row and the fixed 3:2 stage (768 × 512, invisible
   itself) at the same place as the rules screen, so nothing moves when you press Start.
-  - **Start:** per test `start` in the registry: `countdown` (3-2-1, 0.6 s steps: Stroop, Mental Rotation, Word
-    Memory, Quick Maths, Aim Trainer, Go / No-Go, N-Back, Quick Count), `quick` (a short "Ready"), or `none`
-    (your first action starts it: Tap Speed, Line Tracing, Circle Chase, Time Estimation, Split in Half, Eye for Geometry). The countdown is drawn on an empty
+  - **Start:** per test `start` in the registry:
+    - `countdown` (3-2-1, 0.6 s steps) when time matters from the first moment: Stroop, Mental Rotation, Quick Maths,
+      Aim Trainer, Go / No-Go, N-Back, Advent Calendar, Odd One Out (Symbol Code runs its own 3-2-1 on its layout).
+    - `quick` (a short "Ready") when you first look at something, then answer without time pressure: Pattern Memory,
+      Number Memory, Sequence Memory, Number Order, Flash Order, Quick Count, Change Detection.
+    - `none` (the test shows at once) when nothing is timed or your own first action starts it: Reaction Time,
+      Hit the Line, Tap Speed, Line Tracing, Circle Chase, Time Estimation, Split in Half, Eye for Geometry, Word Memory,
+      Backward Span (a 3-2-1 would look like the digits; it shows "Memorize the digits" instead).
+    Start modes changed on 2026-11-19 (Reaction, Hit the Line, Quick Count, Word Memory, Advent Calendar, Odd One Out). The countdown is drawn on an empty
     version of the test's layout (registry `layout`), so the play area is already there. The test's code is
     preloaded on the rules screen, so no loading state shows.
   - **Info row** (`<GameInfo>`): left = where you are (time left, round, level, lives), middle = what to do now
@@ -145,7 +151,9 @@ all best scores in one message.
     Next button instead (their rounds end with a Done button too). All input (clicks, Enter / Space, the Next button)
     is ignored for the first 300 ms, so a double click that ended the round doesn't skip its result.
   - **End moment:** when a run ends by a mistake, the game freezes for 1.5 s (`END_MOMENT_MS`) showing what went
-    wrong, then the result screen appears automatically.
+    wrong, then the result screen appears automatically (every run-ending mistake, since 2026-11-19 also Reaction
+    Time's 6th early click and N-Back's last block, whose result then shows "Out of lives" without "click to
+    continue"). Where the mistake needs reading (Backward Span: shown / reversed / you), it waits for a click instead.
 - **Result screen** (`components/ResultScreen.tsx`): a 3:2 stage like the rules screen.
   - Info row: "Attempt N" (runs without a score: "Not counted").
   - Top of the stage: "‹ Rules" (back to the rules screen) on the left, "Stats ›" (`/stats?open=<id>`) on the right.
@@ -157,7 +165,8 @@ all best scores in one message.
     in its category color). Next test = an unplayed test first, then one not played today, then any other; within
     each group A–Z starting after the current test (`lib/nextTest.ts`).
     The rules screen offers the same suggestion as a quiet "Skip to … ›" link at the right of its info row.
-  - Keys: Enter / Space = Try again, N = next test. Input is ignored for the first 0.8 s.
+  - Keys: R = Try again, N = next test, each shown as a key on its button (since 2026-11-19; Enter / Space used to
+    mean Try again). Enter / Space alone do nothing here, so going on is always a choice. Input is ignored for the first 0.8 s.
   - Details are saved structured with each attempt (older attempts keep their plain label → value text).
   - Runs without a score show their stats too, but have no Share and aren't saved.
 

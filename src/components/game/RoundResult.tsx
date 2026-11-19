@@ -8,6 +8,7 @@ import { Button } from '../Button'
  * so the click that ended the round doesn't skip it).
  * With `button` it shows a button with that label instead (Enter / Space still work) — for tests where
  * the round ended with a button too (Eye for Geometry), so the next step is in the same place.
+ * Without `onContinue` it only shows (the end moment before the result screen, e.g. N-Back out of lives).
  */
 export function RoundResult({ value, unit, line, chips, button, onContinue }: {
   value: ReactNode
@@ -16,11 +17,11 @@ export function RoundResult({ value, unit, line, chips, button, onContinue }: {
   /** Results of the rounds so far (last = this round) and the total number of rounds. */
   chips?: { done: string[]; total: number }
   button?: string
-  onContinue: () => void
+  onContinue?: () => void
 }) {
   // Click anywhere (or the button), Enter or Space; ignored for the first 300 ms so the click that ended the round
   // doesn't skip it.
-  const armed = useContinue(onContinue, { pointer: !button })
+  const armed = useContinue(() => onContinue?.(), { enabled: !!onContinue, pointer: !button })
 
   return (
     <div className="text-center">
@@ -49,7 +50,7 @@ export function RoundResult({ value, unit, line, chips, button, onContinue }: {
           })}
         </div>
       )}
-      {button ? (
+      {!onContinue ? null : button ? (
         <Button onClick={() => armed.current && onContinue()} className="mt-5 w-full">{button}</Button>
       ) : (
         <p className="mt-5 text-xs text-zinc-600">Click anywhere to continue</p>
