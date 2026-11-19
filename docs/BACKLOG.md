@@ -5,8 +5,7 @@ Ideas and TODOs for later. Not planned yet; move an item into the work when it's
 ## TODO
 - **Quick Maths: more varied problems.** More variety in the equations; at higher levels maybe answers over 100,
   negative numbers, or a third number in the problem (e.g. 7 × 4 − 9).
-- **Line Tracing: consider a rework.** More levels; lives and failing instead of just allowing another try; keep the
-  tracks about equally long (path length now varies about ±9 % between runs, which is layout luck).
+- **Line Tracing: tune the 5 tracks from play data** (widths, fork balance; maybe a checkpoint on the long tracks).
 - **Eye for Geometry: tune the limits for fairer, more consistent runs.** Each task's 0 % limit is its own design choice
   (8–50 % of the figure, 10–25°), so some tasks score much higher than others. First data (one player, 10 runs on
   2026-11-14): Make X° ~95 % (too easy), Size ~51 % and Zigzag ~65 % (too hard, scores swing a lot). Plan: collect 5–10

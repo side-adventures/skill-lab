@@ -1,19 +1,71 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
 import { END_MOMENT_MS, useLater } from '../../lib/game'
-import { fmtMs, fmtPct } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
-import { END_RADIUS, HALF_WIDTH, HEIGHT, WIDTH, cumulative, makeControlPoints, nearest, samplePath, type Pt } from './scoring'
+import {
+  END_RADIUS, HEIGHT, PENALTY_MS, WIDTH, WINDOW, indexRange, makeTracks, nearestIn, totalMs, type Pt, type Route, type Track,
+} from './scoring'
 
 // waiting: not on GO yet · armed: on GO, nothing counts yet · tracing: left GO along the path, timer runs
-type Phase = 'waiting' | 'armed' | 'tracing' | 'done'
+// between: a track just finished, the next one comes · done: all tracks finished
+type Phase = 'waiting' | 'armed' | 'tracing' | 'between' | 'done'
+
+const NEXT_TRACK_MS = 1000
+const secs = (ms: number) => (ms / 1000).toFixed(2)
+const line = (pts: Pt[]) => pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+
+/** The corridor of one route between sample indexes [from, to), as round-capped segments (widths may vary). */
+function Segments({ r, from, to, className }: { r: Route; from: number; to: number; className: string }) {
+  const out = []
+  for (let i = from; i < Math.min(to, r.pts.length - 1); i++) {
+    const a = r.pts[i], b = r.pts[i + 1]
+    out.push(<line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth={r.half[i] * 2} strokeLinecap="round" />)
+  }
+  return <g className={className}>{out}</g>
+}
+
+const centerLine = 'stroke-zinc-400 dark:stroke-zinc-600'
+
+/**
+ * All routes of the track. Drawn last route first, so route 0 (the main road at the fork) lies on top and its center
+ * line runs on through the junction.
+ */
+const Corridor = memo(function Corridor({ track }: { track: Track }) {
+  return (
+    <>
+      {[...track.routes].reverse().map((r, k) => (
+        <g key={k}>
+          <Segments r={r} from={0} to={r.pts.length} className="stroke-zinc-200 dark:stroke-zinc-800" />
+          <path d={line(r.pts)} fill="none" strokeWidth={2} strokeDasharray="8 12" className={centerLine} />
+        </g>
+      ))}
+    </>
+  )
+})
+
+/**
+ * The bridge: the piece of the later pass where it crosses the earlier one, drawn again on top with a dark edge. Flat
+ * ends, so it doesn't cover the path (or the traced line) before and after it.
+ */
+const Bridge = memo(function Bridge({ r, range }: { r: Route; range: [number, number] }) {
+  const [from, to] = indexRange(r, ...range)
+  const d = line(r.pts.slice(from, to))
+  const w = r.half[Math.floor((from + to) / 2)] * 2
+  return (
+    <>
+      <path d={d} fill="none" strokeWidth={w + 18} strokeLinejoin="round" className="stroke-zinc-100 dark:stroke-zinc-900" />
+      <path d={d} fill="none" strokeWidth={w} strokeLinejoin="round" className="stroke-zinc-200 dark:stroke-zinc-800" />
+      <path d={d} fill="none" strokeWidth={2} strokeDasharray="8 12" className={centerLine} />
+    </>
+  )
+})
 
 export default function LineTracingTest({ onFinish }: TestComponentProps) {
-  const path = useMemo(() => samplePath(makeControlPoints()), [])
-  const acc = useMemo(() => cumulative(path), [path])
-  const total = acc[acc.length - 1]
-  const start = path[0], end = path[path.length - 1]
+  const tracks = useMemo(() => makeTracks(), [])
+  const [index, setIndex] = useState(0)
+  const track = tracks[index]
+  const start = track.routes[0].pts[0], end = track.routes[0].pts.at(-1)!
 
   const svg = useRef<SVGSVGElement>(null)
   const [phase, setPhaseState] = useState<Phase>('waiting')
@@ -23,14 +75,19 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     phaseRef.current = p
     setPhaseState(p)
   }
-  const [progress, setProgress] = useState(0) // arc length reached
+  // Per route: still possible (you are inside it) and the arc length reached on it.
+  const alive = useRef<boolean[]>([])
+  const reached = useRef<number[]>([])
+  const [drawn, setDrawn] = useState<{ route: number; along: number }>({ route: 0, along: 0 })
   const [elapsed, setElapsed] = useState(0)
   const [failAt, setFailAt] = useState<Pt | null>(null)
+  const trackMs = useRef<number[]>([])
+  const [times, setTimes] = useState<number[]>([])
+  const [exits, setExits] = useState(0)
+  const exitsRef = useRef(0)
+  const trackExits = useRef<number[]>([])
   const startedAt = useRef(0)
   const last = useRef<Pt | null>(null)
-  const reached = useRef(0)
-  // For the result stats: distance from the center line, sampled on every checked point.
-  const off = useRef({ sum: 0, count: 0, max: 0 })
   const { later } = useLater()
 
   useEffect(() => {
@@ -45,54 +102,82 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     return { x: p.x, y: p.y }
   }
 
-  const fail = (at: Pt) => {
-    setFailAt(at)
-    setPhase('done')
-    const pct = Math.floor((reached.current / total) * 100)
-    const ms = performance.now() - startedAt.current
-    later(END_MOMENT_MS, () =>
-      onFinish({
-        score: 0,
-        failed: `Off the line at ${pct} %`,
-        details: { stats: [{ label: 'Made it', value: `${pct} % of the path` }, { label: 'Time until then', value: fmtMs(ms) }] },
-      }),
-    )
+  const showProgress = () => {
+    let best = -1
+    alive.current.forEach((a, k) => {
+      if (a && (best < 0 || reached.current[k] > reached.current[best])) best = k
+    })
+    if (best >= 0) setDrawn({ route: best, along: reached.current[best] })
   }
 
-  const succeed = () => {
-    setPhase('done')
+  const exit = (at: Pt) => {
+    exitsRef.current++
+    trackExits.current[index] = (trackExits.current[index] ?? 0) + 1
+    setExits(exitsRef.current)
+    setFailAt(at)
+    setElapsed(0)
+    setPhase('waiting')
+  }
+
+  const finishTrack = () => {
     const ms = Math.round(performance.now() - startedAt.current)
-    setElapsed(ms)
-    const o = off.current
+    trackMs.current.push(ms)
+    setTimes([...trackMs.current])
+    setElapsed(0)
+    if (index < tracks.length - 1) {
+      setPhase('between')
+      later(NEXT_TRACK_MS, () => {
+        setIndex((i) => i + 1)
+        setDrawn({ route: 0, along: 0 })
+        setPhase('waiting')
+      })
+      return
+    }
+    setPhase('done')
+    const times = trackMs.current, n = exitsRef.current
     later(END_MOMENT_MS, () =>
       onFinish({
-        score: ms,
+        score: totalMs(times, n),
         details: {
           stats: [
-            { label: 'Avg off-center', value: fmtPct(o.count ? o.sum / o.count / HALF_WIDTH : 0) },
-            { label: 'Furthest off-center', value: fmtPct(o.max / HALF_WIDTH) },
+            { label: 'Exits', value: String(n) },
+            { label: 'Penalty', value: `+${(n * PENALTY_MS) / 1000} s` },
+            { label: 'Time without penalty', value: `${secs(times.reduce((s, t) => s + t, 0))} s` },
           ],
+          chips: {
+            title: 'Tracks',
+            items: times.map((t, i) => {
+              const pen = ((trackExits.current[i] ?? 0) * PENALTY_MS) / 1000
+              return { label: tracks[i].name, value: `${secs(t)} s${pen ? ` +${pen} s` : ''}` }
+            }),
+          },
         },
       }),
     )
   }
 
   const inStart = (q: Pt) => Math.hypot(q.x - start.x, q.y - start.y) <= END_RADIUS
+  const inEnd = (q: Pt) => Math.hypot(q.x - end.x, q.y - end.y) <= END_RADIUS
 
   const handle = (p: Pt) => {
     if (phaseRef.current === 'waiting') {
-      if (inStart(p)) setPhase('armed')
+      if (inStart(p)) {
+        setFailAt(null)
+        setDrawn({ route: 0, along: 0 })
+        setPhase('armed')
+      }
       return
     }
     if (phaseRef.current === 'armed') {
       if (inStart(p)) return
-      // Left GO: the run (and the timer) starts only if you left it along the path.
-      const { dist, along } = nearest(p, path, acc)
-      if (dist > HALF_WIDTH) return setPhase('waiting')
+      // Left GO: the track (and the timer) starts only if you left it along the path.
+      const hits = track.routes.map((r) => nearestIn(p, r, 0, WINDOW))
+      if (!hits.some((h) => h.inside)) return setPhase('waiting')
+      alive.current = hits.map((h) => h.inside)
+      reached.current = hits.map((h) => h.along)
       startedAt.current = performance.now()
       last.current = p
-      reached.current = Math.min(along, 80)
-      setProgress(reached.current)
+      showProgress()
       setPhase('tracing')
       return
     }
@@ -102,24 +187,23 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     const steps = Math.max(1, Math.ceil(Math.hypot(p.x - from.x, p.y - from.y) / 6))
     for (let s = 1; s <= steps; s++) {
       const q = { x: from.x + ((p.x - from.x) * s) / steps, y: from.y + ((p.y - from.y) * s) / steps }
-      const inEnd = Math.hypot(q.x - end.x, q.y - end.y) <= END_RADIUS
-      const { dist, along } = nearest(q, path, acc)
-      if (dist > HALF_WIDTH && !inEnd && !inStart(q)) return fail(q)
-      if (!inEnd && !inStart(q)) {
-        off.current.sum += dist
-        off.current.count++
-        off.current.max = Math.max(off.current.max, dist)
-      }
-      // progress only advances continuously (no jumping ahead along the path)
-      if (along > reached.current && along - reached.current < 80) reached.current = along
-      if (inEnd && reached.current > total * 0.9) {
-        reached.current = total
-        setProgress(total)
-        return succeed()
+      const atEnd = inEnd(q), atStart = inStart(q)
+      track.routes.forEach((r, k) => {
+        if (!alive.current[k]) return
+        // only near your progress, so the other pass of the loop never counts
+        const h = nearestIn(q, r, reached.current[k] - WINDOW, reached.current[k] + WINDOW)
+        if (h.inside) reached.current[k] = Math.max(reached.current[k], h.along)
+        else if (!atEnd && !atStart) alive.current[k] = false
+      })
+      if (!alive.current.some(Boolean)) return exit(q)
+      if (atEnd && track.routes.some((r, k) => alive.current[k] && reached.current[k] > r.length * 0.9)) {
+        const k = alive.current.findIndex(Boolean)
+        setDrawn({ route: k, along: track.routes[k].length })
+        return finishTrack()
       }
     }
     last.current = p
-    setProgress(reached.current)
+    showProgress()
   }
 
   const onMove = (e: React.PointerEvent) => {
@@ -127,22 +211,27 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     for (const ev of events.length ? events : [e.nativeEvent]) handle(toSvg(ev.clientX, ev.clientY))
   }
 
-  const d = path.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-  const doneIdx = acc.findIndex((a) => a >= progress)
-  const traced = path.slice(0, doneIdx === -1 ? path.length : doneIdx + 1)
-  const dTraced = traced.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  // the traced part, split at the bridge so the lower pass stays under it
+  const r = track.routes[drawn.route]
+  const reachedIdx = indexRange(r, 0, drawn.along)[1]
+  const [b0] = track.bridge && drawn.route === 0 ? indexRange(r, ...track.bridge) : [r.pts.length]
+  const tracedBelow = r.pts.slice(0, Math.min(reachedIdx, b0 + 1))
+  const tracedAbove = reachedIdx > b0 ? r.pts.slice(b0, reachedIdx) : []
+  const tracedClass = 'stroke-violet-500'
 
+  const total = totalMs(times, exits) + (phase === 'tracing' ? elapsed : 0)
   const status =
-    phase === 'waiting' ? 'Move your pointer onto GO'
+    phase === 'waiting' ? (failAt ? `Off the path: +${PENALTY_MS / 1000} s. Back to GO` : 'Move your pointer onto GO')
     : phase === 'armed' ? 'Leave GO along the path to start'
     : phase === 'tracing' ? 'Follow the path to the flag'
-    : failAt ? 'Off the line' : 'Finished'
+    : phase === 'between' ? `${track.name} done: ${secs(times.at(-1) ?? 0)} s`
+    : 'Finished'
   return (
     <>
       <GameInfo
-        left={<InfoValue value={(elapsed / 1000).toFixed(2)} unit="s" />}
+        left={<InfoValue value={secs(total)} unit="s" />}
         middle={<span className={failAt ? 'text-rose-300' : ''}>{status}</span>}
-        right={<InfoValue value={Math.floor((progress / total) * 100)} unit="%" />}
+        right={<InfoValue label="Track" value={index + 1} of={tracks.length} />}
       />
       <FullLayout className="bg-zinc-900" style={{ touchAction: 'none' }}>
         <svg
@@ -151,12 +240,13 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
           className="block size-full cursor-crosshair"
           onPointerMove={onMove}
           onPointerDown={(e) => handle(toSvg(e.clientX, e.clientY))}
-          onPointerUp={(e) => phase === 'tracing' && e.pointerType !== 'mouse' && fail(toSvg(e.clientX, e.clientY))}
-          onPointerLeave={(e) => phase === 'tracing' && fail(toSvg(e.clientX, e.clientY))}
+          onPointerUp={(e) => phase === 'tracing' && e.pointerType !== 'mouse' && exit(toSvg(e.clientX, e.clientY))}
+          onPointerLeave={(e) => phase === 'tracing' && exit(toSvg(e.clientX, e.clientY))}
         >
-          <path d={d} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={HALF_WIDTH * 2} className="stroke-zinc-200 dark:stroke-zinc-800" />
-          <path d={d} fill="none" strokeWidth={3} strokeDasharray="10 12" className="stroke-zinc-400 dark:stroke-zinc-600" />
-          {traced.length > 1 && <path d={dTraced} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={10} className="stroke-violet-500" />}
+          <Corridor track={track} />
+          {tracedBelow.length > 1 && <path d={line(tracedBelow)} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={10} className={tracedClass} />}
+          {track.bridge && <Bridge r={track.routes[0]} range={track.bridge} />}
+          {tracedAbove.length > 1 && <path d={line(tracedAbove)} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={10} className={tracedClass} />}
           <circle cx={start.x} cy={start.y} r={END_RADIUS} className={phase === 'waiting' ? 'animate-pulse fill-emerald-500' : phase === 'armed' ? 'fill-emerald-400' : 'fill-emerald-500/60'} />
           <text x={start.x} y={start.y + 8} textAnchor="middle" className="pointer-events-none fill-white text-[22px] font-bold">GO</text>
           <circle cx={end.x} cy={end.y} r={END_RADIUS} className="fill-zinc-900 dark:fill-zinc-100" />
