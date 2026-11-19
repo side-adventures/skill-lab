@@ -8,7 +8,8 @@ Ideas and TODOs for later: `docs/BACKLOG.md`.
 - **Current focus: desktop + dark theme only.** The site is always dark (`class="dark"` on `<html>` in
   `index.html`, no toggle). Desktop is the target. **Inputs are mouse and / or keyboard, and the mouse is always
   supported:** every test is fully playable with the mouse alone. Where the keyboard is an advantage (typing, fast
-  key answers) the rules may say so or recommend it.
+  key answers) the rules may say so or recommend it. Exception: a test may be keyboard-only when typing is the task
+  itself (Password Memory); its rules say so.
   Mobile / touch and a light theme may come back later, so don't break them needlessly: keep using
   `dark:` variants for dark colors, `onPointerDown` for input, and avoid fixed desktop-only widths, but
   don't spend effort testing or polishing them.
