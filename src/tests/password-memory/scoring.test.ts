@@ -38,10 +38,17 @@ describe('password memory: generation', () => {
     }
   })
 
-  it('has word pools large enough to rarely repeat', () => {
-    expect(POOLS.short.length).toBeGreaterThan(200)
-    expect(POOLS.medium.length).toBeGreaterThan(100)
-    expect(POOLS.long.length).toBeGreaterThan(50)
+  it('has 256 different lowercase words per group, in the right lengths', () => {
+    const lengths = { short: [4, 5], medium: [6, 6], long: [7, 9] } as const
+    for (const [group, words] of Object.entries(POOLS) as [keyof typeof lengths, string[]][]) {
+      expect(words.length).toBe(256)
+      expect(new Set(words).size).toBe(256)
+      for (const w of words) {
+        expect(w).toMatch(/^[a-z]+$/)
+        expect(w.length).toBeGreaterThanOrEqual(lengths[group][0])
+        expect(w.length).toBeLessThanOrEqual(lengths[group][1])
+      }
+    }
   })
 
   it('starts like "ball1": a short word and one extra', () => {

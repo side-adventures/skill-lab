@@ -1,5 +1,5 @@
 import { randInt, shuffle, type Rand } from '../../lib/random'
-import { WORDS } from '../word-memory/words'
+import { LONG_WORDS, MEDIUM_WORDS, SHORT_WORDS } from './words'
 
 /** Lives for the whole run: a wrong answer costs one, and you get a new password of the same level. */
 export const LIVES = 2
@@ -9,7 +9,7 @@ export const showMs = (password: string) => 1000 + 500 * password.length
 
 /**
  * A password is built from a recipe:
- * - shape: one word (short 4–5 letters, medium 6, long 7–8) or two short words with a separator;
+ * - shape: one word (short 4–5 letters, medium 6, long 7–9) or two short words with a separator;
  * - changes: letters turned into uppercase or leet (a→4, e→3, i→1, o→0, s→5, t→7);
  * - extras: digits / symbols added at the end.
  */
@@ -28,7 +28,7 @@ export const LEVELS: Recipe[][] = [
   [rec('short', 1, 1), rec('medium', 1, 1)], // ~15: ch4ir9
   [rec('short', 1, 2), rec('medium', 1, 2)], // ~19: stonE@4
   [rec('short', 1, 3), rec('medium', 1, 3), rec('long', 1, 3), rec('two', 0, 1)], // ~22.5
-  [rec('medium', 3, 3), rec('medium', 1, 4), rec('long', 1, 4), rec('two', 1, 1)], // ~26
+  [rec('medium', 2, 3), rec('medium', 3, 3), rec('long', 2, 3), rec('two', 1, 1)], // ~26
   [rec('two', 2, 1), rec('two', 3, 1), rec('two', 1, 2)], // ~30
   [rec('two', 2, 2), rec('two', 3, 2), rec('two', 1, 3)], // ~34
   [rec('two', 2, 3), rec('two', 3, 3), rec('two', 1, 4)], // ~38
@@ -44,12 +44,11 @@ export function recipesFor(level: number): Recipe[] {
 
 // ---------- building blocks ----------
 
-const onlyLetters = WORDS.filter((w) => /^[a-z]+$/.test(w))
-const byLength = (min: number, max: number) => onlyLetters.filter((w) => w.length >= min && w.length <= max)
+/** 256 words per group, so every word is worth 8 bits whatever its length. */
 export const POOLS: Record<Exclude<Shape, 'two'>, string[]> = {
-  short: byLength(4, 5),
-  medium: byLength(6, 6),
-  long: byLength(7, 8),
+  short: SHORT_WORDS,
+  medium: MEDIUM_WORDS,
+  long: LONG_WORDS,
 }
 
 export const LEET: Record<string, string> = { a: '4', e: '3', i: '1', o: '0', s: '5', t: '7' }
