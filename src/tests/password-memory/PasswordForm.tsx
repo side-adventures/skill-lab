@@ -30,7 +30,7 @@ function Field({ label, children, tone = '' }: { label: string; children: ReactN
  * password, then dots), a "Confirm password" field (a real text input) and a save button. After a mismatch both
  * fields show the passwords, wrong characters crossed out.
  */
-export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, wrongHint, footer }: {
+export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, wrongHint, footer, symbols }: {
   phase: FormPhase
   target: string
   input: string
@@ -41,6 +41,8 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
   wrongHint: string
   /** Extra controls at the bottom left (the lab's buttons). */
   footer?: ReactNode
+  /** Buttons under the fields that type these characters, for players who don't know where they are on the keyboard. */
+  symbols?: string[]
 }) {
   const field = useRef<HTMLInputElement>(null)
   const [capsLock, setCapsLock] = useState(false)
@@ -56,6 +58,16 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [phase])
+
+  /** Types `char` at the cursor, as if it was typed, and keeps the focus in the field. */
+  const typeChar = (char: string) => {
+    const el = field.current
+    if (phase !== 'input' || !el || input.length >= target.length + 5) return
+    const start = el.selectionStart ?? input.length
+    const end = el.selectionEnd ?? start
+    onInput(input.slice(0, start) + char + input.slice(end))
+    requestAnimationFrame(() => el.setSelectionRange(start + 1, start + 1))
+  }
 
   const heading = phase === 'show' ? 'Memorize the password'
     : phase === 'input' ? 'Confirm the password'
@@ -125,6 +137,25 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
         </Field>
         <p className="h-5 text-sm">{message}</p>
       </div>
+
+      {symbols && (
+        <div className="mt-1 flex gap-1.5" aria-label="Symbols">
+          {symbols.map((c) => (
+            <button
+              key={c}
+              type="button"
+              disabled={phase !== 'input'}
+              onPointerDown={(e) => {
+                e.preventDefault() // keep the focus in the field
+                typeChar(c)
+              }}
+              className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-800 font-mono text-lg font-semibold text-zinc-200 hover:bg-zinc-700 active:bg-zinc-600 disabled:opacity-40 disabled:hover:bg-zinc-800"
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mt-auto flex w-full items-center">
         <div className="flex flex-1 items-center gap-2">{footer}</div>

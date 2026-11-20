@@ -4,7 +4,7 @@ import { useAnswerFlash, useContinue, useLater } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { PasswordForm, type FormPhase } from './PasswordForm'
-import { LIVES, crackTime, matches, passwordFor, scoreBits, showMs, strengthLabel, type Password } from './scoring'
+import { LIVES, SYMBOL_KEYS, crackTime, matches, passwordFor, scoreBits, showMs, strengthLabel, type Password } from './scoring'
 
 export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
   const [level, setLevel] = useState(1)
@@ -89,6 +89,7 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
         input={input}
         onInput={setInput}
         onSubmit={submit}
+        symbols={SYMBOL_KEYS}
         flash={flash}
         wrongHint={lives > 0 ? 'Click anywhere to try a new password' : 'Click anywhere to see your result'}
       />

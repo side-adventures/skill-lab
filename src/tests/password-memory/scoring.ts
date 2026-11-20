@@ -53,6 +53,8 @@ export const separatorsFor = (words: number) => SEPARATORS.filter((s) => s.sep !
 /** Symbols that are easy to type on common keyboard layouts (no dead keys). */
 export const SYMBOLS = ['!', '?', '@', '#', '$', '%', '&', '*']
 export const EXTRA_CHARS = [...'0123456789', ...SYMBOLS]
+/** Every non-letter, non-digit character a password can have except space: the symbol buttons under the form. */
+export const SYMBOL_KEYS = [...SYMBOLS, ...SEPARATORS.map((s) => s.sep).filter((s) => s.trim() !== '')]
 
 export const pick = <T>(items: T[], rand: Rand) => items[randInt(0, items.length - 1, rand)]
 const log2 = Math.log2

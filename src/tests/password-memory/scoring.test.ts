@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CHANGES, EXTRA_CHARS, LEVELS, POOLS, buildPassword, changeOptions, crackTime, hasDigitRun, makeExtras, makePassword,
+  SYMBOL_KEYS, CHANGES, EXTRA_CHARS, LEVELS, POOLS, buildPassword, changeOptions, crackTime, hasDigitRun, makeExtras, makePassword,
   matches, passwordFor, pickWords, recipesFor, scoreBits, showMs, strengthLabel, wordCount, type Recipe,
 } from './scoring'
 
@@ -169,5 +169,11 @@ describe('password memory: checking an answer', () => {
     expect(matches('falc0n', 'falc0N')).toBe(false)
     expect(matches('FAlCoN*97', 'FAlC0N*97')).toBe(false)
     expect(matches('FAlC0N*9', 'FAlC0N*97')).toBe(false)
+  })
+})
+
+describe('password memory: symbol buttons', () => {
+  it('offer every non-letter, non-digit character a password can have, except space', () => {
+    expect(SYMBOL_KEYS).toEqual(['!', '?', '@', '#', '$', '%', '&', '*', '-', '_', '.'])
   })
 })
