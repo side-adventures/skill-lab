@@ -11,6 +11,12 @@ import {
  * which keeps you at around half right, where each answer tells the most.
  */
 
+/**
+ * Saved with every answer, so the analysis can tell setups apart. Answers without it are version 1.
+ * 1: first lab (a space shown as ␣ while memorizing). 2: a space shown as a plain gap (2026-11-20).
+ */
+export const LAB_VERSION = 2
+
 /** Same show time for every password, so the timing doesn't hide how hard a part is. */
 export const LAB_SHOW_MS = 4000
 export const START_PARTS = 4
@@ -44,6 +50,8 @@ export function labPassword(parts: number, rand: Rand = Math.random): LabPasswor
 export interface LabRecord {
   /** When (ms since 1970). */
   at: number
+  /** Which lab setup it was played with (LAB_VERSION; missing = 1). */
+  labVersion?: number
   parts: number
   text: string
   typed: string
@@ -67,6 +75,7 @@ export function toRecord(lab: LabPassword, typed: string, typeMs: number, at = D
   const p = lab.password
   return {
     at,
+    labVersion: LAB_VERSION,
     parts: lab.parts,
     text: p.text,
     typed,

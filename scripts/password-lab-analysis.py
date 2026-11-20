@@ -267,6 +267,9 @@ def main(paths):
     for r in used:
         by_parts[r['parts']][0] += 1
         by_parts[r['parts']][1] += right(r)
+    versions = Counter(r.get('labVersion', 1) for r in used)
+    print('Lab versions: ' + '  '.join(f'v{v}: {n}' for v, n in sorted(versions.items()))
+          + '   (v1: space shown as ␣ · v2: space as a plain gap)')
     print('By parts:  ' + '  '.join(f'{k}: {v[1]}/{v[0]}' for k, v in sorted(by_parts.items())))
 
     # Part outcomes over all used answers (typos left out of the part counts: their errors are slips).
@@ -353,6 +356,17 @@ def main(paths):
     table('Changed letters (per letter):', 'change')
     table('Extra characters (per character):', 'extra')
     table('Separators:', 'separator')
+    space = defaultdict(lambda: [0, 0])
+    for r in used:
+        if r['sep'] == ' ' and not r.get('typo'):
+            a = analyse(r)
+            for lab, res in zip(a['labs'], a['res']):
+                if lab['type'] == 'sep':
+                    v = r.get('labVersion', 1)
+                    space[v][0] += 1
+                    space[v][1] += res != 'ok'
+    if space:
+        print('  space by lab version: ' + '  '.join(f'v{v}: {b} of {n} wrong' for v, (n, b) in sorted(space.items())))
     if sep_swaps:
         print('  typed instead: ' + ', '.join(f'"{a}" → "{b}" {n}×' for (a, b), n in sep_swaps.most_common()))
     print('\nWords misremembered (a plain letter wrong or missing):')

@@ -36,7 +36,7 @@ describe('password lab: records and progress', () => {
   it('records everything about an answer', () => {
     const lab = labPassword(5)
     const r = toRecord(lab, lab.password.text, 1234.6, 42)
-    expect(r).toMatchObject({ at: 42, parts: 5, ok: true, typeMs: 1235, text: lab.password.text })
+    expect(r).toMatchObject({ at: 42, labVersion: 2, parts: 5, ok: true, typeMs: 1235, text: lab.password.text })
     expect(r.words.length + r.changes.length + r.extras.length).toBe(5)
     expect(toRecord(lab, 'nope', 0).ok).toBe(false)
   })
