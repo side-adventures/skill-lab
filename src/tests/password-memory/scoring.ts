@@ -96,6 +96,18 @@ export function hasDigitRun(s: string) {
   return false
 }
 
+/**
+ * A capital O or I never appears in a password (o can only become 0, i only 1), so typing O for 0 or I for 1 loses
+ * nothing: you remembered that the letter was changed, and that was its only change. l and 1 stay different, since
+ * a lowercase l does appear in words.
+ */
+export const sameChar = (typed: string, shown: string) =>
+  typed === shown || (shown === '0' && typed === 'O') || (shown === '1' && typed === 'I')
+
+/** Whether what you typed matches the password (exact, except O for 0 and I for 1). */
+export const matches = (typed: string, text: string) =>
+  typed.length === text.length && [...typed].every((c, i) => sameChar(c, text[i]))
+
 // ---------- building a password ----------
 
 /** What to build: the words (and their bits), how many letters to change, how many extra characters. */

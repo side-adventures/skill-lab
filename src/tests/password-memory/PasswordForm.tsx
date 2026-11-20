@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { FullLayout } from '../../components/game/layouts'
 import { feedbackRing, type Flash } from '../../lib/game'
+import { sameChar } from './scoring'
 
 export type FormPhase = 'show' | 'input' | 'correct' | 'wrong'
 
@@ -83,7 +84,7 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
           {phase === 'wrong' ? (
             <span className={TEXT}>
               {[...input].map((c, i) => (
-                <span key={i} className={c === target[i] ? 'text-zinc-50' : 'text-rose-400 line-through'}>{visible(c)}</span>
+                <span key={i} className={sameChar(c, target[i]) ? 'text-zinc-50' : 'text-rose-400 line-through'}>{visible(c)}</span>
               ))}
               {/* Characters you left out, as gaps. */}
               <span className="text-rose-400/70">{'_'.repeat(Math.max(0, target.length - input.length))}</span>
