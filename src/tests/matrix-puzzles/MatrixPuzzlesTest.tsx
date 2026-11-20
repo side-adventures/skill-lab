@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
 import { SquarePanelLayout } from '../../components/game/layouts'
-import { END_MOMENT_MS, feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
+import { feedbackRing, useAnswerFlash, useContinue } from '../../lib/game'
 import { useLatest } from '../../lib/hooks'
 import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
-import { LIVES, changingOf, levelOf, makePuzzle, puzzleMs, type Cell } from './scoring'
+import { LIVES, changingOf, describeRules, levelOf, makePuzzle, puzzleMs, type Cell } from './scoring'
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8']
 
@@ -19,7 +19,7 @@ const SPOTS: [number, number][][] = [
   [[21, 32], [50, 32], [79, 32], [21, 68], [50, 68], [79, 68]],
 ]
 const SCALE = [1.55, 0.85, 0.85, 0.8, 0.6, 0.56]
-const RADIUS = [9, 13, 17, 22]
+const RADIUS = [8, 14, 21]
 
 /** Triangle, square, hexagon, circle, star: different at a glance even when small. */
 function shapePath(shape: number, cx: number, cy: number, r: number) {
@@ -38,24 +38,28 @@ function shapePath(shape: number, cx: number, cy: number, r: number) {
 export function CellView({ cell }: { cell: Cell }) {
   const id = useId()
   const r = RADIUS[cell.size] * SCALE[cell.count - 1]
-  const fillClass = ['', '', 'fill-zinc-500', 'fill-zinc-200'][cell.fill]
   return (
     <svg viewBox="0 0 100 100" className="size-full">
       <defs>
-        <pattern id={`${id}-s`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="2" height="5" className="fill-zinc-300" />
-        </pattern>
+        {/* Half fill: the lower half of each copy's own box. */}
+        <clipPath id={`${id}-h`} clipPathUnits="objectBoundingBox">
+          <rect x="0" y="0.5" width="1" height="0.5" />
+        </clipPath>
       </defs>
-      {SPOTS[cell.count - 1].map(([x, y], i) => (
-        <path
-          key={i}
-          d={shapePath(cell.shape, x, y, r)}
-          className={`stroke-zinc-200 ${fillClass}`}
-          fill={cell.fill === 0 ? 'none' : cell.fill === 1 ? `url(#${id}-s)` : undefined}
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-      ))}
+      {SPOTS[cell.count - 1].map(([x, y], i) => {
+        const d = shapePath(cell.shape, x, y, r)
+        return (
+          <g key={i}>
+            {cell.fill === 1 && <path d={d} clipPath={`url(#${id}-h)`} className="fill-zinc-200" />}
+            <path
+              d={d}
+              className={`stroke-zinc-200 ${cell.fill === 2 ? 'fill-zinc-200' : 'fill-none'}`}
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+          </g>
+        )
+      })}
     </svg>
   )
 }
@@ -91,7 +95,6 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
   // After a mistake: the picked option (null = time ran out); the right one shows in green.
   const [picked, setPicked] = useState<number | null>(null)
   const [flash, signal] = useAnswerFlash()
-  const { later } = useLater()
   const shownAt = useRef(0)
   const solveTimes = useRef<number[]>([])
   const clicks = useRef(0)
@@ -118,15 +121,18 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
     setPicked(i)
     setPhase('reveal')
     signal(false)
-    const left = lives - 1
-    setLives(left)
-    later(END_MOMENT_MS, () => {
-      if (left <= 0) return finish(solved)
+    setLives((l) => l - 1)
+  }
+  // The mistake stays on screen with the rules until you go on (click anywhere, Enter or Space).
+  useContinue(
+    () => {
+      if (lives <= 0) return finish(solved)
       setPicked(null)
       setPhase('play')
       setPuzzle(makePuzzle(levelOf(solved)))
-    })
-  }
+    },
+    { enabled: phase === 'reveal' },
+  )
 
   // The clock restarts with every new puzzle.
   const remaining = usePuzzleClock(limit, phase === 'play', puzzle, () => mistake(null))
@@ -179,9 +185,31 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
           </div>
         }
         panel={
+          phase === 'reveal' ? (
+            <div className="flex h-full flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                {[picked, puzzle.answer].map((i, k) =>
+                  i === null ? (
+                    <div key={k} className="grid aspect-square place-items-center rounded-lg border border-rose-400 text-sm text-rose-300">No answer</div>
+                  ) : (
+                    <div key={k} className={`aspect-square rounded-lg border-2 bg-zinc-900 p-1 ${k ? 'border-emerald-400' : 'border-rose-400'}`}>
+                      <CellView cell={puzzle.options[i]} />
+                    </div>
+                  ),
+                )}
+                <p className="-mt-2 text-center text-xs text-rose-300">Your answer</p>
+                <p className="-mt-2 text-center text-xs text-emerald-300">Right answer</p>
+              </div>
+              <ul className="space-y-1 text-sm text-zinc-300">
+                {describeRules(puzzle).map((line) => <li key={line}>{line}</li>)}
+              </ul>
+              <p className="mt-auto text-center text-sm text-zinc-500">
+                {lives > 0 ? 'Click anywhere to continue' : 'Click anywhere to see your result'}
+              </p>
+            </div>
+          ) : (
           <div className="grid h-full grid-cols-2 grid-rows-4 gap-2">
             {puzzle.options.map((c, i) => {
-              const state = phase !== 'reveal' ? '' : i === puzzle.answer ? 'border-emerald-400 ring-2 ring-emerald-400/60' : i === picked ? 'border-rose-400 ring-2 ring-rose-400/65' : 'opacity-40'
               return (
                 <button
                   key={i}
@@ -191,7 +219,7 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
                     e.preventDefault()
                     answer(i)
                   }}
-                  className={`play-area relative rounded-lg border border-zinc-700 bg-zinc-900 p-1 transition-colors hover:border-zinc-500 ${state}`}
+                  className={`play-area relative rounded-lg border border-zinc-700 bg-zinc-900 p-1 transition-colors hover:border-zinc-500`}
                 >
                   <CellView cell={c} />
                   <span className="absolute top-0.5 left-1.5 text-[11px] font-medium text-zinc-500">{KEYS[i]}</span>
@@ -199,6 +227,7 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
               )
             })}
           </div>
+          )
         }
       />
     </>

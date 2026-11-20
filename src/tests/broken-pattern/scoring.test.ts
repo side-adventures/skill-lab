@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fitsExcept, isAmbiguous, levelOf, levelSpec, makePattern, quadrantBag, quadrantCells } from './scoring'
+import { fitsExcept, isAmbiguous, levelOf, levelSpec, makePattern, quadrantBag, quadrantCells, tilesChanged } from './scoring'
 
 describe('broken pattern: generation', () => {
   for (let level = 1; level <= 7; level++) {
@@ -23,6 +23,17 @@ describe('broken pattern: generation', () => {
       }
     })
   }
+
+  it('a new board never looks like the previous one (at least half the tiles differ)', () => {
+    for (let level = 1; level <= 6; level++) {
+      let prev = makePattern(level, 0)
+      for (let n = 0; n < 200; n++) {
+        const p = makePattern(level, n % 4, prev)
+        expect(tilesChanged(p, prev) * 2).toBeGreaterThanOrEqual(p.tiles.length)
+        prev = p
+      }
+    }
+  })
 
   it('quadrant cells: interior only, 4 quadrants of equal size', () => {
     for (const size of [4, 5, 6]) {

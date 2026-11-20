@@ -69,7 +69,7 @@ export default function BrokenPatternTest({ onFinish }: TestComponentProps) {
     later(FOUND_MS, () => {
       setFound(false)
       setWrongAt(null)
-      setPattern(makePattern(levelOf(c), nextQuadrant()))
+      setPattern(makePattern(levelOf(c), nextQuadrant(), pattern))
       setShownAt(performance.now())
     })
   }

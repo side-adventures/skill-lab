@@ -1,6 +1,6 @@
 import { randInt, shuffle, type Rand } from '../../lib/random'
 
-export const DURATION_MS = 90_000
+export const DURATION_MS = 120_000
 /** Correct answers per level: every 3 make the pattern harder. */
 export const PER_LEVEL = 3
 
@@ -92,11 +92,18 @@ export function isAmbiguous(p: Pattern) {
   return p.tiles.some((_, i) => i !== p.broken && feats.every((xs) => fitsExcept(xs, p.size, i)))
 }
 
+/** Tiles that differ between two boards of the same size (all of them when the sizes differ). */
+export function tilesChanged(a: Pattern, b: Pattern) {
+  if (a.size !== b.size) return a.tiles.length
+  return a.tiles.filter((t, i) => t.kind !== b.tiles[i].kind || t.rot !== b.tiles[i].rot).length
+}
+
 /**
  * A pattern for a level, with the broken tile in quadrant `q` (spread evenly over a run by the caller).
- * Retries until no other tile could be read as the broken one.
+ * Retries until no other tile could be read as the broken one, and until at least half the tiles differ from the
+ * previous board `prev` (otherwise the break could be found by comparing the two boards).
  */
-export function makePattern(level: number, q: number, rand: Rand = Math.random): Pattern {
+export function makePattern(level: number, q: number, prev?: Pattern, rand: Rand = Math.random): Pattern {
   const spec = levelSpec(level)
   for (;;) {
     const [d1a, d1b] = dir1D(rand)
@@ -117,6 +124,7 @@ export function makePattern(level: number, q: number, rand: Rand = Math.random):
     const rule = pick(rules, rand)
     tiles[broken] = { ...tiles[broken], [rule.attr]: pick(rule.vals.filter((v) => v !== tiles[broken][rule.attr]), rand) }
     const pattern = { level, size: spec.size, rules, tiles, broken }
+    if (prev && tilesChanged(pattern, prev) * 2 < pattern.tiles.length) continue
     if (!isAmbiguous(pattern)) return pattern
   }
 }

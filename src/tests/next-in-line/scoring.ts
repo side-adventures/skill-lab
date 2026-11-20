@@ -1,20 +1,20 @@
 import { randInt, shuffle, type Rand } from '../../lib/random'
 
-export const DURATION_MS = 90_000
+export const DURATION_MS = 120_000
 /** Correct answers per level: every 4 correct answers make the series harder. */
 export const PER_LEVEL = 4
 /** Figures shown before the one you pick. */
 export const SHOWN = 4
 
 /**
- * A figure: a shape (`shape`: 0 triangle, 1 square, 2 circle; `fill`) with a clock hand inside (`hand`, in 45° steps), a row of `dots` below it and
+ * A figure: a shape (`shape`: 0 triangle, 1 square, 2 circle; `fill`) with a clock hand inside (`hand`, in 45° steps), 1–6 `dots` below it (laid out as on a die) and
  * a small square in one corner of its box (`marker`, 0 = top left, clockwise).
  */
 export interface Fig { shape: number; fill: number; hand: number; dots: number; marker: number }
 export type Attr = keyof Fig
 export const ATTRS: Attr[] = ['shape', 'fill', 'hand', 'dots', 'marker']
 
-const RANGE: Record<Attr, [number, number]> = { shape: [0, 2], fill: [0, 2], hand: [0, 7], dots: [1, 7], marker: [0, 3] }
+const RANGE: Record<Attr, [number, number]> = { shape: [0, 2], fill: [0, 2], hand: [0, 7], dots: [1, 6], marker: [0, 3] }
 /** Cyclic attributes wrap around (a full turn, the corners, the shapes, the fills); the dots must stay in range. */
 const CYCLE: Partial<Record<Attr, number>> = { hand: 8, marker: 4, fill: 3, shape: 3 }
 
@@ -31,13 +31,13 @@ export interface Rule { attr: Attr; step: number; hard: boolean }
 
 /** How many attributes change, and how many of them use a hard step, per level. */
 const LEVELS: { rules: number; hard: number }[] = [
-  { rules: 1, hard: 0 },
   { rules: 2, hard: 0 },
   { rules: 2, hard: 1 },
   { rules: 3, hard: 1 },
   { rules: 3, hard: 2 },
   { rules: 4, hard: 2 },
   { rules: 4, hard: 3 },
+  { rules: 5, hard: 3 },
 ]
 export const levelOf = (correct: number) => 1 + Math.floor(correct / PER_LEVEL)
 export const levelSpec = (level: number) => LEVELS[Math.min(level, LEVELS.length) - 1]

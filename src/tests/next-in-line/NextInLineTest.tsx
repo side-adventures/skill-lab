@@ -16,14 +16,23 @@ const KEYS = ['1', '2', '3', '4']
 const CORNERS: [number, number][] = [[4, 4], [86, 4], [86, 86], [4, 86]]
 
 /** Triangle, square, circle, centred on (50, 43) and about the same size. */
+/** Dots as on a die (offsets in a 3 × 3 grid), so 4, 5 and 6 read at a glance. */
+const DIE: [number, number][][] = [
+  [[0, 0]],
+  [[-1, -1], [1, 1]],
+  [[-1, -1], [0, 0], [1, 1]],
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+  [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
+  [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
+]
+
 const SHAPES = ['M50 11L83 66H17Z', 'M23 16H77V70H23Z', 'M21 43a29 29 0 1 0 58 0a29 29 0 1 0 -58 0Z']
 
 export function Figure({ fig }: { fig: Fig }) {
   const id = useId()
   const cx = 50, cy = 43
   const a = (fig.hand * Math.PI) / 4
-  const dotGap = 9
-  const dotX0 = 50 - ((fig.dots - 1) * dotGap) / 2
+  const hx = cx + 21 * Math.sin(a), hy = cy - 21 * Math.cos(a)
   const [mx, my] = CORNERS[fig.marker]
   return (
     <svg viewBox="0 0 100 100" className="size-full">
@@ -40,10 +49,13 @@ export function Figure({ fig }: { fig: Fig }) {
         strokeWidth="2.5"
         strokeLinejoin="round"
       />
-      <line x1={cx} y1={cy} x2={cx + 21 * Math.sin(a)} y2={cy - 21 * Math.cos(a)} className="stroke-violet-400" strokeWidth="5" strokeLinecap="round" />
+      {/* A dark outline keeps the hand readable on the striped and grey fills. */}
+      <line x1={cx} y1={cy} x2={hx} y2={hy} className="stroke-zinc-950" strokeWidth="9" strokeLinecap="round" />
+      <circle cx={cx} cy={cy} r="6" className="fill-zinc-950" />
+      <line x1={cx} y1={cy} x2={hx} y2={hy} className="stroke-violet-400" strokeWidth="5" strokeLinecap="round" />
       <circle cx={cx} cy={cy} r="4" className="fill-violet-400" />
-      {Array.from({ length: fig.dots }, (_, i) => (
-        <circle key={i} cx={dotX0 + i * dotGap} cy="88" r="3.2" className="fill-zinc-200" />
+      {DIE[fig.dots - 1].map(([dx, dy], i) => (
+        <circle key={i} cx={50 + dx * 6.5} cy={87 + dy * 6.5} r="2.6" className="fill-zinc-200" />
       ))}
     </svg>
   )
@@ -67,7 +79,7 @@ export default function NextInLineTest({ onFinish }: TestComponentProps) {
 
   const remaining = useCountdown(DURATION_MS, true, () => {
     const all = answers.current
-    const byRules = [1, 2, 3, 4].map((n) => all.filter((a) => a.rules === n)).filter((xs) => xs.length)
+    const byRules = [1, 2, 3, 4, 5].map((n) => all.filter((a) => a.rules === n)).filter((xs) => xs.length)
     onFinish({
       score: correctMinusWrong(correct, wrong),
       ...(all.length === 0 && { failed: 'No answers — try again!' }),
