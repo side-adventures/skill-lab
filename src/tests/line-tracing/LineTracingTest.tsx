@@ -240,8 +240,8 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
           className="block size-full cursor-crosshair"
           onPointerMove={onMove}
           onPointerDown={(e) => handle(toSvg(e.clientX, e.clientY))}
-          onPointerUp={(e) => phase === 'tracing' && e.pointerType !== 'mouse' && exit(toSvg(e.clientX, e.clientY))}
-          onPointerLeave={(e) => phase === 'tracing' && exit(toSvg(e.clientX, e.clientY))}
+          onPointerUp={(e) => phaseRef.current === 'tracing' && e.pointerType !== 'mouse' && exit(toSvg(e.clientX, e.clientY))}
+          onPointerLeave={(e) => phaseRef.current === 'tracing' && exit(toSvg(e.clientX, e.clientY))}
         >
           <Corridor track={track} />
           {tracedBelow.length > 1 && <path d={line(tracedBelow)} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth={10} className={tracedClass} />}
