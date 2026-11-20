@@ -4,9 +4,8 @@ import { SquareLayout } from '../../components/game/layouts'
 import { feedbackRing, useAnswerFlash, useLater } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import { fmtMs, type TimedAnswer } from '../../lib/resultFormat'
-import { correctMinusWrong } from '../../lib/scoring'
 import type { TestComponentProps } from '../types'
-import { DURATION_MS, levelOf, makePattern, quadrantBag, type Tile } from './scoring'
+import { DURATION_MS, PENALTY_MS, levelOf, makePattern, quadrantBag, type Tile } from './scoring'
 
 /** The three kinds at turn 0 (in a 100 × 100 tile): a diagonal half, a quarter circle, a half. */
 const KIND_PATH = ['M0 0H100L0 100Z', 'M0 0H100A100 100 0 0 1 0 100Z', 'M0 0H100V50H0Z']
@@ -36,18 +35,17 @@ export default function BrokenPatternTest({ onFinish }: TestComponentProps) {
   const remaining = useCountdown(DURATION_MS, true, () => {
     const found = answers.filter((a) => a.correct)
     onFinish({
-      score: correctMinusWrong(correct, wrong),
+      score: correct,
       ...(answers.length === 0 && { failed: 'No clicks — try again!' }),
       details: {
         stats: [
-          { label: 'Patterns', value: String(correct) },
-          { label: 'Wrong clicks', value: String(wrong) },
+          { label: 'Wrong clicks', value: `${wrong} (−${(wrong * PENALTY_MS) / 1000} s)` },
           ...(found.length ? [{ label: 'Avg per pattern', value: fmtMs(found.reduce((t, a) => t + a.ms, 0) / found.length) }] : []),
           { label: 'Highest level', value: String(Math.max(1, ...answers.map((a) => a.level))) },
         ],
       },
     })
-  })
+  }, wrong * PENALTY_MS)
   const over = remaining <= 0
 
   const click = (i: number) => {
@@ -79,8 +77,8 @@ export default function BrokenPatternTest({ onFinish }: TestComponentProps) {
     <>
       <GameInfo
         left={<><InfoValue value={(remaining / 1000).toFixed(1)} unit="s left" /><InfoValue label="Level" value={pattern.level} /></>}
-        middle="Click the tile that breaks the pattern"
-        right={<InfoValue label="Score" value={correctMinusWrong(correct, wrong)} />}
+        middle={<>Click the tile that breaks the pattern{wrongAt !== null && <span className="text-rose-300"> · −{PENALTY_MS / 1000} s</span>}</>}
+        right={<InfoValue label="Found" value={correct} />}
         timer={remaining / DURATION_MS}
       />
       <SquareLayout>
