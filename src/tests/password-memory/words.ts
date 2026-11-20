@@ -1,5 +1,6 @@
 // Words for Password Memory: common, concrete, spelled the same in US and UK English (checked against both
-// system dictionaries), 256 per length group so every word is worth exactly 8 bits whatever its length.
+// system dictionaries). 256 words per main group (4–5, 6, 7–9 letters), so each is worth 8 bits whatever its length;
+// the extra groups (3 and 10–12 letters) are smaller, because there are fewer good words of those lengths.
 
 /** 4–5 letters. */
 export const SHORT_WORDS: string[] = [
@@ -77,4 +78,29 @@ export const LONG_WORDS: string[] = [
   "thunder", "toaster", "tornado", "tortoise", "tractor", "treasure", "trolley", "trumpet", "tugboat", "turquoise", "umbrella", "unicorn",
   "vanilla", "village", "vinegar", "violinist", "volcano", "vulture", "wardrobe", "warrior", "waterfall", "weekend", "whirlpool", "whistle",
   "windmill", "wishbone", "workshop", "wrestler",
+]
+
+/** 3 letters (extra group, 128 words): for combining words. */
+export const TINY_WORDS: string[] = [
+  "ace", "ant", "ape", "arc", "arm", "art", "axe", "bag", "bat", "bay", "bed", "bee",
+  "bib", "big", "bow", "box", "bug", "bun", "bus", "cab", "cap", "car", "cat", "cot",
+  "cow", "cub", "cup", "day", "den", "dew", "dog", "dot", "dry", "ear", "eel", "egg",
+  "elk", "elm", "eye", "fan", "fig", "fin", "fit", "fog", "fox", "fun", "gas", "gem",
+  "gum", "gym", "ham", "hat", "hay", "hen", "hip", "hot", "hut", "ice", "icy", "ink",
+  "inn", "ivy", "jam", "jar", "jaw", "jet", "joy", "jug", "key", "kid", "kit", "leg",
+  "lid", "lip", "log", "map", "mat", "mud", "mug", "net", "new", "nut", "oak", "oar",
+  "oat", "odd", "oil", "old", "owl", "pan", "pea", "pen", "pie", "pig", "pin", "pot",
+  "pup", "ram", "raw", "red", "rib", "rod", "rug", "sad", "saw", "sea", "shy", "sky",
+  "spa", "sum", "sun", "tag", "tan", "tap", "tar", "tea", "tie", "tin", "tip", "toe",
+  "top", "toy", "tub", "van", "wax", "web", "wet", "zoo",
+]
+
+/** 10–12 letters (extra group, 64 words): one long word at higher levels. */
+export const XLONG_WORDS: string[] = [
+  "astronomer", "basketball", "blackberry", "blackboard", "butterscotch", "candlestick", "caterpillar", "cauliflower", "cheesecake", "chimpanzee", "clothesline", "countryside",
+  "dishwasher", "earthquake", "electrician", "fingernail", "firecracker", "firefighter", "flashlight", "gingerbread", "grapefruit", "grasshopper", "greenhouse", "hairdresser",
+  "helicopter", "hippopotamus", "honeysuckle", "hummingbird", "kingfisher", "lighthouse", "marshmallow", "microscope", "motorcycle", "nightingale", "paintbrush", "peppermint",
+  "photograph", "pillowcase", "playground", "pomegranate", "rainforest", "refrigerator", "salamander", "sandcastle", "scoreboard", "skateboard", "skyscraper", "snowmobile",
+  "strawberry", "tablecloth", "tablespoon", "tambourine", "thunderstorm", "toothbrush", "toothpaste", "trampoline", "typewriter", "volleyball", "watermelon", "wheelbarrow",
+  "wheelchair", "windowsill", "woodpecker", "wristwatch",
 ]

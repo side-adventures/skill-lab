@@ -1,78 +1,77 @@
 import { randInt, shuffle, type Rand } from '../../lib/random'
-import { LONG_WORDS, MEDIUM_WORDS, SHORT_WORDS } from './words'
+import { LONG_WORDS, MEDIUM_WORDS, SHORT_WORDS, TINY_WORDS, XLONG_WORDS } from './words'
 
 /** Lives for the whole run: a wrong answer costs one, and you get a new password of the same level. */
 export const LIVES = 2
 
-/** How long the password stays visible: 1 s + 0.5 s per character. */
-export const showMs = (password: string) => 1000 + 500 * password.length
+// ---------- words, changes, separators, extras ----------
 
 /**
- * A password is built from a recipe:
- * - shape: one word (short 4–5 letters, medium 6, long 7–9) or two short words with a separator;
- * - changes: letters turned into uppercase or leet (a→4, e→3, i→1, o→0, s→5, t→7);
- * - extras: digits / symbols added at the end.
+ * Word pools. The main groups have 256 words each (8 bits per word). Combined words come from the 3-letter and 4–5
+ * letter words together (384, ~8.6 bits each), so about 1 in 3 combined words has 3 letters.
+ * The 10–12 letter group is small (64 words, 6 bits) and only used in a few recipes.
  */
-export type Shape = 'short' | 'medium' | 'long' | 'two'
-export interface Recipe { shape: Shape; changes: number; extras: number }
-
-const rec = (shape: Shape, changes: number, extras: number): Recipe => ({ shape, changes, extras })
-
-/**
- * The level ladder. Each level lists recipes of about the same strength (within ~1.5 bits), and one is picked at
- * random, so a long word gets more changes than a short one. Each level is ~3–4 bits stronger than the one before.
- * Past the last level, each further level adds one extra character to the last level's recipes.
- */
-export const LEVELS: Recipe[][] = [
-  [rec('short', 0, 1)], // ~12 bits: ball1
-  [rec('short', 1, 1), rec('medium', 1, 1)], // ~15: ch4ir9
-  [rec('short', 1, 2), rec('medium', 1, 2)], // ~19: stonE@4
-  [rec('short', 1, 3), rec('medium', 1, 3), rec('long', 1, 3), rec('two', 0, 1)], // ~22.5
-  [rec('medium', 2, 3), rec('medium', 3, 3), rec('long', 2, 3), rec('two', 1, 1)], // ~26
-  [rec('two', 2, 1), rec('two', 3, 1), rec('two', 1, 2)], // ~30
-  [rec('two', 2, 2), rec('two', 3, 2), rec('two', 1, 3)], // ~34
-  [rec('two', 2, 3), rec('two', 3, 3), rec('two', 1, 4)], // ~38
-  [rec('two', 2, 4), rec('two', 3, 4)], // ~42
-]
-
-/** The recipes for a level (1-based); past the ladder, one more extra character per level. */
-export function recipesFor(level: number): Recipe[] {
-  const last = LEVELS.length
-  if (level <= last) return LEVELS[level - 1]
-  return LEVELS[last - 1].map((r) => ({ ...r, extras: r.extras + level - last }))
-}
-
-// ---------- building blocks ----------
-
-/** 256 words per group, so every word is worth 8 bits whatever its length. */
-export const POOLS: Record<Exclude<Shape, 'two'>, string[]> = {
+export const POOLS = {
   short: SHORT_WORDS,
   medium: MEDIUM_WORDS,
   long: LONG_WORDS,
+  xlong: XLONG_WORDS,
+  combo: [...TINY_WORDS, ...SHORT_WORDS],
 }
+export type Group = keyof typeof POOLS
 
-export const LEET: Record<string, string> = { a: '4', e: '3', i: '1', o: '0', s: '5', t: '7' }
-/** Letters that are never uppercased: I looks like l / 1, O like 0. */
-const NO_UPPER = new Set(['i', 'o'])
-/** Ways a letter can be changed (uppercase and / or leet). */
-export const changeOptions = (letter: string) => {
-  const opts: string[] = []
-  if (!NO_UPPER.has(letter)) opts.push(letter.toUpperCase())
-  if (LEET[letter]) opts.push(LEET[letter])
-  return opts
+/**
+ * What a changed letter can become: uppercase, or a digit / symbol that looks like it (leet).
+ * I and O are never uppercased (they look like l / 1 and 0).
+ */
+export const CHANGES: Record<string, string[]> = {
+  a: ['A', '4', '@'],
+  b: ['B', '8'],
+  e: ['E', '3'],
+  g: ['G', '9'],
+  i: ['1'],
+  l: ['L', '1'],
+  o: ['0'],
+  s: ['S', '5', '$'],
+  t: ['T', '7'],
+  z: ['Z', '2'],
 }
+export const changeOptions = (letter: string) => CHANGES[letter] ?? [letter.toUpperCase()]
+/** How a letter was changed, for the calibration data. */
+export const changeKind = (to: string): 'upper' | 'digit' | 'symbol' =>
+  /[0-9]/.test(to) ? 'digit' : /[A-Z]/.test(to) ? 'upper' : 'symbol'
 
-export const SEPARATORS = ['', '-', '_', '.', ' ']
+/**
+ * Separators between combined words, with how often each is picked. "No separator" is much harder to read back, so
+ * it is rarer, and only between two words (three words always get a visible one).
+ */
+export const SEPARATORS: { sep: string; weight: number }[] = [
+  { sep: '-', weight: 7 }, { sep: '_', weight: 7 }, { sep: '.', weight: 7 }, { sep: ' ', weight: 7 }, { sep: '', weight: 4 },
+]
+export const separatorsFor = (words: number) => SEPARATORS.filter((s) => s.sep !== '' || words === 2)
+
 /** Symbols that are easy to type on common keyboard layouts (no dead keys). */
 export const SYMBOLS = ['!', '?', '@', '#', '$', '%', '&', '*']
 export const EXTRA_CHARS = [...'0123456789', ...SYMBOLS]
 
-const pick = <T>(items: T[], rand: Rand) => items[randInt(0, items.length - 1, rand)]
+export const pick = <T>(items: T[], rand: Rand) => items[randInt(0, items.length - 1, rand)]
 const log2 = Math.log2
 const choose = (n: number, k: number) => {
   let r = 1
   for (let i = 0; i < k; i++) r = (r * (n - i)) / (i + 1)
   return r
+}
+
+/** Picks one item by weight; returns it and its chance. */
+export function pickWeighted<T extends { weight: number }>(items: T[], rand: Rand): { item: T; p: number } {
+  const total = items.reduce((a, i) => a + i.weight, 0)
+  let r = rand() * total
+  for (const item of items) {
+    r -= item.weight
+    if (r < 0) return { item, p: item.weight / total }
+  }
+  const item = items[items.length - 1]
+  return { item, p: item.weight / total }
 }
 
 /** Extra characters for the end: no character twice, no run of 3 digits up or down (123, 987). */
@@ -89,62 +88,140 @@ export function makeExtras(count: number, rand: Rand = Math.random): string {
 
 export function hasDigitRun(s: string) {
   for (let i = 0; i + 2 < s.length; i++) {
-    const [a, b, c] = [s[i], s[i + 1], s[i + 2]].map(Number)
-    if ([s[i], s[i + 1], s[i + 2]].some((ch) => !/[0-9]/.test(ch))) continue
+    const t = s.slice(i, i + 3)
+    if (!/^[0-9]{3}$/.test(t)) continue
+    const [a, b, c] = [...t].map(Number)
     if ((b - a === 1 && c - b === 1) || (a - b === 1 && b - c === 1)) return true
   }
   return false
 }
 
+// ---------- building a password ----------
+
+/** What to build: the words (and their bits), how many letters to change, how many extra characters. */
+export interface Spec {
+  words: string[]
+  wordBits: number
+  changes: number
+  extras: number
+  /** Separators to pick from (default: the game's). */
+  separators?: { sep: string; weight: number }[]
+}
+
+/** One changed letter: which word, which letter in it, from what to what. */
+export interface Change { word: number; index: number; from: string; to: string }
+
 export interface Password {
   text: string
   /** Strength in bits: how many yes / no guesses it takes to pin it down, knowing how passwords here are made. */
   bits: number
-  recipe: Recipe
+  words: string[]
+  sep: string
+  changes: Change[]
+  extras: string
 }
 
 /**
- * Builds a password for a recipe and works out its strength in bits, from the choices the generator made:
- * the word(s) out of their pool, the separator, which letters were changed and how, and the extra characters.
+ * Builds a password and works out its strength in bits, from the choices made: the words out of their pool, the
+ * separator (by its chance: a rarer one counts more), which letters were changed (each change counts the same 1 bit
+ * for "how", whatever the letter's options), and the extra characters.
  */
-export function makePassword(recipe: Recipe, rand: Rand = Math.random): Password {
-  const words = recipe.shape === 'two'
-    ? twoWords(rand)
-    : [pick(POOLS[recipe.shape], rand)]
-  let bits = recipe.shape === 'two'
-    ? 2 * log2(POOLS.short.length) + log2(SEPARATORS.length)
-    : log2(POOLS[recipe.shape].length)
-  const sep = recipe.shape === 'two' ? pick(SEPARATORS, rand) : ''
+export function buildPassword(spec: Spec, rand: Rand = Math.random): Password {
+  const { words } = spec
+  let bits = spec.wordBits
+  let sep = ''
+  if (words.length > 1) {
+    const { item, p } = pickWeighted(spec.separators ?? separatorsFor(words.length), rand)
+    sep = item.sep
+    bits += -log2(p)
+  }
 
   // Letters of all words in one row; pick which ones change, then how.
   const letters = [...words.join('')]
-  const changeable = letters.flatMap((l, i) => (changeOptions(l).length ? [i] : []))
-  const changes = Math.min(recipe.changes, changeable.length)
-  const chosen = shuffle(changeable, rand).slice(0, changes)
-  bits += log2(choose(changeable.length, changes))
-  for (const i of chosen) {
-    const opts = changeOptions(letters[i])
-    letters[i] = pick(opts, rand)
-    bits += log2(opts.length)
-  }
+  const count = Math.min(spec.changes, letters.length)
+  const chosen = shuffle(letters.map((_, i) => i), rand).slice(0, count).sort((a, b) => a - b)
+  bits += log2(choose(letters.length, count)) + count
+  const starts = words.map((_, w) => words.slice(0, w).join('').length)
+  const changes: Change[] = chosen.map((i) => {
+    const from = letters[i]
+    const to = pick(changeOptions(from), rand)
+    letters[i] = to
+    let word = 0
+    while (word + 1 < starts.length && starts[word + 1] <= i) word++
+    return { word, index: i - starts[word], from, to }
+  })
 
-  const extras = makeExtras(recipe.extras, rand)
-  bits += recipe.extras * log2(EXTRA_CHARS.length)
+  const extras = makeExtras(spec.extras, rand)
+  bits += spec.extras * log2(EXTRA_CHARS.length)
 
-  const first = letters.slice(0, words[0].length).join('')
-  const second = letters.slice(words[0].length).join('')
-  return { text: (words.length === 2 ? first + sep + second : first) + extras, bits, recipe }
+  const parts = starts.map((s, w) => letters.slice(s, s + words[w].length).join(''))
+  return { text: parts.join(sep) + extras, bits, words, sep, changes, extras }
 }
 
-function twoWords(rand: Rand): string[] {
-  const a = pick(POOLS.short, rand)
-  let b = pick(POOLS.short, rand)
-  while (b === a) b = pick(POOLS.short, rand)
-  return [a, b]
+/** Different words from one pool, with their bits. */
+export function pickWords(pool: string[], count: number, rand: Rand = Math.random) {
+  const words: string[] = []
+  while (words.length < count) {
+    const w = pick(pool, rand)
+    if (!words.includes(w)) words.push(w)
+  }
+  return { words, wordBits: count * log2(pool.length) }
+}
+
+// ---------- the game's levels ----------
+
+/**
+ * A recipe: one word from a group (4–5 letters, 6, 7–9, 10–12), or two / three combined words (3–5 letters each);
+ * how many letters change; how many extra characters.
+ */
+export type Shape = Exclude<Group, 'combo'> | 'two' | 'three'
+export interface Recipe { shape: Shape; changes: number; extras: number }
+const rec = (shape: Shape, changes: number, extras: number): Recipe => ({ shape, changes, extras })
+
+/**
+ * The level ladder. Each level lists recipes of about the same strength, and one is picked at random. Words get
+ * longer as the levels go up (4–5 letters first, then 6, then 7–9; 10–12 and three words later), and each level is
+ * ~3–4 bits stronger than the one before. Past the last level, each further level adds one extra character.
+ */
+export const LEVELS: Recipe[][] = [
+  [rec('short', 0, 1)],
+  [rec('short', 1, 1), rec('medium', 1, 1)],
+  [rec('short', 1, 2), rec('medium', 1, 2), rec('two', 0, 0)],
+  [rec('medium', 1, 3), rec('long', 2, 2), rec('two', 1, 0)],
+  [rec('medium', 2, 3), rec('long', 2, 3), rec('xlong', 3, 3), rec('two', 1, 1)],
+  [rec('long', 2, 4), rec('xlong', 2, 4), rec('two', 2, 1), rec('two', 1, 2)],
+  [rec('two', 2, 2), rec('two', 1, 3), rec('two', 3, 1)],
+  [rec('two', 3, 2), rec('three', 1, 1), rec('two', 2, 3)],
+  [rec('three', 1, 2), rec('three', 2, 1), rec('two', 3, 3)],
+  [rec('three', 2, 2), rec('three', 1, 3), rec('two', 3, 4)],
+]
+
+/** The recipes for a level (1-based); past the ladder, one more extra character per level. */
+export function recipesFor(level: number): Recipe[] {
+  const last = LEVELS.length
+  if (level <= last) return LEVELS[level - 1]
+  return LEVELS[last - 1].map((r) => ({ ...r, extras: r.extras + level - last }))
+}
+
+export const wordCount = (shape: Shape) => (shape === 'two' ? 2 : shape === 'three' ? 3 : 1)
+
+export function makePassword(recipe: Recipe, rand: Rand = Math.random): Password {
+  const count = wordCount(recipe.shape)
+  const pool = count > 1 ? POOLS.combo : POOLS[recipe.shape as Group]
+  return buildPassword({ ...pickWords(pool, count, rand), changes: recipe.changes, extras: recipe.extras }, rand)
 }
 
 /** A password for a level (1-based): a random recipe of that level. */
 export const passwordFor = (level: number, rand: Rand = Math.random) => makePassword(pick(recipesFor(level), rand), rand)
+
+/**
+ * How long a password stays visible: by the things to remember, not the characters (a long word is one chunk).
+ * 1.5 s + 1 s per word + 0.5 s per separator + 0.75 s per changed letter + 0.75 s per extra character.
+ */
+export const showMs = (p: Pick<Password, 'words' | 'changes' | 'extras'>) =>
+  1500 + 1000 * p.words.length + 500 * (p.words.length - 1) + 750 * p.changes.length + 750 * p.extras.length
+
+// ---------- score and result ----------
 
 /** The score: whole bits. */
 export const scoreBits = (bits: number) => Math.round(bits)
