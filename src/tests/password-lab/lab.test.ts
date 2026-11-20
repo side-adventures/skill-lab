@@ -90,3 +90,14 @@ describe('password lab: records and progress', () => {
     expect(markLast(right, 'typo')).toBe(right)
   })
 })
+
+describe('password lab: O for 0', () => {
+  it('records O for 0 as right, keeping what was typed', () => {
+    let lab = labPassword(4)
+    for (let i = 0; i < 500 && !lab.password.text.includes('0'); i++) lab = labPassword(6)
+    const typed = lab.password.text.replaceAll('0', 'O')
+    const r = toRecord(lab, typed, 0)
+    expect(r.ok).toBe(true)
+    expect(r.typed).toBe(typed)
+  })
+})

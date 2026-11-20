@@ -1,6 +1,6 @@
 import { randInt, type Rand } from '../../lib/random'
 import {
-  POOLS, buildPassword, changeKind, pickWeighted, pickWords, type Group, type Password,
+  POOLS, buildPassword, changeKind, matches, pickWeighted, pickWords, type Group, type Password,
 } from '../password-memory/scoring'
 
 /**
@@ -70,7 +70,8 @@ export function toRecord(lab: LabPassword, typed: string, typeMs: number, at = D
     parts: lab.parts,
     text: p.text,
     typed,
-    ok: typed === p.text,
+    // What you typed is kept as it was; O for 0 and I for 1 count as right (see `matches`).
+    ok: matches(typed, p.text),
     typeMs: Math.round(typeMs),
     bits: Math.round(p.bits * 100) / 100,
     group: lab.group,

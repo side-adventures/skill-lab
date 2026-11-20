@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CHANGES, EXTRA_CHARS, LEVELS, POOLS, buildPassword, changeOptions, crackTime, hasDigitRun, makeExtras, makePassword,
-  passwordFor, pickWords, recipesFor, scoreBits, showMs, strengthLabel, wordCount, type Recipe,
+  matches, passwordFor, pickWords, recipesFor, scoreBits, showMs, strengthLabel, wordCount, type Recipe,
 } from './scoring'
 
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]
@@ -156,5 +156,18 @@ describe('password memory: time, score and result', () => {
     expect(crackTime(30)).toBe('~6.2 days')
     expect(crackTime(40)).toBe('~17 years')
     expect(crackTime(60)).toBe('~18 million years')
+  })
+})
+
+describe('password memory: checking an answer', () => {
+  it('is exact, except a capital O for 0 and a capital I for 1', () => {
+    expect(matches('FAlC0N*97', 'FAlC0N*97')).toBe(true)
+    expect(matches('FAlCON*97', 'FAlC0N*97')).toBe(true)
+    expect(matches('ch4Ir', 'ch41r')).toBe(true)
+    // l and 1 stay different, and so do o and 0, case and length.
+    expect(matches('ba1l', 'bal1')).toBe(false)
+    expect(matches('falc0n', 'falc0N')).toBe(false)
+    expect(matches('FAlCoN*97', 'FAlC0N*97')).toBe(false)
+    expect(matches('FAlC0N*9', 'FAlC0N*97')).toBe(false)
   })
 })
