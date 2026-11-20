@@ -29,21 +29,23 @@ export function useActionKey(handler: () => void, enabled = true) {
  * Counts down durationMs while `running`; returns remaining ms (rounded to 0.1 s)
  * and calls onEnd once when it reaches zero.
  */
-export function useCountdown(durationMs: number, running: boolean, onEnd: () => void) {
+export function useCountdown(durationMs: number, running: boolean, onEnd: () => void, lostMs = 0) {
   const [remaining, setRemaining] = useState(durationMs)
   const onEndRef = useLatest(onEnd)
+  // Time taken off the clock (penalties); read on every tick, so changing it doesn't restart the clock.
+  const lost = useLatest(lostMs)
   useEffect(() => {
     if (!running) return
     const end = performance.now() + durationMs
     let raf = 0
     const tick = () => {
-      const left = Math.max(0, end - performance.now())
+      const left = Math.max(0, end - lost.current - performance.now())
       setRemaining(Math.ceil(left / 100) * 100)
       if (left <= 0) return onEndRef.current()
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [running, durationMs, onEndRef])
+  }, [running, durationMs, onEndRef, lost])
   return remaining
 }

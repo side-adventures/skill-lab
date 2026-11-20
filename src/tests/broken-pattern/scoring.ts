@@ -1,6 +1,8 @@
 import { randInt, shuffle, type Rand } from '../../lib/random'
 
 export const DURATION_MS = 120_000
+/** A wrong click takes this much time off the clock. */
+export const PENALTY_MS = 5_000
 /** Correct answers per level: every 3 make the pattern harder. */
 export const PER_LEVEL = 3
 
