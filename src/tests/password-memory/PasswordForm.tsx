@@ -5,8 +5,11 @@ import { sameChar } from './scoring'
 
 export type FormPhase = 'show' | 'input' | 'correct' | 'wrong'
 
-/** A space is hard to see when comparing, so it is drawn as ␣ there. */
-const visible = (c: string) => (c === ' ' ? '␣' : c)
+/**
+ * While memorizing, a space is a plain gap (a ␣ was read as an underscore: in the lab, 5 of 13 spaces came back
+ * as "_"). When comparing after a mismatch, a missing or extra space must be visible, so it is a dimmed ␣ there.
+ */
+const visible = (c: string) => (c === ' ' ? <span className="opacity-40">␣</span> : c)
 
 const TEXT = 'font-mono text-3xl font-semibold tracking-[0.08em] whitespace-pre'
 
@@ -71,7 +74,10 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
 
       <div className="mt-8 w-full max-w-xl space-y-5">
         <Field label="Password" tone={phase === 'wrong' ? 'border-zinc-500' : ''}>
-          {(phase === 'show' || phase === 'wrong') && <span className={`${TEXT} text-zinc-50`}>{[...target].map(visible).join('')}</span>}
+          {phase === 'show' && <span className={`${TEXT} text-zinc-50`}>{target}</span>}
+          {phase === 'wrong' && (
+            <span className={`${TEXT} text-zinc-50`}>{[...target].map((c, i) => <span key={i}>{visible(c)}</span>)}</span>
+          )}
           {(phase === 'input' || phase === 'correct') && (
             <span className="text-2xl tracking-[0.25em] text-zinc-400">{'●'.repeat(target.length)}</span>
           )}
