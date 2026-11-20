@@ -248,9 +248,14 @@ def pct(a, b):
 
 
 def main(paths):
-    records = []
+    # Each download holds every answer saved so far, so several downloads overlap: keep each answer once.
+    seen, records = set(), []
     for p in paths:
-        records += json.load(open(p))['records']
+        for r in json.load(open(p))['records']:
+            key = (r['at'], r['text'])
+            if key not in seen:
+                seen.add(key)
+                records.append(r)
     records.sort(key=lambda r: r['at'])
     used = [r for r in records if not r.get('skipped')]
     right = lambda r: bool(r['ok'] or r.get('typo'))
