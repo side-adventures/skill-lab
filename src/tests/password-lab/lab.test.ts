@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EXTRA_CHARS } from '../password-memory/scoring'
-import { LAB_KEY, MIN_PARTS, START_PARTS, emptyLab, hitRate, labPassword, loadLab, markLast, nextParts, saveLab, toRecord } from './lab'
+import { LAB_KEY, LAB_SHOW_MS, MIN_PARTS, SHORTER_MS, START_PARTS, emptyLab, hitRate, labPassword, loadLab, markLast, nextParts, saveLab, toRecord } from './lab'
 
 /** A tiny in-memory stand-in for localStorage. */
 const memory = () => {
@@ -9,11 +9,13 @@ const memory = () => {
 }
 
 describe('password lab: passwords', () => {
-  it('has exactly the asked number of parts (words + changes + extras)', () => {
+  it('has exactly the asked number of parts (words + changes + extras + a shorter time)', () => {
     for (let parts = MIN_PARTS; parts <= 12; parts++) {
       for (let i = 0; i < 300; i++) {
-        const { password: p } = labPassword(parts)
-        expect(p.words.length + p.changes.length + p.extras.length).toBe(parts)
+        const { password: p, showMs } = labPassword(parts)
+        expect([LAB_SHOW_MS, LAB_SHOW_MS - SHORTER_MS]).toContain(showMs)
+        const shorter = showMs < LAB_SHOW_MS ? 1 : 0
+        expect(p.words.length + p.changes.length + p.extras.length + shorter).toBe(parts)
         expect([...p.extras].every((c) => EXTRA_CHARS.includes(c))).toBe(true)
       }
     }
@@ -29,6 +31,9 @@ describe('password lab: passwords', () => {
     expect(seps).toEqual(new Set(['-', '_', '.', ' ', '']))
     const kinds = new Set(labs.flatMap((l) => toRecord(l, '', 0).changes.map((c) => c.kind)))
     expect(kinds).toEqual(new Set(['upper', 'digit', 'symbol']))
+    const shorter = labs.filter((l) => l.showMs < LAB_SHOW_MS).length / labs.length
+    expect(shorter).toBeGreaterThan(0.15)
+    expect(shorter).toBeLessThan(0.35)
   })
 })
 
@@ -36,7 +41,7 @@ describe('password lab: records and progress', () => {
   it('records everything about an answer', () => {
     const lab = labPassword(5)
     const r = toRecord(lab, lab.password.text, 1234.6, 42)
-    expect(r).toMatchObject({ at: 42, labVersion: 2, parts: 5, ok: true, typeMs: 1235, text: lab.password.text })
+    expect(r).toMatchObject({ at: 42, labVersion: 2, showMs: lab.showMs, parts: 5, ok: true, typeMs: 1235, text: lab.password.text })
     expect(r.words.length + r.changes.length + r.extras.length).toBe(5)
     expect(toRecord(lab, 'nope', 0).ok).toBe(false)
   })

@@ -269,7 +269,10 @@ def main(paths):
         by_parts[r['parts']][1] += right(r)
     versions = Counter(r.get('labVersion', 1) for r in used)
     print('Lab versions: ' + '  '.join(f'v{v}: {n}' for v, n in sorted(versions.items()))
-          + '   (v1: space shown as ␣ · v2: space as a plain gap)')
+          + '   (v1: space shown as ␣ · v2: space as a plain gap, sometimes 1 s shorter)')
+    short = [r for r in used if r.get('showMs', 4000) < 4000]
+    if short:
+        print(f'Shown 1 s shorter: {len(short)} answers, right {pct(sum(right(r) for r in short), len(short))}')
     print('By parts:  ' + '  '.join(f'{k}: {v[1]}/{v[0]}' for k, v in sorted(by_parts.items())))
 
     # Part outcomes over all used answers (typos left out of the part counts: their errors are slips).
@@ -377,13 +380,13 @@ def main(paths):
 
     # Model: chance of getting the whole password right, from its parts.
     feats = ['words', 'letters (per 4)', 'change upper', 'change digit', 'change symbol', 'extra digit',
-             'extra symbol', 'no separator']
+             'extra symbol', 'no separator', '1 s less']
 
     def x(r):
         ch = Counter(c['kind'] for c in r['changes'])
         ex = Counter(e['kind'] for e in r['extras'])
         return [1.0, len(r['words']), sum(w['length'] for w in r['words']) / 4, ch['upper'], ch['digit'], ch['symbol'],
-                ex['digit'], ex['symbol'], 1.0 if r['sep'] == '' else 0.0]
+                ex['digit'], ex['symbol'], 1.0 if r['sep'] == '' else 0.0, (4000 - r.get('showMs', 4000)) / 1000]
 
     xs = [x(r) for r in used]
     ys = [1.0 if right(r) else 0.0 for r in used]

@@ -13,12 +13,17 @@ import {
 
 /**
  * Saved with every answer, so the analysis can tell setups apart. Answers without it are version 1.
- * 1: first lab (a space shown as ␣ while memorizing). 2: a space shown as a plain gap (2026-11-20).
+ * 1: first lab (a space shown as ␣ while memorizing).
+ * 2 (2026-11-20): a space shown as a plain gap; some passwords shown 1 s shorter, which counts as one of their parts.
  */
 export const LAB_VERSION = 2
 
 /** Same show time for every password, so the timing doesn't hide how hard a part is. */
 export const LAB_SHOW_MS = 4000
+/** Sometimes a password is shown this much shorter; that counts as one of its parts, so its weight can be measured. */
+export const SHORTER_MS = 1000
+/** Chance that a password with a part to spare uses it for the shorter time. */
+const SHORTER_CHANCE = 0.25
 export const START_PARTS = 4
 export const MIN_PARTS = 2
 
@@ -32,18 +37,20 @@ const GROUPS: { group: Group; weight: number }[] = [
 const LAB_SEPARATORS = (words: number) =>
   ['-', '_', '.', ' ', ...(words === 2 ? [''] : [])].map((sep) => ({ sep, weight: 1 }))
 
-export interface LabPassword { password: Password; group: Group; parts: number }
+export interface LabPassword { password: Password; group: Group; parts: number; showMs: number }
 
 /** A password with `parts` parts: its words plus its changed letters plus its extra characters. */
 export function labPassword(parts: number, rand: Rand = Math.random): LabPassword {
   const words = Math.min(pickWeighted(WORD_COUNTS, rand).item.n, parts)
   const group: Group = words > 1 ? 'combo' : pickWeighted(GROUPS, rand).item.group
   const picked = pickWords(POOLS[group], words, rand)
-  const rest = parts - words
+  // One of the remaining parts may be "1 s less to look at".
+  const shorter = parts - words >= 1 && rand() < SHORTER_CHANCE
+  const rest = parts - words - (shorter ? 1 : 0)
   const changes = Math.min(randInt(0, rest, rand), picked.words.join('').length)
   const extras = rest - changes
   const password = buildPassword({ ...picked, changes, extras, separators: LAB_SEPARATORS(words) }, rand)
-  return { password, group, parts }
+  return { password, group, parts, showMs: LAB_SHOW_MS - (shorter ? SHORTER_MS : 0) }
 }
 
 /** One answer, with everything needed to work out the weight of each part later. */
@@ -56,6 +63,8 @@ export interface LabRecord {
   text: string
   typed: string
   ok: boolean
+  /** How long the password was shown, in ms (missing = 4000). */
+  showMs?: number
   /** Time from the field opening to saving, in ms. */
   typeMs: number
   bits: number
@@ -77,6 +86,7 @@ export function toRecord(lab: LabPassword, typed: string, typeMs: number, at = D
     at,
     labVersion: LAB_VERSION,
     parts: lab.parts,
+    showMs: lab.showMs,
     text: p.text,
     typed,
     // What you typed is kept as it was; O for 0 and I for 1 count as right (see `matches`).
