@@ -57,6 +57,10 @@ export interface LabRecord {
   sep: string | null
   changes: { word: number; index: number; from: string; to: string; kind: 'upper' | 'digit' | 'symbol'; first: boolean; last: boolean }[]
   extras: { char: string; kind: 'digit' | 'symbol' }[]
+  /** Wrong, but you said it was a typo: counts as right (for the difficulty too). */
+  typo?: boolean
+  /** Wrong, and you chose Skip: left out of the results; the difficulty stays. */
+  skipped?: boolean
 }
 
 export function toRecord(lab: LabPassword, typed: string, typeMs: number, at = Date.now()): LabRecord {
@@ -116,6 +120,26 @@ export function saveLab(data: LabData, storage: Pick<Storage, 'setItem'> | undef
   }
 }
 
-/** Share of right answers, in percent (0 with none). */
-export const hitRate = (records: LabRecord[]) =>
-  records.length ? Math.round((100 * records.filter((r) => r.ok).length) / records.length) : 0
+/** Right for the results: typed correctly, or wrong only by a typo. */
+export const countsRight = (r: LabRecord) => r.ok || !!r.typo
+
+/** Share of right answers, in percent (0 with none); skipped ones left out. */
+export function hitRate(records: LabRecord[]) {
+  const used = records.filter((r) => !r.skipped)
+  return used.length ? Math.round((100 * used.filter(countsRight).length) / used.length) : 0
+}
+
+/**
+ * After a wrong answer: mark it as a typo (counts as right, so the difficulty goes up instead of down) or skip it
+ * (left out; the difficulty stays where it was). Only the last answer, and only a wrong one, can be marked.
+ */
+export function markLast(data: LabData, mark: 'typo' | 'skip'): LabData {
+  const last = data.records[data.records.length - 1]
+  if (!last || last.ok || last.typo || last.skipped) return data
+  const marked: LabRecord = mark === 'typo' ? { ...last, typo: true } : { ...last, skipped: true }
+  return {
+    ...data,
+    parts: mark === 'typo' ? nextParts(last.parts, true) : last.parts,
+    records: [...data.records.slice(0, -1), marked],
+  }
+}

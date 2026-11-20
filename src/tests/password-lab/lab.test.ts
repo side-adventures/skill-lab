@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EXTRA_CHARS } from '../password-memory/scoring'
-import { LAB_KEY, MIN_PARTS, START_PARTS, emptyLab, hitRate, labPassword, loadLab, nextParts, saveLab, toRecord } from './lab'
+import { LAB_KEY, MIN_PARTS, START_PARTS, emptyLab, hitRate, labPassword, loadLab, markLast, nextParts, saveLab, toRecord } from './lab'
 
 /** A tiny in-memory stand-in for localStorage. */
 const memory = () => {
@@ -69,5 +69,24 @@ describe('password lab: records and progress', () => {
     const lab = labPassword(4)
     expect(hitRate([])).toBe(0)
     expect(hitRate([toRecord(lab, lab.password.text, 0), toRecord(lab, 'x', 0)])).toBe(50)
+  })
+
+  it('marks a wrong answer as a typo (counts as right, difficulty goes up) or skips it (left out, difficulty stays)', () => {
+    const lab = labPassword(5)
+    const wrong = toRecord(lab, 'x', 0)
+    // As saved right after the wrong answer: one part fewer.
+    const data = { version: 1 as const, parts: 4, records: [wrong] }
+    const typo = markLast(data, 'typo')
+    expect(typo.parts).toBe(6)
+    expect(typo.records[0]).toMatchObject({ ok: false, typo: true })
+    expect(hitRate(typo.records)).toBe(100)
+    const skip = markLast(data, 'skip')
+    expect(skip.parts).toBe(5)
+    expect(skip.records[0]).toMatchObject({ ok: false, skipped: true })
+    expect(hitRate([...skip.records, toRecord(lab, lab.password.text, 0)])).toBe(100)
+    // Only once, and never a right answer.
+    expect(markLast(typo, 'skip')).toBe(typo)
+    const right = { version: 1 as const, parts: 6, records: [toRecord(lab, lab.password.text, 0)] }
+    expect(markLast(right, 'typo')).toBe(right)
   })
 })
