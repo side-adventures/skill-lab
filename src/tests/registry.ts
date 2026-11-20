@@ -453,19 +453,17 @@ export const TESTS: TestDefinition[] = [
   {
     id: 'line-tracing',
     name: 'Line Tracing',
-    icon: '✏️',
+    icon: '🏁',
     category: 'Motor',
     tagline: 'Race through 5 tracks without leaving the path.',
-    skill: 'fast, precise movement',
+    skill: 'steering speed and precision',
     howTo: [
       'Move your pointer onto GO. The timer starts when you leave GO along the path.',
       'Follow the path to the flag as fast as you can, staying inside it.',
-      '5 tracks: Straight, Zigzag, Spiral, Fork and Loop. On the Fork, you can take the long wide way or the short narrow one.',
-      'Leaving the path sends you back to GO, and that track starts again from 0.',
+      'Leaving the path adds a 3 s penalty and sends you back to GO, and that track starts again from 0.',
     ],
     scoring: [
-      'Your total time for all 5 tracks.',
-      'Each time you leave the path adds 3 s.',
+      'Your total time for all 5 tracks, plus penalties.',
     ],
     durationHint: '~1 min',
     scoreLabel: 'Total time',

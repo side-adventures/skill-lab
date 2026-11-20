@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { GameInfo, InfoValue } from '../../components/game/GameInfo'
 import { FullLayout } from '../../components/game/layouts'
-import { END_MOMENT_MS, useLater } from '../../lib/game'
+import { useLater } from '../../lib/game'
 import type { TestComponentProps } from '../types'
 import {
   END_RADIUS, HEIGHT, PENALTY_MS, WIDTH, WINDOW, indexRange, makeTracks, nearestIn, totalMs, type Pt, type Route, type Track,
@@ -12,6 +12,8 @@ import {
 type Phase = 'waiting' | 'armed' | 'tracing' | 'between' | 'done'
 
 const NEXT_TRACK_MS = 1000
+/** After the last flag: a short look at the full trace, like other tests after a last correct answer. */
+const FINISH_MS = 400
 const secs = (ms: number) => (ms / 1000).toFixed(2)
 const line = (pts: Pt[]) => pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
 
@@ -138,7 +140,7 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     }
     setPhase('done')
     const times = trackMs.current, n = exitsRef.current
-    later(END_MOMENT_MS, () =>
+    later(FINISH_MS, () =>
       onFinish({
         score: totalMs(times, n),
         details: {
