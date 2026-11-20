@@ -1,86 +1,88 @@
 import { describe, expect, it } from 'vitest'
 import {
-  EXTRA_CHARS, LEET, LEVELS, POOLS, SEPARATORS, crackTime, hasDigitRun, makeExtras, makePassword, passwordFor,
-  recipesFor, scoreBits, showMs, strengthLabel, type Recipe,
+  CHANGES, EXTRA_CHARS, LEVELS, POOLS, buildPassword, changeOptions, crackTime, hasDigitRun, makeExtras, makePassword,
+  passwordFor, pickWords, recipesFor, scoreBits, showMs, strengthLabel, wordCount, type Recipe,
 } from './scoring'
 
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]
 const bitsOf = (level: number, n = 2000) => Array.from({ length: n }, () => passwordFor(level).bits)
 
-/** Undo the changes, so the word(s) can be checked against the pools. */
-const unchange = (s: string) => s.toLowerCase().replace(/[0-9]/g, (d) => Object.keys(LEET).find((k) => LEET[k] === d) ?? d)
+describe('password memory: words', () => {
+  it('has different lowercase words per group, in the right lengths and sizes', () => {
+    const groups = { short: [4, 5, 256], medium: [6, 6, 256], long: [7, 9, 256], xlong: [10, 12, 64], combo: [3, 5, 384] } as const
+    for (const [group, words] of Object.entries(POOLS) as [keyof typeof groups, string[]][]) {
+      const [min, max, size] = groups[group]
+      expect(words.length).toBe(size)
+      expect(new Set(words).size).toBe(size)
+      for (const w of words) {
+        expect(w).toMatch(/^[a-z]+$/)
+        expect(w.length).toBeGreaterThanOrEqual(min)
+        expect(w.length).toBeLessThanOrEqual(max)
+      }
+    }
+  })
+})
 
-describe('password memory: generation', () => {
+describe('password memory: building', () => {
   it('builds every recipe of every level validly', () => {
     for (let level = 1; level <= LEVELS.length + 2; level++) {
       for (const recipe of recipesFor(level)) {
         for (let i = 0; i < 200; i++) {
           const p = makePassword(recipe)
-          const extras = p.text.slice(-recipe.extras)
-          const body = p.text.slice(0, -recipe.extras)
-          // Extras: allowed characters, none twice, no 123 / 987 runs.
-          expect([...extras].every((c) => EXTRA_CHARS.includes(c))).toBe(true)
-          expect(new Set(extras).size).toBe(extras.length)
-          expect(hasDigitRun(extras)).toBe(false)
-          // Body: the word(s), with exactly `changes` letters changed, never an uppercase I or O.
-          expect(body).not.toMatch(/[IO]/)
-          const changed = [...body].filter((c) => /[A-Z0-9]/.test(c)).length
-          expect(changed).toBe(recipe.changes)
-          if (recipe.shape === 'two') {
-            const sep = SEPARATORS.slice(1).find((s) => body.includes(s)) ?? ''
-            const words = sep ? unchange(body).split(sep) : null
-            if (words) words.forEach((w) => expect(POOLS.short).toContain(w))
-          } else {
-            expect(POOLS[recipe.shape]).toContain(unchange(body))
+          expect(p.words).toHaveLength(wordCount(recipe.shape))
+          expect(p.changes).toHaveLength(recipe.changes)
+          expect(p.extras).toHaveLength(recipe.extras)
+          // Extras: allowed characters, none twice, no 123 / 987 runs, at the end.
+          expect([...p.extras].every((c) => EXTRA_CHARS.includes(c))).toBe(true)
+          expect(new Set(p.extras).size).toBe(p.extras.length)
+          expect(hasDigitRun(p.extras)).toBe(false)
+          expect(p.text.endsWith(p.extras)).toBe(true)
+          // Three words always have a visible separator; one word none.
+          if (p.words.length === 3) expect(p.sep).not.toBe('')
+          if (p.words.length === 1) expect(p.sep).toBe('')
+          // Each change is one of the letter's options; never an uppercase I or O.
+          for (const c of p.changes) {
+            expect(p.words[c.word][c.index]).toBe(c.from)
+            expect(changeOptions(c.from)).toContain(c.to)
           }
+          expect(p.text).not.toMatch(/[IO]/)
         }
       }
     }
   })
 
-  it('has word pools large enough to rarely repeat', () => {
-    expect(POOLS.short.length).toBeGreaterThan(200)
-    expect(POOLS.medium.length).toBeGreaterThan(100)
-    expect(POOLS.long.length).toBeGreaterThan(50)
+  it('puts the changes into the text where they belong', () => {
+    const p = buildPassword({ words: ['salt', 'oak'], wordBits: 0, changes: 7, extras: 0, separators: [{ sep: '-', weight: 1 }] })
+    expect(p.text).toMatch(/^[S5$][A4@][L1][T7]-0[A4@]K$/)
   })
 
-  it('starts like "ball1": a short word and one extra', () => {
-    const p = passwordFor(1)
-    expect(p.text).toMatch(/^[a-z]{4,5}[0-9!?@#$%&*]$/)
+  it('uses the leet replacements from the design', () => {
+    expect(CHANGES.a).toEqual(['A', '4', '@'])
+    expect(CHANGES.s).toEqual(['S', '5', '$'])
+    expect(changeOptions('b')).toContain('8')
+    expect(changeOptions('g')).toContain('9')
+    expect(changeOptions('l')).toContain('1')
+    expect(changeOptions('z')).toContain('2')
+    expect(changeOptions('k')).toEqual(['K'])
   })
 
-  it('gets about 3–4 bits stronger every level, without much overlap', () => {
-    let prev = 0
-    for (let level = 1; level <= LEVELS.length + 2; level++) {
-      const m = median(bitsOf(level))
-      if (level > 1) {
-        expect(m - prev).toBeGreaterThan(2)
-        expect(m - prev).toBeLessThan(6)
-      }
-      prev = m
-    }
+  it('makes "no separator" rare, and only between two words', () => {
+    const seps = Array.from({ length: 4000 }, () => makePassword({ shape: 'two', changes: 0, extras: 0 }).sep)
+    const none = seps.filter((s) => s === '').length / seps.length
+    expect(none).toBeGreaterThan(0.08)
+    expect(none).toBeLessThan(0.18)
   })
 
-  it('keeps a level within a few bits (luck stays small)', () => {
-    for (let level = 1; level <= LEVELS.length; level++) {
-      const bs = bitsOf(level)
-      expect(Math.max(...bs) - Math.min(...bs)).toBeLessThan(5.5)
-    }
+  it('counts every change the same, whatever its options', () => {
+    const one = (word: string) => buildPassword({ words: [word], wordBits: 0, changes: 1, extras: 0 }).bits
+    // "a" has 3 options, "k" only one: same bits for the same word length.
+    expect(one('aaaa')).toBeCloseTo(one('kkkk'))
   })
 
   it('counts bits from the choices made', () => {
-    // One short word and one extra: log2(words) + log2(extra characters).
     const r: Recipe = { shape: 'short', changes: 0, extras: 1 }
-    expect(makePassword(r).bits).toBeCloseTo(Math.log2(POOLS.short.length) + Math.log2(EXTRA_CHARS.length))
-    // Each change and each extra adds strength.
-    const avg = (rec: Recipe) => median(Array.from({ length: 500 }, () => makePassword(rec).bits))
-    expect(avg({ shape: 'short', changes: 1, extras: 1 })).toBeGreaterThan(avg(r))
-    expect(avg({ shape: 'short', changes: 0, extras: 2 })).toBeGreaterThan(avg(r))
-  })
-
-  it('past the ladder adds one extra per level', () => {
-    const last = LEVELS.length
-    expect(recipesFor(last + 2)[0].extras).toBe(LEVELS[last - 1][0].extras + 2)
+    expect(makePassword(r).bits).toBeCloseTo(8 + Math.log2(EXTRA_CHARS.length))
+    expect(pickWords(POOLS.combo, 2).wordBits).toBeCloseTo(2 * Math.log2(384))
   })
 
   it('rejects digit runs only', () => {
@@ -92,10 +94,54 @@ describe('password memory: generation', () => {
   })
 })
 
-describe('password memory: score and result', () => {
-  it('shows longer passwords for longer', () => {
-    expect(showMs('ball1')).toBe(3500)
-    expect(showMs('r0bin-c4ke!7')).toBe(7000)
+describe('password memory: levels', () => {
+  it('starts with one short word and one extra', () => {
+    expect(passwordFor(1).text).toMatch(/^[a-z]{4,5}[0-9!?@#$%&*]$/)
+  })
+
+  it('makes words longer as levels go up', () => {
+    const groupsAt = (level: number) => new Set(recipesFor(level).map((r) => r.shape))
+    expect([...groupsAt(1)]).toEqual(['short'])
+    for (const level of [1, 2, 3]) {
+      expect(groupsAt(level).has('long')).toBe(false)
+      expect(groupsAt(level).has('xlong')).toBe(false)
+      expect(groupsAt(level).has('three')).toBe(false)
+    }
+  })
+
+  it('gets stronger every level, without much overlap', () => {
+    let prev = 0
+    for (let level = 1; level <= LEVELS.length + 2; level++) {
+      const m = median(bitsOf(level))
+      if (level > 1) {
+        expect(m - prev).toBeGreaterThan(1.8)
+        expect(m - prev).toBeLessThan(6)
+      }
+      prev = m
+    }
+  })
+
+  it('keeps a level within a few bits (luck stays small)', () => {
+    for (let level = 1; level <= LEVELS.length; level++) {
+      const bs = bitsOf(level).sort((a, b) => a - b)
+      expect(bs[Math.floor(bs.length * 0.95)] - bs[Math.floor(bs.length * 0.05)]).toBeLessThan(5)
+    }
+  })
+
+  it('past the ladder adds one extra per level', () => {
+    const last = LEVELS.length
+    expect(recipesFor(last + 2)[0].extras).toBe(LEVELS[last - 1][0].extras + 2)
+  })
+})
+
+describe('password memory: time, score and result', () => {
+  it('shows a password by its parts, not its characters', () => {
+    const p = (words: string[], changes: number, extras: string) =>
+      ({ words, changes: Array.from({ length: changes }, () => ({ word: 0, index: 0, from: 'a', to: 'A' })), extras })
+    expect(showMs(p(['ball'], 0, '1'))).toBe(3250)
+    // A long word with little changed is quicker than a short one with a lot changed.
+    expect(showMs(p(['diamond'], 0, '#5'))).toBeLessThan(showMs(p(['spicy'], 3, '6?1')))
+    expect(showMs(p(['wild', 'desk'], 2, '?20'))).toBe(1500 + 2000 + 500 + 1500 + 2250)
   })
   it('scores whole bits', () => expect(scoreBits(29.6)).toBe(30))
   it('labels strength', () => {

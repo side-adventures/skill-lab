@@ -675,8 +675,34 @@ export const PROTOTYPES: TestDefinition[] = [
     higherIsBetter: true,
     formatScore: (s) => count(s, 'bit'),
     start: 'quick',
-    layout: 'prompt',
+    layout: 'full',
     Component: lazyTest(() => import('./password-memory/PasswordMemoryTest')),
+  },
+  {
+    // A practice tool, not a real test: collects data to weight Password Memory's parts (see password-lab/lab.ts).
+    id: 'password-lab',
+    name: 'Password Lab',
+    icon: '🧪',
+    category: 'Memory',
+    tagline: 'Memorize passwords for as long as you like, to tune Password Memory.',
+    skill: 'nothing yet: it collects data on which parts of a password are hard to remember',
+    howTo: [
+      'A password shows for 4 s, then disappears. Type it back, then press Enter.',
+      'Every password mixes its parts at random: one to three words, changed letters, extra characters.',
+      'It gets one part longer after a right answer and one part shorter after a wrong one.',
+      'No lives, no end: stop with Finish whenever you like. Your answers stay saved in this browser.',
+      'Download data saves everything as a file.',
+    ],
+    scoring: [
+      'Your number of passwords in this visit.',
+    ],
+    durationHint: 'as long as you like',
+    scoreLabel: 'Passwords this visit',
+    higherIsBetter: true,
+    formatScore: (s) => count(s, 'password'),
+    start: 'none',
+    layout: 'full',
+    Component: lazyTest(() => import('./password-lab/PasswordLabTest')),
   },
 ]
 
