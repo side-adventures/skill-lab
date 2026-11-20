@@ -19,7 +19,7 @@ export const CATEGORY_COLORS: Record<Category, string> = {
 export interface TestResult {
   score: number
   /**
-   * Set when the run ended without a valid score (e.g. left the line in Line Tracing).
+   * Set when the run ended without a valid score (e.g. no answers at all in Stroop).
    * The message is shown instead of a score and nothing is saved; `score` is ignored.
    */
   failed?: string

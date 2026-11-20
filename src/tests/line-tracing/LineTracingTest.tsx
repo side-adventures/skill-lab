@@ -81,6 +81,8 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
   const [drawn, setDrawn] = useState<{ route: number; along: number }>({ route: 0, along: 0 })
   const [elapsed, setElapsed] = useState(0)
   const [failAt, setFailAt] = useState<Pt | null>(null)
+  // left GO but not along the path: no penalty, but say why nothing started
+  const [offStart, setOffStart] = useState(false)
   const trackMs = useRef<number[]>([])
   const [times, setTimes] = useState<number[]>([])
   const [exits, setExits] = useState(0)
@@ -114,7 +116,8 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     exitsRef.current++
     trackExits.current[index] = (trackExits.current[index] ?? 0) + 1
     setExits(exitsRef.current)
-    setFailAt(at)
+    // a board exit happens outside the svg: keep the dot on the board's edge so it stays visible
+    setFailAt({ x: Math.min(WIDTH - 14, Math.max(14, at.x)), y: Math.min(HEIGHT - 14, Math.max(14, at.y)) })
     setElapsed(0)
     setPhase('waiting')
   }
@@ -140,8 +143,8 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
         score: totalMs(times, n),
         details: {
           stats: [
-            { label: 'Exits', value: String(n) },
-            { label: 'Penalty', value: `+${(n * PENALTY_MS) / 1000} s` },
+            { label: 'Times you left', value: String(n) },
+            { label: 'Penalty', value: n ? `+${(n * PENALTY_MS) / 1000} s` : '0 s' },
             { label: 'Time without penalty', value: `${secs(times.reduce((s, t) => s + t, 0))} s` },
           ],
           chips: {
@@ -163,6 +166,7 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
     if (phaseRef.current === 'waiting') {
       if (inStart(p)) {
         setFailAt(null)
+        setOffStart(false)
         setDrawn({ route: 0, along: 0 })
         setPhase('armed')
       }
@@ -172,7 +176,10 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
       if (inStart(p)) return
       // Left GO: the track (and the timer) starts only if you left it along the path.
       const hits = track.routes.map((r) => nearestIn(p, r, 0, WINDOW))
-      if (!hits.some((h) => h.inside)) return setPhase('waiting')
+      if (!hits.some((h) => h.inside)) {
+        setOffStart(true)
+        return setPhase('waiting')
+      }
       alive.current = hits.map((h) => h.inside)
       reached.current = hits.map((h) => h.along)
       startedAt.current = performance.now()
@@ -221,7 +228,10 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
 
   const total = totalMs(times, exits) + (phase === 'tracing' ? elapsed : 0)
   const status =
-    phase === 'waiting' ? (failAt ? `Off the path: +${PENALTY_MS / 1000} s. Back to GO` : 'Move your pointer onto GO')
+    phase === 'waiting'
+      ? failAt ? `Off the path · +${PENALTY_MS / 1000} s · back to GO`
+      : offStart ? 'Start along the path · back to GO'
+      : 'Move your pointer onto GO'
     : phase === 'armed' ? 'Leave GO along the path to start'
     : phase === 'tracing' ? 'Follow the path to the flag'
     : phase === 'between' ? `${track.name} done: ${secs(times.at(-1) ?? 0)} s`
@@ -229,9 +239,9 @@ export default function LineTracingTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={<InfoValue value={secs(total)} unit="s" />}
-        middle={<span className={failAt ? 'text-rose-300' : ''}>{status}</span>}
-        right={<InfoValue label="Track" value={index + 1} of={tracks.length} />}
+        left={<InfoValue value={`Track ${index + 1}`} of={tracks.length} />}
+        middle={<span className={(failAt || offStart) && phase === 'waiting' ? 'text-rose-300' : ''}>{status}</span>}
+        right={<InfoValue label="Total" value={secs(total)} unit="s" />}
       />
       <FullLayout className="bg-zinc-900" style={{ touchAction: 'none' }}>
         <svg

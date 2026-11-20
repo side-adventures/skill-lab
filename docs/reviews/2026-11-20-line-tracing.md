@@ -28,3 +28,54 @@ when an attempt is > 3 s behind (practically only a long stall); no ceiling or t
 component state resets per attempt and per track, input between tracks / after the end ignored, timers cleaned up,
 result chips + penalty add up to the score. Comparability vs `main`: the score changed meaning (one random path, no
 score on leaving → 5 tracks + 3 s per exit); no bump while in development, list it for later.
+
+## Play-test (play-tester)
+
+3 full runs + partial runs (mostly scripted along `makeTracks()`, some real mouse). No blocking bugs, no stuck states,
+no double counts; chips + penalty add up to the score; R / N on the result screen work; rules and "?" overlay fit.
+
+| # | Finding | Decision |
+|---|---|---|
+| 1 | Moving back along your own route by more than ~160 units (the tracking window) counts as an exit, e.g. overshooting and U-turning. Not in the rules. | Open (user) |
+| 2 | An exit by leaving the board put the red dot outside the svg (clipped, invisible). | Fixed: dot kept on the board edge |
+| 3 | The failed attempt's violet line stays until you re-arm on GO. | Keep (shows where you went wrong) |
+| 4 | Leaving GO off the path resets silently. | Fixed: "Start along the path · back to GO" (rose, no penalty) |
+| 5 | Loop, first pass: the bridge deck covers a bend of the first pass; only ~35 % of the deck lies inside the first-pass corridor, so steering by the visible deck can exit. | Open (user): move control point `[420, 385]` out from under the bridge, or add a rules line |
+| 6 | Violet line: gap only exactly under the bridge on the first pass (correct), continuous on the bridge. | Fine |
+| 7 | Reaching the "?" button mid-trace is an exit. | Expected |
+
+## Audit (test-auditor)
+
+Steering-law grounding is good: Straight = linear tunnel (width ~21 px, inside the lab range), Spiral = Accot & Zhai's
+spiral (narrowing adds cost), Zigzag = corner cost (Pastel 2006), Fork / Loop = curvature and width changes; the fork
+is an honest speed–accuracy choice. ~270 difficulty units (∫ds/W) per run, vs ~28 before. Differences from lab
+practice (long tracks, time and errors in one number, fixed tracks, device effects) are known and accepted.
+
+| # | Finding | Decision |
+|---|---|---|
+| 1 | SPEC said Zigzag has 5 corners; it has 4. | Fixed |
+| 2 | Share emoji ✏️ fits drawing, not a race; suggests 🏁. | Open (user) |
+| 3 | howTo "from a straight line to race tracks" is vague. | Fixed: names the 5 tracks |
+| 4 | Optional rules line for the loop ("stay on your own pass"). | Open, with play-test #5 |
+| 5 | Skill could name the construct: "steering speed and precision". | Open (user) |
+| 6 | Optional result stat: steering speed (difficulty units ÷ time without penalty, "widths / s"). | Open (user) |
+| 7 | The site is live: publishing without a `scoreVersion` bump leaves every player's old single-path best unbeatable. | Open (user), before `develop` → `main` |
+| 8 | Name: keep "Line Tracing" (alternatives "Track Race", "Buzz Wire"). | Keep |
+
+Rough bands from the scoring model (to calibrate with real data): very good < ~14 s, typical ~16–20 s, slow > ~25 s.
+
+## Consistency (consistency-reviewer)
+
+| # | Finding | Decision |
+|---|---|---|
+| 1 | Info row slots swapped vs siblings (left = where you are, right = how you are doing). | Fixed: left "Track n / 5", right "Total … s" |
+| 2 | `scoreLabel` 'Time' vs 'Total time' in the other time + penalty tests. | Fixed |
+| 3 | Score line "over all 5 tracks" vs "for all 15 rounds". | Fixed: "for all 5 tracks" |
+| 4 | Stat "Exits" vs Steady Hand's "Times you left". | Fixed: "Times you left" |
+| 5 | Status style: parts joined with " · ", no sentence periods. | Fixed |
+| 6 | Stale `types.ts` comment about "left the line in Line Tracing". | Fixed |
+| 7 | No green / red feedback ring (other tests ring the board on a mistake). | Open (user) |
+| 8 | Finish waits `END_MOMENT_MS` (1.5 s) after a clean last track; siblings wait ~400 ms. | Open (user) |
+| 9 | Track result only 1 s in the info row (no RoundResult). | Fine (nothing is timed until GO) |
+| 10 | "Penalty +0 s" with no exits. | Fixed: "0 s" |
+| 11 | Old best (3.27 s) from the single-path version still shows. | See audit #7 |

@@ -460,15 +460,15 @@ export const TESTS: TestDefinition[] = [
     howTo: [
       'Move your pointer onto GO. The timer starts when you leave GO along the path.',
       'Follow the path to the flag as fast as you can, staying inside it.',
-      '5 tracks, from a straight line to race tracks. At the fork on track 4, you can take the long wide way or the short narrow one.',
+      '5 tracks: Straight, Zigzag, Spiral, Fork and Loop. On the Fork, you can take the long wide way or the short narrow one.',
       'Leaving the path sends you back to GO, and that track starts again from 0.',
     ],
     scoring: [
-      'Your total time over all 5 tracks.',
+      'Your total time for all 5 tracks.',
       'Each time you leave the path adds 3 s.',
     ],
     durationHint: '~1 min',
-    scoreLabel: 'Time',
+    scoreLabel: 'Total time',
     higherIsBetter: false,
     formatScore: (s) => `${(s / 1000).toFixed(2)} s`,
     start: 'none',
