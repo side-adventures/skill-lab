@@ -99,11 +99,13 @@ const spiral: Ctrl[] = Array.from({ length: 61 }, (_, i) => {
 const flowing: Ctrl[] = [
   [80, 600, 70], [420, 605, 70], [540, 600, 55], [600, 560, 40], [660, 605, 40], [720, 560, 40], [800, 600, 55],
   [910, 560, 60], [940, 440, 60], [880, 350, 55], [760, 360, 50], [690, 310, 45], [600, 345, 45],
-  [520, 390, 50], [420, 385, 50], [310, 300, 50], [360, 195, 50], [460, 240, 50], [430, 385, 50], [360, 470, 50],
+  [540, 389, 50], [430, 389, 50], [330, 387, 50], [270, 300, 50], [340, 195, 50], [460, 240, 50], [430, 385, 50],
+  [360, 470, 50],
   [190, 480, 45], [100, 360, 45], [160, 140, 40], [300, 85, 36], [480, 85, 34], [560, 140, 32], [640, 85, 32],
   [720, 140, 32], [800, 85, 32], [900, 150, 32], [910, 220, 32],
 ]
-const BRIDGE_FROM = 17, BRIDGE_TO = 19 // control points of the pass going down through the loop
+const BRIDGE_FROM = 18, BRIDGE_TO = 20 // control points of the pass going down through the loop
+// the first pass runs straight under the bridge (its bend comes after), so nothing hidden there surprises you
 const CROSSING: Pt = { x: 428, y: 386 }
 
 // Fork: chicane, thin straight, hairpin, then the wide main way sweeps around (it carries straight on), while a

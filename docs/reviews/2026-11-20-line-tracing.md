@@ -6,8 +6,8 @@ failed time not counted (bail-out accepted), no lives, fixed tracks (learning ef
 
 ## Scoring review (scoring-reviewer)
 
-Evidence: `src/tests/line-tracing/scoring.review.test.ts` (9 tests; contains `tracer()`, a copy of the component's
-tracking logic). Player numbers below come from a steering-law model (track time = 200 ms + b·∫ds/W, b = 45 / 60 / 90
+Evidence: a `scoring.review.test.ts` with 9 tests and a copy of the tracking logic, deleted after the review (it would
+have to stay in sync with the component; the findings are kept here). Player numbers below come from a steering-law model (track time = 200 ms + b·∫ds/W, b = 45 / 60 / 90
 ms per unit for strong / average / weak; exit chance rising with speed, ~0.5 exits per run for an average player; 8 %
 time noise), so they are illustrative.
 
@@ -36,11 +36,11 @@ no double counts; chips + penalty add up to the score; R / N on the result scree
 
 | # | Finding | Decision |
 |---|---|---|
-| 1 | Moving back along your own route by more than ~160 units (the tracking window) counts as an exit, e.g. overshooting and U-turning. Not in the rules. | Open (user) |
+| 1 | Moving back along your own route by more than ~160 units (the tracking window) counts as an exit, e.g. overshooting and U-turning. Not in the rules. | Keep as is (user) |
 | 2 | An exit by leaving the board put the red dot outside the svg (clipped, invisible). | Fixed: dot kept on the board edge |
 | 3 | The failed attempt's violet line stays until you re-arm on GO. | Keep (shows where you went wrong) |
 | 4 | Leaving GO off the path resets silently. | Fixed: "Start along the path · back to GO" (rose, no penalty) |
-| 5 | Loop, first pass: the bridge deck covers a bend of the first pass; only ~35 % of the deck lies inside the first-pass corridor, so steering by the visible deck can exit. | Open (user): move control point `[420, 385]` out from under the bridge, or add a rules line |
+| 5 | Loop, first pass: the bridge deck covers a bend of the first pass; only ~35 % of the deck lies inside the first-pass corridor, so steering by the visible deck can exit. | Open (user): move control point `[420, 385]` out from under the bridge, or add a rules line → Done: the first pass runs straight under the bridge (bend moved after it; test checks < 6° turn) |
 | 6 | Violet line: gap only exactly under the bridge on the first pass (correct), continuous on the bridge. | Fine |
 | 7 | Reaching the "?" button mid-trace is an exit. | Expected |
 

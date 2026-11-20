@@ -45,6 +45,19 @@ describe('line tracing tracks', () => {
     // the passes are far apart along the path, so a window around one never reaches the other
     expect(secondPass.along - firstPass.along).toBeGreaterThan(2 * WINDOW)
   })
+
+  it('keeps the first pass of the loop straight where the bridge hides it', () => {
+    const t = tracks.find((t) => t.name === 'Loop')!, loop = t.routes[0]
+    const at = nearestIn(t.crossings[0], loop, 0, t.bridge![0]).along
+    const heading = (s: number) => {
+      const i = loop.acc.findIndex((a) => a >= s)
+      return Math.atan2(loop.pts[i + 1].y - loop.pts[i].y, loop.pts[i + 1].x - loop.pts[i].x)
+    }
+    // 60 units each side: the bridge deck with its edge plus some margin
+    const d = heading(at + 60) - heading(at - 60)
+    const turn = Math.abs(Math.atan2(Math.sin(d), Math.cos(d))) * (180 / Math.PI)
+    expect(turn).toBeLessThan(6)
+  })
 })
 
 describe('line tracing helpers', () => {
