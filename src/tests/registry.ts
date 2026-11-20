@@ -714,12 +714,12 @@ export const PROTOTYPES: TestDefinition[] = [
     howTo: [
       'You see 4 figures that change step by step: the hand turns, dots come or go, the shape, the fill or the corner square moves on.',
       'Click the figure that comes next, or press 1–4.',
-      'You have 90 seconds: answer as many as you can. Every 4 correct answers, more things change at once.',
+      'You have 2 minutes: answer as many as you can. Every 4 correct answers, more things change at once.',
     ],
     scoring: [
       'Your correct answers minus wrong answers, so guessing does not pay off.',
     ],
-    durationHint: '90 s',
+    durationHint: '2 min',
     scoreLabel: 'Points (correct − wrong)',
     higherIsBetter: true,
     formatScore: (s) => `${s < 0 ? '−' : ''}${Math.abs(s)} pts`,
@@ -762,12 +762,12 @@ export const PROTOTYPES: TestDefinition[] = [
     howTo: [
       'You see a board of tiles that repeat by a rule: along the rows, the columns or the diagonals.',
       'One tile is turned or shaped against the rule. Click it.',
-      'You have 90 seconds: find as many as you can. Every 3 found, the pattern gets bigger or harder.',
+      'You have 2 minutes: find as many as you can. Every 3 found, the pattern gets bigger or harder.',
     ],
     scoring: [
       'Your patterns found minus wrong clicks, so clicking around does not pay off.',
     ],
-    durationHint: '90 s',
+    durationHint: '2 min',
     scoreLabel: 'Points (found − wrong)',
     higherIsBetter: true,
     formatScore: (s) => `${s < 0 ? '−' : ''}${Math.abs(s)} pts`,

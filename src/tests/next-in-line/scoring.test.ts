@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ATTRS, SHOWN, levelOf, levelSpec, makeSeries, sameFig, type Fig } from './scoring'
 
-const RANGE = { shape: [0, 2], fill: [0, 2], hand: [0, 7], dots: [1, 7], marker: [0, 3] } as const
+const RANGE = { shape: [0, 2], fill: [0, 2], hand: [0, 7], dots: [1, 6], marker: [0, 3] } as const
 
 describe('next in line: series generation', () => {
   for (let level = 1; level <= 9; level++) {

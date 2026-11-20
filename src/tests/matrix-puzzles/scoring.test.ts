@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ATTRS, RANGE, changingOf, levelOf, makePuzzle, puzzleMs, sameCell, type Attr, type Cell } from './scoring'
+import { ATTRS, RANGE, changingOf, describeRules, levelOf, makePuzzle, puzzleMs, sameCell, type Attr, type Cell } from './scoring'
 
 const col = (cells: Cell[], a: Attr) => cells.map((c) => c[a])
 const row = (xs: number[], r: number) => xs.slice(r * 3, r * 3 + 3)
@@ -54,6 +54,15 @@ describe('matrix puzzles: generation', () => {
         p.options.forEach((o) => counts.set(o[a], (counts.get(o[a]) ?? 0) + 1))
         expect([...counts.values()].sort().join()).toMatch(/^(8|4,4)$/)
       }
+    }
+  })
+
+  it('describes every rule, then the fixed features', () => {
+    for (let n = 0; n < 200; n++) {
+      const p = makePuzzle(1 + (n % 4))
+      const lines = describeRules(p)
+      expect(lines).toHaveLength(p.rules.length + (p.rules.length < 4 ? 1 : 0))
+      expect(lines.at(-1)).toMatch(/^Always the same: /)
     }
   })
 

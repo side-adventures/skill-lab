@@ -9,13 +9,13 @@ export const MIN_PUZZLE_MS = 20_000
 export const PER_LEVEL = 2
 
 /**
- * One cell: `count` copies (1–6) of a shape (triangle, square, hexagon, circle, star), all the same `size` (0–3) and `fill` (0 empty,
- * 1 striped, 2 grey, 3 full).
+ * One cell: `count` copies (1–6) of a shape (triangle, square, hexagon, circle, star), all the same `size` (0–2: small,
+ * medium, large) and `fill` (0 empty, 1 half, 2 full). Only 3 sizes and fills, far apart, so they tell apart at a glance.
  */
 export interface Cell { shape: number; count: number; size: number; fill: number }
 export type Attr = keyof Cell
 export const ATTRS: Attr[] = ['shape', 'count', 'size', 'fill']
-export const RANGE: Record<Attr, [number, number]> = { shape: [0, 4], count: [1, 6], size: [0, 3], fill: [0, 3] }
+export const RANGE: Record<Attr, [number, number]> = { shape: [0, 4], count: [1, 6], size: [0, 2], fill: [0, 2] }
 
 /**
  * Row rules (the rules of Raven-style matrices, as in RAVEN / I-RAVEN):
@@ -120,3 +120,18 @@ export function makePuzzle(level: number, rand: Rand = Math.random): Puzzle {
 }
 
 export const sameCell = (a: Cell, b: Cell) => ATTRS.every((k) => a[k] === b[k])
+
+const ATTR_NAME: Record<Attr, string> = { shape: 'Shape', count: 'Number', size: 'Size', fill: 'Fill' }
+
+/** The puzzle's rules in words, for the screen after a mistake. */
+export function describeRules(p: Puzzle): string[] {
+  const lines = p.rules.map(({ attr, kind, step }) => {
+    const name = ATTR_NAME[attr]
+    if (kind === 'row') return `${name}: the same in each row`
+    if (kind === 'three') return `${name}: 3 values, each once in every row`
+    return `${name}: one step ${step! > 0 ? 'up' : 'down'} from cell to cell`
+  })
+  const fixed = ATTRS.filter((a) => !p.rules.some((r) => r.attr === a)).map((a) => ATTR_NAME[a].toLowerCase())
+  if (fixed.length) lines.push(`Always the same: ${fixed.join(', ')}`)
+  return lines
+}
