@@ -687,7 +687,7 @@ export const PROTOTYPES: TestDefinition[] = [
     tagline: 'Memorize passwords for as long as you like, to tune Password Memory.',
     skill: 'nothing yet: it collects data on which parts of a password are hard to remember',
     howTo: [
-      'A password shows for 4 s, then disappears. Type it back, then press Enter.',
+      'A password shows for 4 s (sometimes 3 s), then disappears. Type it back, then press Enter.',
       'Every password mixes its parts at random: one to three words, changed letters, extra characters.',
       'It gets one part longer after a right answer and one part shorter after a wrong one.',
       'No lives, no end: stop with Finish whenever you like. Your answers stay saved in this browser.',

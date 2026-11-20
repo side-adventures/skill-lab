@@ -4,7 +4,7 @@ import { useAnswerFlash, useContinue, useLater } from '../../lib/game'
 import { useCountdown, useLatest } from '../../lib/hooks'
 import { PasswordForm, type FormPhase } from '../password-memory/PasswordForm'
 import type { TestComponentProps } from '../types'
-import { LAB_SHOW_MS, hitRate, labPassword, loadLab, markLast, nextParts, saveLab, toRecord, type LabData } from './lab'
+import { hitRate, labPassword, loadLab, markLast, nextParts, saveLab, toRecord, type LabData } from './lab'
 
 /** Saves the lab data as a JSON file. */
 function download(data: LabData) {
@@ -50,7 +50,7 @@ export default function PasswordLabTest({ onFinish }: TestComponentProps) {
   const { later } = useLater()
   const inputStart = useRef(0)
 
-  const showLeft = useCountdown(LAB_SHOW_MS, phase === 'show', () => {
+  const showLeft = useCountdown(current.showMs, phase === 'show', () => {
     inputStart.current = performance.now()
     setPhase('input')
   })
@@ -128,7 +128,7 @@ export default function PasswordLabTest({ onFinish }: TestComponentProps) {
           </span>
         }
         right={<InfoValue label="Saved" value={total} unit={`· ${hitRate(data.records)} % right`} />}
-        timer={phase === 'show' ? showLeft / LAB_SHOW_MS : undefined}
+        timer={phase === 'show' ? showLeft / current.showMs : undefined}
       />
       <PasswordForm
         phase={phase}
