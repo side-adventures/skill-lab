@@ -54,12 +54,12 @@ practice (long tracks, time and errors in one number, fixed tracks, device effec
 | # | Finding | Decision |
 |---|---|---|
 | 1 | SPEC said Zigzag has 5 corners; it has 4. | Fixed |
-| 2 | Share emoji ✏️ fits drawing, not a race; suggests 🏁. | Open (user) |
+| 2 | Share emoji ✏️ fits drawing, not a race; suggests 🏁. | Done: 🏁 |
 | 3 | howTo "from a straight line to race tracks" is vague. | Fixed: names the 5 tracks |
 | 4 | Optional rules line for the loop ("stay on your own pass"). | Open, with play-test #5 |
-| 5 | Skill could name the construct: "steering speed and precision". | Open (user) |
-| 6 | Optional result stat: steering speed (difficulty units ÷ time without penalty, "widths / s"). | Open (user) |
-| 7 | The site is live: publishing without a `scoreVersion` bump leaves every player's old single-path best unbeatable. | Open (user), before `develop` → `main` |
+| 5 | Skill could name the construct: "steering speed and precision". | Done |
+| 6 | Optional result stat: steering speed (difficulty units ÷ time without penalty, "widths / s"). | Left out (user) |
+| 7 | The site is live: publishing without a `scoreVersion` bump leaves every player's old single-path best unbeatable. | No bump: the user clears old scores |
 | 8 | Name: keep "Line Tracing" (alternatives "Track Race", "Buzz Wire"). | Keep |
 
 Rough bands from the scoring model (to calibrate with real data): very good < ~14 s, typical ~16–20 s, slow > ~25 s.
@@ -74,8 +74,11 @@ Rough bands from the scoring model (to calibrate with real data): very good < ~1
 | 4 | Stat "Exits" vs Steady Hand's "Times you left". | Fixed: "Times you left" |
 | 5 | Status style: parts joined with " · ", no sentence periods. | Fixed |
 | 6 | Stale `types.ts` comment about "left the line in Line Tracing". | Fixed |
-| 7 | No green / red feedback ring (other tests ring the board on a mistake). | Open (user) |
-| 8 | Finish waits `END_MOMENT_MS` (1.5 s) after a clean last track; siblings wait ~400 ms. | Open (user) |
+| 7 | No green / red feedback ring (other tests ring the board on a mistake). | Keep: dot + text are enough (user) |
+| 8 | Finish waits `END_MOMENT_MS` (1.5 s) after a clean last track; siblings wait ~400 ms. | Done: 400 ms |
 | 9 | Track result only 1 s in the info row (no RoundResult). | Fine (nothing is timed until GO) |
 | 10 | "Penalty +0 s" with no exits. | Fixed: "0 s" |
 | 11 | Old best (3.27 s) from the single-path version still shows. | See audit #7 |
+
+## User decisions after the review
+- Rules: the penalty moved into How to play (it changes how carefully you play); one score line "Your total time for all 5 tracks, plus penalties."; the line naming the tracks and the fork was dropped.
