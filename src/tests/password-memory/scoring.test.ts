@@ -61,11 +61,9 @@ describe('password memory: building', () => {
     expect(changeOptions('k')).toEqual(['K'])
   })
 
-  it('makes "no separator" rare, and only between two words', () => {
-    const seps = Array.from({ length: 4000 }, () => two().sep)
-    const none = seps.filter((s) => s === '').length / seps.length
-    expect(none).toBeGreaterThan(0.08)
-    expect(none).toBeLessThan(0.18)
+  it('always puts a visible separator between words', () => {
+    const seps = new Set(Array.from({ length: 2000 }, () => two().sep))
+    expect([...seps].sort()).toEqual([' ', '-', '.', '_'])
   })
 
   it('still counts bits from the choices made (the lab saves them)', () => {
@@ -108,8 +106,7 @@ describe('password memory: load', () => {
     expect(partsLoad({ ...two, changes: [ch('C', 0), ch('K', 1)] })).toBeGreaterThan(partsLoad({ ...two, changes: [ch('C', 0), ch('K', 0)] }))
   })
 
-  it('counts joined words and the show time', () => {
-    expect(partsLoad(base(['cake', 'oak'], [], '', '')) - partsLoad(base(['cake', 'oak']))).toBeCloseTo(1)
+  it('counts the show time', () => {
     const p = base(['cake'])
     expect(loadOf(p, 5000)).toBeCloseTo(partsLoad(p) - 0.4)
     expect(loadOf(p, 3500)).toBeCloseTo(partsLoad(p) + 0.2)
@@ -147,6 +144,14 @@ describe('password memory: load', () => {
         const p = passwordForLevel(level)
         expect(p.words.length).toBeLessThanOrEqual(limits.words)
         expect(p.changes.length).toBeLessThanOrEqual(limits.changes)
+      }
+    }
+    // From load 8.5 on, at least 2 changed letters and 2 extra characters.
+    for (let level = 8; level <= 30; level++) {
+      for (let i = 0; i < 20; i++) {
+        const p = passwordForLevel(level)
+        expect(p.changes.length).toBeGreaterThanOrEqual(2)
+        expect(p.extras.length).toBeGreaterThanOrEqual(2)
       }
     }
     const ps = Array.from({ length: 300 }, () => passwordForLevel(14))

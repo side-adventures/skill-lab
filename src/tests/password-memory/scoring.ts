@@ -39,13 +39,12 @@ export const changeKind = (to: string): 'upper' | 'digit' | 'symbol' =>
   /[0-9]/.test(to) ? 'digit' : /[A-Z]/.test(to) ? 'upper' : 'symbol'
 
 /**
- * Separators between combined words, with how often each is picked. "No separator" is much harder to read back, so
- * it is rarer, and only between two words (three words always get a visible one).
+ * Separators between combined words, all equally likely. Always a visible one: words run together (no separator) were
+ * hard to read apart, which made them hard to recognize (the Password Lab still tests them).
  */
 export const SEPARATORS: { sep: string; weight: number }[] = [
-  { sep: '-', weight: 7 }, { sep: '_', weight: 7 }, { sep: '.', weight: 7 }, { sep: ' ', weight: 7 }, { sep: '', weight: 4 },
+  { sep: '-', weight: 1 }, { sep: '_', weight: 1 }, { sep: '.', weight: 1 }, { sep: ' ', weight: 1 },
 ]
-export const separatorsFor = (words: number) => SEPARATORS.filter((s) => s.sep !== '' || words === 2)
 
 /** Symbols that are easy to type on common keyboard layouts (no dead keys). */
 export const SYMBOLS = ['!', '?', '@', '#', '$', '%', '&', '*']
@@ -142,7 +141,7 @@ export function buildPassword(spec: Spec, rand: Rand = Math.random): Password {
   let bits = spec.wordBits
   let sep = ''
   if (words.length > 1) {
-    const { item, p } = pickWeighted(spec.separators ?? separatorsFor(words.length), rand)
+    const { item, p } = pickWeighted(spec.separators ?? SEPARATORS, rand)
     sep = item.sep
     bits += -log2(p)
   }
@@ -191,7 +190,6 @@ export function pickWords(pool: string[], count: number, rand: Rand = Math.rando
  * - A look-alike (digit / symbol) adds 1.2, counted up to half the word's letters too.
  * - With changes counted this way, a word's length matters little (long words were hard mostly because they had room
  *   for more changes).
- * - No separator counts 1.0: the model says ~1.4, but from only 18 passwords.
  */
 export const LOAD = {
   word: 1.45,
@@ -201,7 +199,6 @@ export const LOAD = {
   leet: 1.2,
   extraDigit: 1,
   extraSymbol: 1.53,
-  noSeparator: 1,
   /** One second less to look counts this much more (measured between 3 and 4 s). */
   perSecond: 0.4,
 }
@@ -222,7 +219,6 @@ export function partsLoad(p: Parts) {
     load += LOAD.leet * Math.min(changes.filter((c) => changeKind(c.to) !== 'upper').length, half)
   })
   for (const c of p.extras) load += /[0-9]/.test(c) ? LOAD.extraDigit : LOAD.extraSymbol
-  if (p.words.length > 1 && p.sep === '') load += LOAD.noSeparator
   return load
 }
 
@@ -249,10 +245,11 @@ const MAX_EXTRAS = 12
 
 /**
  * Limits for the first levels, so they look like ordinary passwords: up to load 6 one word with at most one change,
- * up to load 8 at most two words; from there the full mix.
+ * up to load 8 at most two words; from there the full mix, with at least 2 changed letters and 2 extra characters (so
+ * a level isn't filled by a word with a long string of extras, or by changes alone).
  */
 export const limitsFor = (load: number) =>
-  load <= 6 ? { words: 1, changes: 1 } : load <= 8 ? { words: 2, changes: Infinity } : { words: 3, changes: Infinity }
+  load <= 6 ? { words: 1, changes: 1, min: 0 } : load <= 8 ? { words: 2, changes: Infinity, min: 0 } : { words: 3, changes: Infinity, min: 2 }
 
 /**
  * A password whose load (at `showMs`) is within LOAD_TOLERANCE of `target`. Its parts are mixed at random, as in the
@@ -275,8 +272,10 @@ export function passwordForLoad(target: number, showMs: number, rand: Rand = Mat
     if (rest < -LOAD_TOLERANCE) continue
     // Split what is left between changed letters (~1.3 each) and extra characters (~1.25 each), at random.
     const letters = picked.words.join('').length
-    const changes = randInt(0, Math.max(0, Math.min(letters, limits.changes, Math.floor(rest / LOAD.furtherChange))), rand)
-    const extras = Math.max(0, Math.min(MAX_EXTRAS, Math.round((rest - changes * 1.3) / 1.25)))
+    const most = Math.min(letters, limits.changes, Math.floor(rest / LOAD.furtherChange))
+    if (most < limits.min) continue
+    const changes = randInt(limits.min, most, rand)
+    const extras = Math.max(limits.min, Math.min(MAX_EXTRAS, Math.round((rest - changes * 1.3) / 1.25)))
     const p = buildPassword({ ...picked, changes, extras }, rand)
     if (isBareWord(p)) continue
     const off = Math.abs(loadOf(p, showMs) - target)
