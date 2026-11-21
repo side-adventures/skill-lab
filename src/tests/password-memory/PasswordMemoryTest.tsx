@@ -5,11 +5,11 @@ import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { PasswordForm, type FormPhase } from './PasswordForm'
 import {
-  LIVES, SYMBOL_KEYS, afterMiss, afterRight, levelOf, matches, passwordForLoad, showMsFor, startClimb, type Climb,
-  type Password,
+  LIVES, SYMBOL_KEYS, afterMiss, afterRight, loadOfLevel, matches, passwordForLevel, showMsOfLevel, startClimb,
+  type Climb, type Password,
 } from './scoring'
 
-const newPassword = (c: Climb) => passwordForLoad(c.load, showMsFor(c.load))
+const newPassword = (c: Climb) => passwordForLevel(c.level)
 
 /** Loads like 11.5 as "11.5", whole ones as "12". */
 const loadText = (load: number) => (Number.isInteger(load) ? String(load) : load.toFixed(1))
@@ -20,17 +20,17 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
   const [phase, setPhase] = useState<FormPhase>('show')
   const [input, setInput] = useState('')
   const [lives, setLives] = useState(LIVES)
-  // The hardest password confirmed so far and its load (the score is its level).
-  const [best, setBest] = useState<{ text: string; load: number } | null>(null)
+  // The hardest password confirmed so far and its level (the score).
+  const [best, setBest] = useState<{ text: string; level: number } | null>(null)
   // Levels of the missed passwords, for the result.
   const [missed, setMissed] = useState<number[]>([])
   const [flash, signal] = useAnswerFlash()
   const { later } = useLater()
 
   const target = password.text
-  const showFor = showMsFor(climb.load)
+  const showFor = showMsOfLevel(climb.level)
   const showLeft = useCountdown(showFor, phase === 'show', () => setPhase('input'))
-  const score = best ? levelOf(best.load) : 0
+  const score = best?.level ?? 0
   const next = afterMiss(climb)
 
   const play = (c: Climb) => {
@@ -45,12 +45,12 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
     const ok = matches(input, target)
     signal(ok)
     if (ok) {
-      if (!best || climb.load > best.load) setBest({ text: target, load: climb.load })
+      if (!best || climb.level > best.level) setBest({ text: target, level: climb.level })
       setPhase('correct')
       later(900, () => play(afterRight(climb)))
       return
     }
-    setMissed([...missed, levelOf(climb.load)])
+    setMissed([...missed, climb.level])
     setLives(lives - 1)
     setPhase('wrong')
   }
@@ -63,7 +63,7 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
           ...(best
             ? [
                 { label: 'Hardest password', value: best.text },
-                { label: 'As hard to remember as', value: `~${loadText(best.load)} random digits` },
+                { label: 'As hard to remember as', value: `~${loadText(loadOfLevel(best.level))} random digits` },
               ]
             : []),
           ...(missed.length ? [{ label: 'Missed at', value: `level ${missed.join(', ')}` }] : []),
@@ -79,14 +79,14 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={<><InfoValue label="Level" value={levelOf(climb.load)} /><Lives left={lives} total={LIVES} /></>}
+        left={<><InfoValue label="Level" value={climb.level} /><Lives left={lives} total={LIVES} /></>}
         middle={
           <span className={phase === 'wrong' ? 'text-rose-300' : ''}>
             {phase === 'show' ? 'Memorize'
               : phase === 'input' ? 'Type it, then Enter'
               : phase === 'correct' ? 'Saved'
               : lives === 0 ? 'Out of lives'
-              : next.load < climb.load ? 'No match · smaller steps now'
+              : next.level < climb.level ? 'No match · smaller steps now'
               : 'No match · new password, same level'}
           </span>
         }

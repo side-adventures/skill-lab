@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CHANGES, EXTRA_CHARS, LIVES, LOAD_TOLERANCE, POOLS, START_LOAD, SYMBOL_KEYS, afterMiss, afterRight, buildPassword,
-  changeOptions, hasDigitRun, levelOf, loadOf, loadOfLevel, makeExtras, matches, partsLoad, passwordForLoad, pickWords,
-  showMsFor, startClimb,
+  CHANGES, EXTRA_CHARS, LIVES, LOAD_TOLERANCE, POOLS, SYMBOL_KEYS, afterMiss, afterRight,
+  buildPassword, changeOptions, hasDigitRun, isBareWord, limitsFor, loadOf, loadOfLevel, makeExtras, matches, partsLoad,
+  passwordForLevel, pickWords, showMsOfLevel, startClimb,
 } from './scoring'
 
 describe('password memory: words', () => {
@@ -25,9 +25,9 @@ const two = (changes = 0, extras = 0) => buildPassword({ ...pickWords(POOLS.comb
 
 describe('password memory: building', () => {
   it('builds valid passwords at every load', () => {
-    for (let load = START_LOAD; load <= 24; load += 0.5) {
+    for (let level = 1; level <= 30; level++) {
       for (let i = 0; i < 60; i++) {
-        const p = passwordForLoad(load, showMsFor(load))
+        const p = passwordForLevel(level)
         // Extras: allowed characters, none twice, no 123 / 987 runs, at the end.
         expect([...p.extras].every((c) => EXTRA_CHARS.includes(c))).toBe(true)
         expect(new Set(p.extras).size).toBe(p.extras.length)
@@ -84,90 +84,98 @@ describe('password memory: building', () => {
 })
 
 describe('password memory: load', () => {
-  const ch = (to: string) => ({ word: 0, index: 0, from: 'x', to })
+  const ch = (to: string, word = 0, index = 1) => ({ word, index, from: 'x', to })
+  const base = (words: string[], changes: ReturnType<typeof ch>[] = [], extras = '', sep = '-') => ({ words, sep, changes, extras })
 
   it('weighs the parts as measured in the lab', () => {
-    expect(partsLoad({ words: ['cake'], sep: '', changes: [], extras: '' })).toBeCloseTo(2.56)
-    expect(partsLoad({ words: ['cake'], sep: '', changes: [ch('C')], extras: '7' })).toBeCloseTo(2.56 + 1.09 + 1)
-    // A digit or symbol change weighs about twice a capital; an extra symbol more than an extra digit.
-    expect(partsLoad({ words: ['cake'], sep: '', changes: [ch('4')], extras: '' })).toBeCloseTo(2.56 + 2.23)
-    expect(partsLoad({ words: ['cake'], sep: '', changes: [], extras: '#' })).toBeCloseTo(2.56 + 1.56)
-    // Two words run together cost more than with a separator.
-    const apart = partsLoad({ words: ['cake', 'oak'], sep: '-', changes: [], extras: '' })
-    expect(partsLoad({ words: ['cake', 'oak'], sep: '', changes: [], extras: '' }) - apart).toBeCloseTo(1.79)
+    expect(partsLoad(base(['cake']))).toBeCloseTo(2.56)
+    expect(partsLoad(base(['cake'], [], '7'))).toBeCloseTo(3.56)
+    expect(partsLoad(base(['cake'], [], '#'))).toBeCloseTo(4.12)
   })
 
-  it('counts the show time: more time is lighter', () => {
-    const p = { words: ['cake'], sep: '', changes: [], extras: '' }
-    expect(loadOf(p, 4000)).toBeCloseTo(partsLoad(p))
+  it('counts changes per word: the first is the hard one, a digit / symbol a bit more than a capital', () => {
+    const word = partsLoad(base(['letter']))
+    expect(partsLoad(base(['letter'], [ch('T')])) - word).toBeCloseTo(1.9) // leTter
+    expect(partsLoad(base(['letter'], [ch('7')])) - word).toBeCloseTo(2.4) // le7ter
+    const all = [...'LETTER'].map((c, i) => ch(c, 0, i))
+    expect(partsLoad(base(['letter'], all)) - word).toBeCloseTo(1.9 + 5 * 0.8) // LETTER
+    // One change in each of two words costs more than two in one word.
+    const two = base(['cake', 'oak'])
+    expect(partsLoad({ ...two, changes: [ch('C', 0), ch('K', 1)] })).toBeGreaterThan(partsLoad({ ...two, changes: [ch('C', 0), ch('K', 0)] }))
+  })
+
+  it('counts joined words and the show time', () => {
+    expect(partsLoad(base(['cake', 'oak'], [], '', '')) - partsLoad(base(['cake', 'oak']))).toBeCloseTo(1)
+    const p = base(['cake'])
     expect(loadOf(p, 5000)).toBeCloseTo(partsLoad(p) - 0.4)
-    expect(loadOf(p, 3000)).toBeCloseTo(partsLoad(p) + 0.4)
+    expect(loadOf(p, 3500)).toBeCloseTo(partsLoad(p) + 0.2)
   })
 
-  it('makes passwords close to the asked load, quickly', () => {
+  it('never makes a bare word (or one with only a capital first letter)', () => {
+    expect(isBareWord(base(['cake']))).toBe(true)
+    expect(isBareWord(base(['cake'], [ch('C', 0, 0)]))).toBe(true)
+    expect(isBareWord(base(['cake'], [ch('K', 0, 2)]))).toBe(false)
+    expect(isBareWord(base(['cake'], [], '7'))).toBe(false)
+    for (let level = 1; level <= 30; level++) {
+      for (let i = 0; i < 40; i++) expect(isBareWord(passwordForLevel(level))).toBe(false)
+    }
+  })
+
+  it('starts with a 6-letter word and one extra character', () => {
+    for (let i = 0; i < 100; i++) expect(passwordForLevel(1).text).toMatch(/^[a-z]{6}[0-9!?@#$%&*]$/)
+  })
+
+  it('makes passwords within 0.15 of their level\'s load, quickly', () => {
     const start = Date.now()
-    for (let load = START_LOAD; load <= 26; load += 0.5) {
-      for (let i = 0; i < 40; i++) {
-        const ms = showMsFor(load)
-        expect(Math.abs(loadOf(passwordForLoad(load, ms), ms) - load)).toBeLessThanOrEqual(LOAD_TOLERANCE + 1e-9)
+    for (let level = 2; level <= 40; level++) {
+      for (let i = 0; i < 30; i++) {
+        const p = passwordForLevel(level)
+        expect(Math.abs(loadOf(p, showMsOfLevel(level)) - loadOfLevel(level))).toBeLessThanOrEqual(LOAD_TOLERANCE + 1e-9)
       }
     }
-    expect(Date.now() - start).toBeLessThan(5000)
+    expect(Date.now() - start).toBeLessThan(10000)
   })
 
-  it('mixes the parts: one word or several, changes and extras', () => {
-    const ps = Array.from({ length: 400 }, () => passwordForLoad(12, 5000))
-    const words = new Set(ps.map((p) => p.words.length))
-    expect([...words].sort()).toEqual([1, 2, 3])
+  it('keeps the first levels simple, then mixes everything', () => {
+    for (let level = 2; level <= 40; level++) {
+      const limits = limitsFor(loadOfLevel(level))
+      for (let i = 0; i < 30; i++) {
+        const p = passwordForLevel(level)
+        expect(p.words.length).toBeLessThanOrEqual(limits.words)
+        expect(p.changes.length).toBeLessThanOrEqual(limits.changes)
+      }
+    }
+    const ps = Array.from({ length: 300 }, () => passwordForLevel(14))
+    expect([...new Set(ps.map((p) => p.words.length))].sort()).toEqual([1, 2, 3])
     expect(ps.some((p) => p.changes.length >= 3)).toBe(true)
     expect(ps.some((p) => p.extras.length >= 4)).toBe(true)
-    expect(ps.some((p) => p.changes.length === 0)).toBe(true)
   })
 })
 
-describe('password memory: the climb', () => {
-  const rights = (n: number) => {
+describe('password memory: levels and the climb', () => {
+  it('goes up 1 load a level to level 4, then 0.5, with the show time growing to 5 s', () => {
+    expect([1, 2, 3, 4, 5, 6, 12].map(loadOfLevel)).toEqual([4.5, 5.5, 6.5, 7.5, 8, 8.5, 11.5])
+    expect([1, 2, 3, 4, 5, 12].map(showMsOfLevel)).toEqual([3500, 4000, 4500, 5000, 5000, 5000])
+  })
+
+  it('skips a level after each right answer until the first miss, then goes one at a time', () => {
     let c = startClimb()
-    const loads = [c.load]
-    for (let i = 0; i < n; i++) loads.push((c = afterRight(c)).load)
-    return { c, loads }
-  }
-
-  it('climbs by 2 until load 8, then by 1', () => {
-    expect(rights(6).loads).toEqual([4, 6, 8, 9, 10, 11, 12])
-  })
-
-  it('halves the step after a miss and goes on from the last confirmed load', () => {
-    // Miss at 12 after 11: on at 11.5, then 0.5 steps.
-    let c = afterMiss(rights(6).c)
-    expect(c.load).toBe(11.5)
-    expect(afterRight(c).load).toBe(12)
-    // At the 0.5 step a miss repeats the same load.
-    c = afterMiss(afterRight(c))
-    expect(c.load).toBe(12)
-    // An early miss (at 6 after 4) only halves to 1: 5, 6, 7, 8, 9 …
-    let e = afterMiss(rights(1).c)
-    expect(e.load).toBe(5)
-    const loads = [e.load]
-    for (let i = 0; i < 4; i++) loads.push((e = afterRight(e)).load)
-    expect(loads).toEqual([5, 6, 7, 8, 9])
-    // A miss before anything was confirmed repeats the start.
-    expect(afterMiss(startClimb()).load).toBe(START_LOAD)
-  })
-
-  it('numbers levels in half-load steps', () => {
-    expect(levelOf(4)).toBe(1)
-    expect(levelOf(4.5)).toBe(2)
-    expect(levelOf(11.5)).toBe(16)
-    expect(loadOfLevel(16)).toBe(11.5)
-  })
-
-  it('shows longer as the load grows: 3 s, +0.5 s per load, 5 s from load 8', () => {
-    expect([4, 5, 6, 7, 8, 12].map(showMsFor)).toEqual([3000, 3500, 4000, 4500, 5000, 5000])
+    const levels = [c.level]
+    for (let i = 0; i < 4; i++) levels.push((c = afterRight(c)).level)
+    expect(levels).toEqual([1, 3, 5, 7, 9])
+    // A miss at 9 after 7: on at 8, then 9, 10 …
+    c = afterMiss(c)
+    expect(c.level).toBe(8)
+    expect(afterRight(c).level).toBe(9)
+    // A later miss replays the same level.
+    c = afterRight(c)
+    expect(afterMiss(c).level).toBe(9)
+    // A miss before anything was confirmed repeats level 1.
+    expect(afterMiss(startClimb()).level).toBe(1)
   })
 
   // A simulated player: the chance of a right answer falls with the load around their 50 % point, as steeply as in
-  // the lab data (0.63 per load).
+  // the lab data (0.8 per load on this scale).
   const run = (theta: number, rand: () => number) => {
     let c = startClimb()
     let lives = LIVES
@@ -175,28 +183,28 @@ describe('password memory: the climb', () => {
     let rounds = 0
     while (lives > 0 && rounds < 300) {
       rounds++
-      if (rand() < 1 / (1 + Math.exp(0.63 * (c.load - theta)))) {
-        best = Math.max(best, c.load)
+      if (rand() < 1 / (1 + Math.exp(0.8 * (loadOfLevel(c.level) - theta)))) {
+        best = Math.max(best, c.level)
         c = afterRight(c)
       } else {
         lives--
         c = afterMiss(c)
       }
     }
-    return { best, rounds }
+    return { best: best ? loadOfLevel(best) : 0, rounds }
   }
   const seeded = (seed: number) => () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31)
 
   it('scores a player near their 50 % point, steadily, in a reasonable number of rounds', () => {
     const rand = seeded(7)
-    for (const theta of [7, 11.5, 16]) {
+    for (const theta of [8, 11.8, 16]) {
       const runs = Array.from({ length: 3000 }, () => run(theta, rand))
       const mean = runs.reduce((a, r) => a + r.best, 0) / runs.length
       const sd = Math.sqrt(runs.reduce((a, r) => a + (r.best - mean) ** 2, 0) / runs.length)
       const rounds = runs.reduce((a, r) => a + r.rounds, 0) / runs.length
       expect(Math.abs(mean - theta)).toBeLessThan(1)
-      expect(sd).toBeLessThan(1.6)
-      expect(rounds).toBeLessThan(theta + 4)
+      expect(sd).toBeLessThan(1.4)
+      expect(rounds).toBeLessThan(2 * (theta - 4) + 6)
     }
   })
 
