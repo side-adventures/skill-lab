@@ -1,9 +1,6 @@
 import { randInt, shuffle, type Rand } from '../../lib/random'
 import { LONG_WORDS, MEDIUM_WORDS, SHORT_WORDS, TINY_WORDS, XLONG_WORDS } from './words'
 
-/** Lives for the whole run: a wrong answer costs one, and you get a new password of the same level. */
-export const LIVES = 2
-
 // ---------- words, changes, separators, extras ----------
 
 /**
@@ -182,92 +179,113 @@ export function pickWords(pool: string[], count: number, rand: Rand = Math.rando
   return { words, wordBits: count * log2(pool.length) }
 }
 
-// ---------- the game's levels ----------
+// ---------- how hard a password is to remember (load) ----------
 
 /**
- * A recipe: one word from a group (4–5 letters, 6, 7–9, 10–12), or two / three combined words (3–5 letters each);
- * how many letters change; how many extra characters.
+ * How much each part adds to the load of remembering a password, in "extra digits" (one extra digit after the word
+ * counts 1). Measured in the Password Lab (224 answers by one player, 2026-11-21; a logistic model of right / wrong
+ * from the parts), so rough: a word is easy to hold (its letters are one chunk), a changed letter is hard (a digit or
+ * symbol twice as hard as a capital), an extra symbol harder than a digit, and words run together harder than apart.
  */
-export type Shape = Exclude<Group, 'combo'> | 'two' | 'three'
-export interface Recipe { shape: Shape; changes: number; extras: number }
-const rec = (shape: Shape, changes: number, extras: number): Recipe => ({ shape, changes, extras })
+export const LOAD = {
+  word: 1.3,
+  per4Letters: 1.26,
+  upper: 1.09,
+  digit: 2.23,
+  symbol: 2.17,
+  extraDigit: 1,
+  extraSymbol: 1.56,
+  noSeparator: 1.79,
+  /** One second less to look counts this much more (measured between 3 and 4 s). */
+  perSecond: 0.4,
+}
+/** The show time the weights were measured at. */
+const LAB_MS = 4000
 
-/**
- * The level ladder. Each level lists recipes of about the same strength, and one is picked at random. Words get
- * longer as the levels go up (4–5 letters first, then 6, then 7–9; 10–12 and three words later), and each level is
- * ~3–4 bits stronger than the one before. Past the last level, each further level adds one extra character.
- */
-export const LEVELS: Recipe[][] = [
-  [rec('short', 0, 1)],
-  [rec('short', 1, 1), rec('medium', 1, 1)],
-  [rec('short', 1, 2), rec('medium', 1, 2), rec('two', 0, 0)],
-  [rec('medium', 1, 3), rec('long', 2, 2), rec('two', 1, 0)],
-  [rec('medium', 2, 3), rec('long', 2, 3), rec('xlong', 3, 3), rec('two', 1, 1)],
-  [rec('long', 2, 4), rec('xlong', 2, 4), rec('two', 2, 1), rec('two', 1, 2)],
-  [rec('two', 2, 2), rec('two', 1, 3), rec('two', 3, 1)],
-  [rec('two', 3, 2), rec('three', 1, 1), rec('two', 2, 3)],
-  [rec('three', 1, 2), rec('three', 2, 1), rec('two', 3, 3)],
-  [rec('three', 2, 2), rec('three', 1, 3), rec('two', 3, 4)],
+type Parts = Pick<Password, 'words' | 'sep' | 'changes' | 'extras'>
+
+/** The load of a password's parts, at the lab's 4 s. */
+export function partsLoad(p: Parts) {
+  let load = 0
+  for (const w of p.words) load += LOAD.word + (LOAD.per4Letters * w.length) / 4
+  for (const c of p.changes) load += LOAD[changeKind(c.to)]
+  for (const c of p.extras) load += /[0-9]/.test(c) ? LOAD.extraDigit : LOAD.extraSymbol
+  if (p.words.length > 1 && p.sep === '') load += LOAD.noSeparator
+  return load
+}
+
+/** The load of a password shown for `showMs`: more time to look makes it lighter, less time heavier. */
+export const loadOf = (p: Parts, showMs: number) => partsLoad(p) + (LOAD.perSecond * (LAB_MS - showMs)) / 1000
+
+/** How many words a password has, and from which group a single word comes. */
+const WORD_COUNTS = [{ n: 1, weight: 50 }, { n: 2, weight: 35 }, { n: 3, weight: 15 }]
+const SINGLE_GROUPS: { group: Group; weight: number }[] = [
+  { group: 'short', weight: 30 }, { group: 'medium', weight: 30 }, { group: 'long', weight: 25 }, { group: 'xlong', weight: 15 },
 ]
-
-/** The recipes for a level (1-based); past the ladder, one more extra character per level. */
-export function recipesFor(level: number): Recipe[] {
-  const last = LEVELS.length
-  if (level <= last) return LEVELS[level - 1]
-  return LEVELS[last - 1].map((r) => ({ ...r, extras: r.extras + level - last }))
-}
-
-export const wordCount = (shape: Shape) => (shape === 'two' ? 2 : shape === 'three' ? 3 : 1)
-
-export function makePassword(recipe: Recipe, rand: Rand = Math.random): Password {
-  const count = wordCount(recipe.shape)
-  const pool = count > 1 ? POOLS.combo : POOLS[recipe.shape as Group]
-  return buildPassword({ ...pickWords(pool, count, rand), changes: recipe.changes, extras: recipe.extras }, rand)
-}
-
-/** A password for a level (1-based): a random recipe of that level. */
-export const passwordFor = (level: number, rand: Rand = Math.random) => makePassword(pick(recipesFor(level), rand), rand)
+/** How close a password's load must be to its level's (levels are 0.5 apart). */
+export const LOAD_TOLERANCE = 0.25
+const MAX_EXTRAS = 12
 
 /**
- * How long a password stays visible: by the things to remember, not the characters (a long word is one chunk).
- * 1.5 s + 1 s per word + 0.5 s per separator + 0.75 s per changed letter + 0.75 s per extra character.
+ * A password whose load (at `showMs`) is within LOAD_TOLERANCE of `target`. Its parts are mixed at random, as in the
+ * lab: one to three words, which letters change and how, extra digits / symbols, the separator. Many random mixes
+ * are tried and the first close enough is taken (the closest one if none is, which doesn't happen in practice).
  */
-export const showMs = (p: Pick<Password, 'words' | 'changes' | 'extras'>) =>
-  1500 + 1000 * p.words.length + 500 * (p.words.length - 1) + 750 * p.changes.length + 750 * p.extras.length
-
-// ---------- score and result ----------
-
-/** The score: whole bits. */
-export const scoreBits = (bits: number) => Math.round(bits)
-
-export function strengthLabel(bits: number) {
-  if (bits < 20) return 'Weak'
-  if (bits < 28) return 'Fair'
-  if (bits < 36) return 'Strong'
-  return 'Very strong'
-}
-
-/** Guesses per second assumed for "time to crack" (an online attack). */
-export const GUESSES_PER_SECOND = 1000
-
-/** Average time to guess it: half of all 2^bits options, at GUESSES_PER_SECOND. */
-export function crackTime(bits: number): string {
-  const s = 2 ** (bits - 1) / GUESSES_PER_SECOND
-  if (s < 1) return 'instantly'
-  const units: [number, string][] = [
-    [60, 'second'], [60, 'minute'], [24, 'hour'], [365.25, 'day'], [1000, 'year'],
-  ]
-  let v = s
-  for (const [size, name] of units) {
-    if (v < size) return about(v, name)
-    v /= size
+export function passwordForLoad(target: number, showMs: number, rand: Rand = Math.random): Password {
+  const timeLoad = (LOAD.perSecond * (LAB_MS - showMs)) / 1000
+  let best: Password | null = null
+  let bestOff = Infinity
+  for (let tries = 0; tries < 5000; tries++) {
+    const n = pickWeighted(WORD_COUNTS, rand).item.n
+    const pool = n > 1 ? POOLS.combo : POOLS[pickWeighted(SINGLE_GROUPS, rand).item.group]
+    const picked = pickWords(pool, n, rand)
+    const wordsLoad = partsLoad({ words: picked.words, sep: '-', changes: [], extras: '' })
+    const rest = target - timeLoad - wordsLoad
+    if (rest < -LOAD_TOLERANCE) continue
+    // Split what is left between changed letters (~1.6 each) and extra characters (~1.25 each), at random.
+    const letters = picked.words.join('').length
+    const changes = randInt(0, Math.max(0, Math.min(letters, Math.floor(rest / LOAD.upper))), rand)
+    const extras = Math.max(0, Math.min(MAX_EXTRAS, Math.round((rest - changes * 1.6) / 1.25)))
+    const p = buildPassword({ ...picked, changes, extras }, rand)
+    const off = Math.abs(loadOf(p, showMs) - target)
+    if (off <= LOAD_TOLERANCE) return p
+    if (off < bestOff) [best, bestOff] = [p, off]
   }
-  if (v < 1000) return about(v, 'thousand years', false)
-  return about(v / 1000, 'million years', false)
+  return best!
 }
 
-function about(v: number, unit: string, plural = true) {
-  const n = v < 10 ? Math.round(v * 10) / 10 : Math.round(v)
-  const word = plural && n !== 1 ? `${unit}s` : unit
-  return `~${n} ${word}`
+// ---------- the climb ----------
+
+/** Lives for the whole run: a miss costs one. */
+export const LIVES = 3
+export const START_LOAD = 4
+
+/** Levels are numbered in half-load steps: level 1 is load 4, level 2 is 4.5, … */
+export const levelOf = (load: number) => Math.round(2 * (load - START_LOAD)) + 1
+export const loadOfLevel = (level: number) => START_LOAD + (level - 1) / 2
+
+/** Show time grows with the load, 0.5 s per load, from 3 s at the start to 5 s from load 8 on. */
+export const showMsFor = (load: number) => Math.round(1000 * Math.min(5, 3 + 0.5 * (load - START_LOAD)))
+
+/**
+ * Where the run is: the load of the current password, the last load confirmed (none yet: null), and the biggest
+ * step allowed (starts at 2; every miss halves it, down to 0.5).
+ */
+export interface Climb { load: number; cleared: number | null; cap: number }
+export const startClimb = (): Climb => ({ load: START_LOAD, cleared: null, cap: 2 })
+
+/** Steps of 2 until load 8 (a quick start), then 1, never more than the cap. */
+const stepFrom = (load: number, cap: number) => Math.min(load < 8 ? 2 : 1, cap)
+
+export const afterRight = (c: Climb): Climb => ({ load: c.load + stepFrom(c.load, c.cap), cleared: c.load, cap: c.cap })
+
+/**
+ * After a miss the step halves (never below 0.5), and the next password is the last confirmed load plus that step:
+ * a miss at 12 after 11 goes on at 11.5; a miss at 6 after 4 at 5. With the step already at 0.5, that is the same
+ * load again (a new password). A miss before anything was confirmed repeats the start.
+ */
+export function afterMiss(c: Climb): Climb {
+  const lastStep = c.cleared === null ? c.cap : c.load - c.cleared
+  const cap = Math.max(0.5, lastStep / 2)
+  return { load: c.cleared === null ? c.load : c.cleared + cap, cleared: c.cleared, cap }
 }
