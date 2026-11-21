@@ -184,21 +184,23 @@ export function pickWords(pool: string[], count: number, rand: Rand = Math.rando
 /**
  * How much each part adds to the load of remembering a password, in "extra digits" (one extra digit after the word
  * counts 1). From the Password Lab (224 answers by one player, 2026-11-21; a logistic model of right / wrong from the
- * parts), with two judgment calls where the data is thin:
- * - Changes count per word: the first change in a word is the hard part (1.9), each further one in the same word
- *   much less (0.8): a word with several changes is held as one pattern (LETTER), a lone change is easy to forget.
- * - A digit / symbol instead of a capital adds 0.5: letter by letter they were forgotten as often as capitals, but
- *   the model put them ~1.2 higher (a leet letter also hides the word); 0.5 sits between the two.
- * - No separator counts 1.0: the model said ~1.7, but from only 18 passwords, and most of their misses were changes.
+ * parts):
+ * - Changes count per word, by how much of the word they cover: the first change is the hard one (1.7), each further
+ *   one costs 1.4 up to half the word's letters, and past half nothing more (a word was hardest with about half its
+ *   letters changed, 43 % wrong, and easiest fully changed, 18 %: then it reads as one pattern, LETTER).
+ * - A look-alike (digit / symbol) adds 1.2, counted up to half the word's letters too.
+ * - With changes counted this way, a word's length matters little (long words were hard mostly because they had room
+ *   for more changes).
+ * - No separator counts 1.0: the model says ~1.4, but from only 18 passwords.
  */
 export const LOAD = {
-  word: 1.3,
-  per4Letters: 1.26,
-  firstChange: 1.9,
-  furtherChange: 0.8,
-  leet: 0.5,
+  word: 1.45,
+  per4Letters: 0.38,
+  firstChange: 1.7,
+  furtherChange: 1.4,
+  leet: 1.2,
   extraDigit: 1,
-  extraSymbol: 1.56,
+  extraSymbol: 1.53,
   noSeparator: 1,
   /** One second less to look counts this much more (measured between 3 and 4 s). */
   perSecond: 0.4,
@@ -211,10 +213,14 @@ type Parts = Pick<Password, 'words' | 'sep' | 'changes' | 'extras'>
 /** The load of a password's parts, at the lab's 4 s. */
 export function partsLoad(p: Parts) {
   let load = 0
-  for (const w of p.words) load += LOAD.word + (LOAD.per4Letters * w.length) / 4
-  const changedWords = new Set(p.changes.map((c) => c.word)).size
-  load += changedWords * LOAD.firstChange + (p.changes.length - changedWords) * LOAD.furtherChange
-  for (const c of p.changes) if (changeKind(c.to) !== 'upper') load += LOAD.leet
+  p.words.forEach((w, i) => {
+    load += LOAD.word + (LOAD.per4Letters * w.length) / 4
+    const changes = p.changes.filter((c) => c.word === i)
+    if (changes.length === 0) return
+    const half = w.length / 2
+    load += LOAD.firstChange + LOAD.furtherChange * Math.max(0, Math.min(changes.length, half) - 1)
+    load += LOAD.leet * Math.min(changes.filter((c) => changeKind(c.to) !== 'upper').length, half)
+  })
   for (const c of p.extras) load += /[0-9]/.test(c) ? LOAD.extraDigit : LOAD.extraSymbol
   if (p.words.length > 1 && p.sep === '') load += LOAD.noSeparator
   return load
@@ -242,16 +248,17 @@ export const LOAD_TOLERANCE = 0.15
 const MAX_EXTRAS = 12
 
 /**
- * Limits for the first levels, so they look like ordinary passwords: up to load 7 one word with at most one change,
- * up to load 9 at most two words; from there the full mix.
+ * Limits for the first levels, so they look like ordinary passwords: up to load 6 one word with at most one change,
+ * up to load 8 at most two words; from there the full mix.
  */
 export const limitsFor = (load: number) =>
-  load <= 7 ? { words: 1, changes: 1 } : load <= 9 ? { words: 2, changes: Infinity } : { words: 3, changes: Infinity }
+  load <= 6 ? { words: 1, changes: 1 } : load <= 8 ? { words: 2, changes: Infinity } : { words: 3, changes: Infinity }
 
 /**
  * A password whose load (at `showMs`) is within LOAD_TOLERANCE of `target`. Its parts are mixed at random, as in the
  * lab: one to three words, which letters change and how, extra digits / symbols, the separator. Many random mixes
- * are tried and the first close enough is taken (the closest one if none is, which doesn't happen in practice).
+ * are tried and the first close enough is taken (the closest one if none is: only at levels far beyond play, ~70+).
+ * Throws when no mix can reach the target at all (a load below the lightest password; never asked by the game).
  */
 export function passwordForLoad(target: number, showMs: number, rand: Rand = Math.random): Password {
   const timeLoad = (LOAD.perSecond * (LAB_MS - showMs)) / 1000
@@ -276,7 +283,8 @@ export function passwordForLoad(target: number, showMs: number, rand: Rand = Mat
     if (off <= LOAD_TOLERANCE) return p
     if (off < bestOff) [best, bestOff] = [p, off]
   }
-  return best!
+  if (!best) throw new Error(`No password can reach load ${target}`)
+  return best
 }
 
 // ---------- levels and the climb ----------
@@ -285,14 +293,14 @@ export function passwordForLoad(target: number, showMs: number, rand: Rand = Mat
 export const LIVES = 3
 
 /**
- * Each level's load and show time. Level 1 is a fixed recipe (a 6-letter word and one extra digit or symbol, ~4.5);
+ * Each level's load and show time. Level 1 is a fixed recipe (a 6-letter word and one extra digit or symbol, ~3.5);
  * levels 2–4 add 1 load each with the show time growing to 5 s; from level 4 on, 0.5 load per level at 5 s.
  */
 const FIRST_LEVELS = [
-  { load: 4.5, showMs: 3500 },
-  { load: 5.5, showMs: 4000 },
-  { load: 6.5, showMs: 4500 },
-  { load: 7.5, showMs: 5000 },
+  { load: 3.5, showMs: 3500 },
+  { load: 4.5, showMs: 4000 },
+  { load: 5.5, showMs: 4500 },
+  { load: 6.5, showMs: 5000 },
 ]
 export const loadOfLevel = (level: number) =>
   level <= FIRST_LEVELS.length ? FIRST_LEVELS[level - 1].load : FIRST_LEVELS[FIRST_LEVELS.length - 1].load + (level - FIRST_LEVELS.length) / 2

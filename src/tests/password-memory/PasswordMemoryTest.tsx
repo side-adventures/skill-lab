@@ -5,14 +5,11 @@ import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { PasswordForm, type FormPhase } from './PasswordForm'
 import {
-  LIVES, SYMBOL_KEYS, afterMiss, afterRight, loadOfLevel, matches, passwordForLevel, showMsOfLevel, startClimb,
+  LIVES, SYMBOL_KEYS, afterMiss, afterRight, matches, passwordForLevel, showMsOfLevel, startClimb,
   type Climb, type Password,
 } from './scoring'
 
 const newPassword = (c: Climb) => passwordForLevel(c.level)
-
-/** Loads like 11.5 as "11.5", whole ones as "12". */
-const loadText = (load: number) => (Number.isInteger(load) ? String(load) : load.toFixed(1))
 
 export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
   const [climb, setClimb] = useState<Climb>(startClimb)
@@ -60,12 +57,7 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
       score,
       details: {
         stats: [
-          ...(best
-            ? [
-                { label: 'Hardest password', value: best.text },
-                { label: 'As hard to remember as', value: `~${loadText(loadOfLevel(best.level))} random digits` },
-              ]
-            : []),
+          ...(best ? [{ label: 'Hardest password', value: best.text }] : []),
           ...(missed.length ? [{ label: 'Missed at', value: `level ${missed.join(', ')}` }] : []),
         ],
       },
@@ -86,7 +78,7 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
               : phase === 'input' ? 'Type it, then Enter'
               : phase === 'correct' ? 'Saved'
               : lives === 0 ? 'Out of lives'
-              : next.level < climb.level ? 'No match · smaller steps now'
+              : next.level < climb.level ? `No match · next: level ${next.level}`
               : 'No match · new password, same level'}
           </span>
         }

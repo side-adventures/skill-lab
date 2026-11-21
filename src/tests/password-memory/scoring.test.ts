@@ -88,17 +88,21 @@ describe('password memory: load', () => {
   const base = (words: string[], changes: ReturnType<typeof ch>[] = [], extras = '', sep = '-') => ({ words, sep, changes, extras })
 
   it('weighs the parts as measured in the lab', () => {
-    expect(partsLoad(base(['cake']))).toBeCloseTo(2.56)
-    expect(partsLoad(base(['cake'], [], '7'))).toBeCloseTo(3.56)
-    expect(partsLoad(base(['cake'], [], '#'))).toBeCloseTo(4.12)
+    expect(partsLoad(base(['cake']))).toBeCloseTo(1.83)
+    expect(partsLoad(base(['cake'], [], '7'))).toBeCloseTo(2.83)
+    expect(partsLoad(base(['cake'], [], '#'))).toBeCloseTo(3.36)
   })
 
-  it('counts changes per word: the first is the hard one, a digit / symbol a bit more than a capital', () => {
+  it('counts changes per word, up to half its letters; a look-alike more than a capital', () => {
     const word = partsLoad(base(['letter']))
-    expect(partsLoad(base(['letter'], [ch('T')])) - word).toBeCloseTo(1.9) // leTter
-    expect(partsLoad(base(['letter'], [ch('7')])) - word).toBeCloseTo(2.4) // le7ter
-    const all = [...'LETTER'].map((c, i) => ch(c, 0, i))
-    expect(partsLoad(base(['letter'], all)) - word).toBeCloseTo(1.9 + 5 * 0.8) // LETTER
+    const changed = (s: string) => [...s].map((c, i) => (c === 'letter'[i] ? null : ch(c, 0, i))).filter((c) => c !== null)
+    expect(partsLoad(base(['letter'], changed('leTter'))) - word).toBeCloseTo(1.7)
+    expect(partsLoad(base(['letter'], changed('le7ter'))) - word).toBeCloseTo(2.9)
+    // Up to half the word (3 of 6 letters) each change adds 1.4; past half nothing more.
+    expect(partsLoad(base(['letter'], changed('LETter'))) - word).toBeCloseTo(1.7 + 2 * 1.4)
+    expect(partsLoad(base(['letter'], changed('LETTER')))).toBeCloseTo(partsLoad(base(['letter'], changed('LETter'))))
+    // Look-alikes count up to half the word too: L3773R has 4, counted as 3.
+    expect(partsLoad(base(['letter'], changed('L3773R'))) - word).toBeCloseTo(1.7 + 2 * 1.4 + 3 * 1.2)
     // One change in each of two words costs more than two in one word.
     const two = base(['cake', 'oak'])
     expect(partsLoad({ ...two, changes: [ch('C', 0), ch('K', 1)] })).toBeGreaterThan(partsLoad({ ...two, changes: [ch('C', 0), ch('K', 0)] }))
@@ -154,7 +158,7 @@ describe('password memory: load', () => {
 
 describe('password memory: levels and the climb', () => {
   it('goes up 1 load a level to level 4, then 0.5, with the show time growing to 5 s', () => {
-    expect([1, 2, 3, 4, 5, 6, 12].map(loadOfLevel)).toEqual([4.5, 5.5, 6.5, 7.5, 8, 8.5, 11.5])
+    expect([1, 2, 3, 4, 5, 6, 12].map(loadOfLevel)).toEqual([3.5, 4.5, 5.5, 6.5, 7, 7.5, 10.5])
     expect([1, 2, 3, 4, 5, 12].map(showMsOfLevel)).toEqual([3500, 4000, 4500, 5000, 5000, 5000])
   })
 
@@ -175,7 +179,7 @@ describe('password memory: levels and the climb', () => {
   })
 
   // A simulated player: the chance of a right answer falls with the load around their 50 % point, as steeply as in
-  // the lab data (0.8 per load on this scale).
+  // the lab data (0.92 per load on this scale).
   const run = (theta: number, rand: () => number) => {
     let c = startClimb()
     let lives = LIVES
@@ -183,7 +187,7 @@ describe('password memory: levels and the climb', () => {
     let rounds = 0
     while (lives > 0 && rounds < 300) {
       rounds++
-      if (rand() < 1 / (1 + Math.exp(0.8 * (loadOfLevel(c.level) - theta)))) {
+      if (rand() < 1 / (1 + Math.exp(0.92 * (loadOfLevel(c.level) - theta)))) {
         best = Math.max(best, c.level)
         c = afterRight(c)
       } else {
@@ -197,7 +201,7 @@ describe('password memory: levels and the climb', () => {
 
   it('scores a player near their 50 % point, steadily, in a reasonable number of rounds', () => {
     const rand = seeded(7)
-    for (const theta of [8, 11.8, 16]) {
+    for (const theta of [7, 10.8, 15]) {
       const runs = Array.from({ length: 3000 }, () => run(theta, rand))
       const mean = runs.reduce((a, r) => a + r.best, 0) / runs.length
       const sd = Math.sqrt(runs.reduce((a, r) => a + (r.best - mean) ** 2, 0) / runs.length)
