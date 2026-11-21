@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EXTRA_CHARS } from '../password-memory/scoring'
+import * as labWords from './labWords'
 import { LAB_KEY, LAB_SHOW_MS, MIN_PARTS, SHORTER_MS, START_PARTS, emptyLab, hitRate, labPassword, loadLab, markLast, nextParts, saveLab, toRecord } from './lab'
 
 /** A tiny in-memory stand-in for localStorage. */
@@ -104,5 +105,15 @@ describe('password lab: O for 0', () => {
     const r = toRecord(lab, typed, 0)
     expect(r.ok).toBe(true)
     expect(r.typed).toBe(typed)
+  })
+})
+
+describe('password lab: frozen words', () => {
+  it('picks its words from its own copy of the lists, not the game\'s', () => {
+    const lab = new Set(Object.values(labWords).flat())
+    for (let i = 0; i < 300; i++) {
+      for (const w of labPassword(6).password.words) expect(lab.has(w)).toBe(true)
+    }
+    expect(lab.has('gondola')).toBe(true)
   })
 })

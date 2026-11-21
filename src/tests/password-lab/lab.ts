@@ -1,7 +1,8 @@
 import { randInt, type Rand } from '../../lib/random'
 import {
-  POOLS, buildPassword, changeKind, matches, pickWeighted, pickWords, type Group, type Password,
+  buildPassword, changeKind, matches, pickWeighted, pickWords, type Group, type Password,
 } from '../password-memory/scoring'
+import { LONG_WORDS, MEDIUM_WORDS, SHORT_WORDS, TINY_WORDS, XLONG_WORDS } from './labWords'
 
 /**
  * Password Lab: a practice tool to measure how hard each part of a password is to remember, so Password Memory's
@@ -37,13 +38,18 @@ const GROUPS: { group: Group; weight: number }[] = [
 const LAB_SEPARATORS = (words: number) =>
   ['-', '_', '.', ' ', ...(words === 2 ? [''] : [])].map((sep) => ({ sep, weight: 1 }))
 
+/** The lab's frozen word lists (see labWords.ts), grouped like Password Memory's. */
+const LAB_POOLS: Record<Group, string[]> = {
+  short: SHORT_WORDS, medium: MEDIUM_WORDS, long: LONG_WORDS, xlong: XLONG_WORDS, combo: [...TINY_WORDS, ...SHORT_WORDS],
+}
+
 export interface LabPassword { password: Password; group: Group; parts: number; showMs: number }
 
 /** A password with `parts` parts: its words plus its changed letters plus its extra characters. */
 export function labPassword(parts: number, rand: Rand = Math.random): LabPassword {
   const words = Math.min(pickWeighted(WORD_COUNTS, rand).item.n, parts)
   const group: Group = words > 1 ? 'combo' : pickWeighted(GROUPS, rand).item.group
-  const picked = pickWords(POOLS[group], words, rand)
+  const picked = pickWords(LAB_POOLS[group], words, rand)
   // One of the remaining parts may be "1 s less to look at".
   const shorter = parts - words >= 1 && rand() < SHORTER_CHANCE
   const rest = parts - words - (shorter ? 1 : 0)
