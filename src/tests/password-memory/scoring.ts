@@ -234,50 +234,84 @@ export function isBareWord(p: Parts) {
   return p.changes.every((c) => c.index === 0 && changeKind(c.to) === 'upper')
 }
 
-/** How many words a password has, and from which group a single word comes. */
-const WORD_COUNTS = [{ n: 1, weight: 50 }, { n: 2, weight: 35 }, { n: 3, weight: 15 }]
+/** From which group a single word comes, and the groups longer words in a multi-word password come from. */
 const SINGLE_GROUPS: { group: Group; weight: number }[] = [
   { group: 'short', weight: 30 }, { group: 'medium', weight: 30 }, { group: 'long', weight: 25 }, { group: 'xlong', weight: 15 },
+]
+const MIXED_GROUPS: { group: Group; weight: number }[] = [
+  { group: 'short', weight: 40 }, { group: 'medium', weight: 35 }, { group: 'long', weight: 25 },
 ]
 /** How close a password's load must be to its level's. */
 export const LOAD_TOLERANCE = 0.15
 const MAX_EXTRAS = 12
 
 /**
- * Limits for the first levels, so they look like ordinary passwords: up to load 6 one word with at most one change,
- * up to load 8 at most two words; from there the full mix, with at least 2 changed letters and 2 extra characters (so
- * a level isn't filled by a word with a long string of extras, or by changes alone).
+ * What a load allows, so passwords look like ordinary ones early and stay mixed later:
+ * - `words`: chances of 1 / 2 / 3 words; `mixed`: the share of multi-word passwords with longer words (4–9 letters)
+ *   instead of only 3–5 letter ones (they carry more of a high load in words, not in a long string of extras);
+ * - `changes`: the most changed letters (up to load 6: one);
+ * - `minChanges` / `minExtras`: at least this many changed letters (counted up to half of each word, as in the load)
+ *   and extra characters, growing with the level, so a level is never filled by extras or by changes alone.
  */
-export const limitsFor = (load: number) =>
-  load <= 6 ? { words: 1, changes: 1, min: 0 } : load <= 8 ? { words: 2, changes: Infinity, min: 0 } : { words: 3, changes: Infinity, min: 2 }
+export function limitsFor(load: number) {
+  const at = (minChanges: number, minExtras: number) => ({ minChanges, minExtras })
+  if (load <= 6) return { words: [1], mixed: 0, changes: 1, ...at(0, 0) }
+  if (load <= 8) return { words: [50, 35], mixed: 0, changes: Infinity, ...at(0, 0) }
+  const mins = load <= 10 ? at(1, 1) : load <= 13 ? at(2, 2) : load <= 16 ? at(3, 2) : at(3, 3)
+  if (load <= 11) return { words: [45, 40, 15], mixed: 0.3, changes: Infinity, ...mins }
+  if (load <= 14) return { words: [35, 40, 25], mixed: 0.5, changes: Infinity, ...mins }
+  return { words: [25, 45, 30], mixed: 0.5, changes: Infinity, ...mins }
+}
+
+/** Changed letters counted up to half of each word (past half, more changes don't make a word harder). */
+export function countedChanges(p: Pick<Password, 'words' | 'changes'>) {
+  return p.words.reduce((n, w, i) => n + Math.min(p.changes.filter((c) => c.word === i).length, w.length / 2), 0)
+}
+
+/** Words for a password: one from any group, or several short ones, or (a share of the time) several longer ones. */
+function wordsFor(n: number, mixed: number, rand: Rand) {
+  if (n === 1) return pickWords(POOLS[pickWeighted(SINGLE_GROUPS, rand).item.group], 1, rand)
+  if (rand() >= mixed) return pickWords(POOLS.combo, n, rand)
+  const words: string[] = []
+  let wordBits = 0
+  while (words.length < n) {
+    const pool = POOLS[pickWeighted(MIXED_GROUPS, rand).item.group]
+    const w = pick(pool, rand)
+    if (words.includes(w)) continue
+    words.push(w)
+    wordBits += log2(pool.length)
+  }
+  return { words, wordBits }
+}
 
 /**
  * A password whose load (at `showMs`) is within LOAD_TOLERANCE of `target`. Its parts are mixed at random, as in the
- * lab: one to three words, which letters change and how, extra digits / symbols, the separator. Many random mixes
- * are tried and the first close enough is taken (the closest one if none is: only at levels far beyond play, ~70+).
- * Throws when no mix can reach the target at all (a load below the lightest password; never asked by the game).
+ * lab: the number of words (picked first and kept, so the mix by level holds: more words fit a load less often),
+ * which letters change and how, extra digits / symbols, the separator. Many random mixes are tried and the first
+ * close enough is taken (with any word count if the picked one fails; the closest one if none is: only at levels far
+ * beyond play). Throws when no mix can reach the target at all (a load below the lightest password; never asked).
  */
 export function passwordForLoad(target: number, showMs: number, rand: Rand = Math.random): Password {
   const timeLoad = (LOAD.perSecond * (LAB_MS - showMs)) / 1000
   const limits = limitsFor(target)
-  const counts = WORD_COUNTS.filter((c) => c.n <= limits.words)
+  const counts = limits.words.map((weight, i) => ({ n: i + 1, weight }))
+  const firstN = pickWeighted(counts, rand).item.n
   let best: Password | null = null
   let bestOff = Infinity
   for (let tries = 0; tries < 20000; tries++) {
-    const n = pickWeighted(counts, rand).item.n
-    const pool = n > 1 ? POOLS.combo : POOLS[pickWeighted(SINGLE_GROUPS, rand).item.group]
-    const picked = pickWords(pool, n, rand)
+    const n = tries < 4000 ? firstN : pickWeighted(counts, rand).item.n
+    const picked = wordsFor(n, limits.mixed, rand)
     const wordsLoad = partsLoad({ words: picked.words, sep: '-', changes: [], extras: '' })
     const rest = target - timeLoad - wordsLoad
     if (rest < -LOAD_TOLERANCE) continue
     // Split what is left between changed letters (~1.3 each) and extra characters (~1.25 each), at random.
     const letters = picked.words.join('').length
     const most = Math.min(letters, limits.changes, Math.floor(rest / LOAD.furtherChange))
-    if (most < limits.min) continue
-    const changes = randInt(limits.min, most, rand)
-    const extras = Math.max(limits.min, Math.min(MAX_EXTRAS, Math.round((rest - changes * 1.3) / 1.25)))
+    if (most < limits.minChanges) continue
+    const changes = randInt(limits.minChanges, most, rand)
+    const extras = Math.max(limits.minExtras, Math.min(MAX_EXTRAS, Math.round((rest - changes * 1.3) / 1.25)))
     const p = buildPassword({ ...picked, changes, extras }, rand)
-    if (isBareWord(p)) continue
+    if (isBareWord(p) || countedChanges(p) < limits.minChanges) continue
     const off = Math.abs(loadOf(p, showMs) - target)
     if (off <= LOAD_TOLERANCE) return p
     if (off < bestOff) [best, bestOff] = [p, off]

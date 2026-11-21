@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CHANGES, EXTRA_CHARS, LIVES, LOAD_TOLERANCE, POOLS, SYMBOL_KEYS, afterMiss, afterRight,
-  buildPassword, changeOptions, hasDigitRun, isBareWord, limitsFor, loadOf, loadOfLevel, makeExtras, matches, partsLoad,
+  buildPassword, changeOptions, countedChanges, hasDigitRun, isBareWord, limitsFor, loadOf, loadOfLevel, makeExtras, matches, partsLoad,
   passwordForLevel, pickWords, showMsOfLevel, startClimb,
 } from './scoring'
 
@@ -137,27 +137,38 @@ describe('password memory: load', () => {
     expect(Date.now() - start).toBeLessThan(10000)
   })
 
-  it('keeps the first levels simple, then mixes everything', () => {
+  it('keeps the first levels simple, then mixes everything with minimums growing by level', () => {
     for (let level = 2; level <= 40; level++) {
       const limits = limitsFor(loadOfLevel(level))
       for (let i = 0; i < 30; i++) {
         const p = passwordForLevel(level)
-        expect(p.words.length).toBeLessThanOrEqual(limits.words)
+        expect(p.words.length).toBeLessThanOrEqual(limits.words.length)
         expect(p.changes.length).toBeLessThanOrEqual(limits.changes)
+        expect(countedChanges(p)).toBeGreaterThanOrEqual(limits.minChanges)
+        expect(p.extras.length).toBeGreaterThanOrEqual(limits.minExtras)
       }
     }
-    // From load 8.5 on, at least 2 changed letters and 2 extra characters.
-    for (let level = 8; level <= 30; level++) {
-      for (let i = 0; i < 20; i++) {
-        const p = passwordForLevel(level)
-        expect(p.changes.length).toBeGreaterThanOrEqual(2)
-        expect(p.extras.length).toBeGreaterThanOrEqual(2)
-      }
-    }
+    // Minimums (changed letters, extras) by level: none up to 7, then 1 / 1, 2 / 2, 3 / 2, 3 / 3.
+    const mins = (level: number) => { const l = limitsFor(loadOfLevel(level)); return [l.minChanges, l.minExtras] }
+    expect([7, 8, 11, 12, 17, 18, 23, 24].map(mins)).toEqual([[0, 0], [1, 1], [1, 1], [2, 2], [2, 2], [3, 2], [3, 2], [3, 3]])
     const ps = Array.from({ length: 300 }, () => passwordForLevel(14))
     expect([...new Set(ps.map((p) => p.words.length))].sort()).toEqual([1, 2, 3])
-    expect(ps.some((p) => p.changes.length >= 3)).toBe(true)
+    expect(ps.some((p) => p.words.length > 1 && p.words.some((w) => w.length >= 6))).toBe(true)
     expect(ps.some((p) => p.extras.length >= 4)).toBe(true)
+  })
+
+  it('counts changed letters only up to half of each word', () => {
+    const full = { words: ['bear'], changes: [0, 1, 2, 3].map((index) => ({ word: 0, index, from: 'x', to: 'X' })) }
+    expect(countedChanges(full)).toBe(2)
+    expect(countedChanges({ words: ['bear', 'cat'], changes: [...full.changes, { word: 1, index: 0, from: 'c', to: 'C' }] })).toBe(3)
+  })
+
+  it('keeps the word mix of the level (more words later), and fewer extras than before at high levels', () => {
+    const avg = (level: number, f: (p: ReturnType<typeof passwordForLevel>) => number) =>
+      Array.from({ length: 400 }, () => f(passwordForLevel(level))).reduce((a, b) => a + b, 0) / 400
+    expect(avg(10, (p) => p.words.length)).toBeGreaterThan(1.5)
+    expect(avg(22, (p) => p.words.length)).toBeGreaterThan(1.85)
+    expect(avg(18, (p) => p.extras.length)).toBeLessThan(4)
   })
 })
 
