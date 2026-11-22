@@ -11,7 +11,12 @@ export type FormPhase = 'show' | 'input' | 'correct' | 'wrong'
  */
 const visible = (c: string) => (c === ' ' ? <span className="opacity-40">␣</span> : c)
 
-const TEXT = 'font-mono text-3xl font-semibold tracking-[0.08em] whitespace-pre'
+/**
+ * Monospace text, smaller for long passwords so they fit the field (36 rem wide): up to 26 characters at 30 px, 33 at
+ * 24 px, 39 at 20 px (the longest a password at high levels gets, ~34, plus the 5 extra you may type).
+ */
+const textFor = (length: number) =>
+  `font-mono font-semibold tracking-[0.08em] whitespace-pre ${length <= 26 ? 'text-3xl' : length <= 33 ? 'text-2xl' : 'text-xl'}`
 
 /** A labelled box that looks like a form field. */
 function Field({ label, children, tone = '' }: { label: string; children: ReactNode; tone?: string }) {
@@ -45,6 +50,7 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
   symbols?: string[]
 }) {
   const field = useRef<HTMLInputElement>(null)
+  const text = textFor(Math.max(target.length, input.length))
   const [capsLock, setCapsLock] = useState(false)
 
   // The confirm field has the focus while you type; a key pressed elsewhere puts it back there.
@@ -86,12 +92,12 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
 
       <div className="mt-8 w-full max-w-xl space-y-5">
         <Field label="Password" tone={phase === 'wrong' ? 'border-zinc-500' : ''}>
-          {phase === 'show' && <span className={`${TEXT} text-zinc-50`}>{target}</span>}
+          {phase === 'show' && <span className={`${text} text-zinc-50`}>{target}</span>}
           {phase === 'wrong' && (
-            <span className={`${TEXT} text-zinc-50`}>{[...target].map((c, i) => <span key={i}>{visible(c)}</span>)}</span>
+            <span className={`${text} text-zinc-50`}>{[...target].map((c, i) => <span key={i}>{visible(c)}</span>)}</span>
           )}
           {(phase === 'input' || phase === 'correct') && (
-            <span className="text-2xl tracking-[0.25em] text-zinc-400">{'●'.repeat(target.length)}</span>
+            <span className={`${target.length <= 22 ? 'text-2xl tracking-[0.25em]' : 'text-lg tracking-[0.2em]'} text-zinc-400`}>{'●'.repeat(target.length)}</span>
           )}
         </Field>
 
@@ -100,7 +106,7 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
           tone={phase === 'input' ? 'border-violet-500' : phase === 'correct' ? 'border-emerald-500' : phase === 'wrong' ? 'border-rose-500' : ''}
         >
           {phase === 'wrong' ? (
-            <span className={TEXT}>
+            <span className={text}>
               {[...input].map((c, i) => (
                 <span key={i} className={sameChar(c, target[i]) ? 'text-zinc-50' : 'text-rose-400 line-through'}>{visible(c)}</span>
               ))}
@@ -131,7 +137,7 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
-              className={`${TEXT} w-full bg-transparent text-violet-200 caret-violet-400 outline-none select-text disabled:text-emerald-200`}
+              className={`${text} w-full bg-transparent text-violet-200 caret-violet-400 outline-none select-text disabled:text-emerald-200`}
             />
           )}
         </Field>
