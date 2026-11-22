@@ -42,4 +42,13 @@ test-auditor.
   claims about real passwords. The score can't claim a span in items, digit-span norms or password skill.
 
 ## Decisions
-(filled in after the user picks)
+- Two early slips: kept 3 lives, no free first miss (the user's call: a mistake should cost the same).
+- Mixes vs load: resolved by a refit (load v2): changes weighted by the share of the word changed (past half costs
+  nothing), leet 1.2; no-separator dropped from the game (always `-` `_` `.` or space; the lab keeps it); minimums by
+  level (1 / 1 changed letters / extras from level 8, 2 / 2 from 12, 3 / 2 from 18, 3 / 3 from 24, changes counted up
+  to half a word); word mix and lengths by level (more and longer words higher up, no 3-letter words from level 14).
+- Fallback: closest candidate kept, throws only when nothing reaches the load. Passwords capped at 26 characters; show
+  time shrinks from level 20 (2 s at 31); level 40 is the top and ends the run (not in the rules).
+- More players' lab data: later, before switching the score to a unit; "Level N" stays.
+- 4th life: not applied. Score line, "on the keyboard", SPEC ~3 min note: applied. Tagline and icon kept; optional
+  howTo line not used (rules trimmed instead).
