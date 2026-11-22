@@ -146,9 +146,12 @@ describe('password memory: load', () => {
         expect(p.changes.length).toBeLessThanOrEqual(limits.changes)
         expect(countedChanges(p)).toBeGreaterThanOrEqual(limits.minChanges)
         expect(p.extras.length).toBeGreaterThanOrEqual(limits.minExtras)
+        expect(p.extras.length).toBeLessThanOrEqual(limits.maxExtras)
       }
     }
     // Minimums (changed letters, extras) by level: none up to 7, then 1 / 1, 2 / 2, 3 / 2, 3 / 3.
+    // At most 4 extras to level 12, 5 to 18, 6 to 24, 7 to 30, then 8.
+    expect([12, 13, 18, 19, 24, 25, 30, 31].map((l) => limitsFor(loadOfLevel(l)).maxExtras)).toEqual([4, 5, 5, 6, 6, 7, 7, 8])
     const mins = (level: number) => { const l = limitsFor(loadOfLevel(level)); return [l.minChanges, l.minExtras] }
     expect([7, 8, 11, 12, 17, 18, 23, 24].map(mins)).toEqual([[0, 0], [1, 1], [1, 1], [2, 2], [2, 2], [3, 2], [3, 2], [3, 3]])
     const ps = Array.from({ length: 300 }, () => passwordForLevel(14))

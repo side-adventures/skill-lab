@@ -242,7 +242,6 @@ const g = (tiny: number, short: number, medium: number, long: number, xlong = 0)
 
 /** How close a password's load must be to its level's. */
 export const LOAD_TOLERANCE = 0.15
-const MAX_EXTRAS = 12
 /** The longest a password gets: it fits the field at full size (a longer one would need smaller, harder to read text). */
 export const MAX_LENGTH = 26
 
@@ -252,20 +251,25 @@ export const MAX_LENGTH = 26
  * - `single` / `multi`: word lengths for one word, and for each word of several: longer words at higher levels (more of
  *   a high load in words, not in a long string of extras), and no 3-letter words from level 14 (load 11.5) on: they
  *   are there so early levels can combine words without getting long;
- * - `changes`: the most changed letters (up to load 6: one);
+ * - `changes`: the most changed letters (up to load 6: one); `moreChanges`: the number of changes is drawn from the
+ *   upper half of what fits (from level 8), so fewer extras are needed;
  * - `minChanges` / `minExtras`: at least this many changed letters (counted up to half of each word, as in the load)
- *   and extra characters, growing with the level, so a level is never filled by extras or by changes alone.
+ *   and extra characters, growing with the level, so a level is never filled by extras or by changes alone;
+ * - `maxExtras`: at most this many extra characters, growing with the level (4 to level 12, 5 to 18, 6 to 24, 7 to 30,
+ *   then 8): a word letter adds little load, so without a limit the 26 characters fill up with extras.
  */
 export function limitsFor(load: number) {
-  const at = (minChanges: number, minExtras: number) => ({ minChanges, minExtras })
+  const maxExtras = load <= 10.5 ? 4 : load <= 13.5 ? 5 : load <= 16.5 ? 6 : load <= 19.5 ? 7 : 8
+  const at = (minChanges: number, minExtras: number) => ({ minChanges, minExtras, maxExtras })
   // Word lengths: 3 / 4–5 / 6 / 7–9 / 10–12 letters, for a single word and for each word of several.
   const early = { single: g(0, 30, 30, 25, 15), multi: g(1, 2, 0, 0) }
-  if (load <= 6) return { words: [1], changes: 1, ...early, ...at(0, 0) }
-  if (load <= 8) return { words: [50, 35], changes: Infinity, ...early, ...at(0, 0) }
+  if (load <= 6) return { words: [1], changes: 1, moreChanges: false, ...early, ...at(0, 0) }
+  if (load <= 8) return { words: [50, 35], changes: Infinity, moreChanges: false, ...early, ...at(0, 0) }
   const mins = load <= 10 ? at(1, 1) : load <= 13 ? at(2, 2) : load <= 16 ? at(3, 2) : at(3, 3)
-  if (load <= 11) return { words: [45, 40, 15], changes: Infinity, single: g(0, 25, 30, 30, 15), multi: g(20, 50, 20, 10), ...mins }
-  if (load <= 14) return { words: [35, 40, 25], changes: Infinity, single: g(0, 15, 30, 35, 20), multi: g(0, 45, 35, 20), ...mins }
-  return { words: [25, 45, 30], changes: Infinity, single: g(0, 10, 25, 40, 25), multi: g(0, 35, 35, 30), ...mins }
+  const rest = { changes: Infinity, moreChanges: true, ...mins }
+  if (load <= 11) return { words: [45, 40, 15], single: g(0, 25, 30, 30, 15), multi: g(20, 50, 20, 10), ...rest }
+  if (load <= 14) return { words: [25, 45, 30], single: g(0, 15, 30, 35, 20), multi: g(0, 45, 35, 20), ...rest }
+  return { words: [15, 45, 40], single: g(0, 5, 20, 40, 35), multi: g(0, 25, 35, 40), ...rest }
 }
 
 /** Changed letters counted up to half of each word (past half, more changes don't make a word harder). */
@@ -311,8 +315,8 @@ export function passwordForLoad(target: number, showMs: number, rand: Rand = Mat
     const letters = picked.words.join('').length
     const most = Math.min(letters, limits.changes, Math.floor(rest / LOAD.furtherChange))
     if (most < limits.minChanges) continue
-    const changes = randInt(limits.minChanges, most, rand)
-    const extras = Math.max(limits.minExtras, Math.min(MAX_EXTRAS, Math.round((rest - changes * 1.3) / 1.25)))
+    const changes = randInt(limits.moreChanges ? Math.max(limits.minChanges, Math.ceil(most / 2)) : limits.minChanges, most, rand)
+    const extras = Math.max(limits.minExtras, Math.min(limits.maxExtras, Math.round((rest - changes * 1.3) / 1.25)))
     const p = buildPassword({ ...picked, changes, extras }, rand)
     if (isBareWord(p) || countedChanges(p) < limits.minChanges || p.text.length > MAX_LENGTH) continue
     const off = Math.abs(loadOf(p, showMs) - target)
