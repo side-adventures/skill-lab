@@ -9,6 +9,7 @@ import { LONG_WORDS, MEDIUM_WORDS, SHORT_WORDS, TINY_WORDS, XLONG_WORDS } from '
  * The 10–12 letter group is small (64 words, 6 bits) and only used in a few recipes.
  */
 export const POOLS = {
+  tiny: TINY_WORDS,
   short: SHORT_WORDS,
   medium: MEDIUM_WORDS,
   long: LONG_WORDS,
@@ -234,33 +235,35 @@ export function isBareWord(p: Parts) {
   return p.changes.every((c) => c.index === 0 && changeKind(c.to) === 'upper')
 }
 
-/** From which group a single word comes, and the groups longer words in a multi-word password come from. */
-const SINGLE_GROUPS: { group: Group; weight: number }[] = [
-  { group: 'short', weight: 30 }, { group: 'medium', weight: 30 }, { group: 'long', weight: 25 }, { group: 'xlong', weight: 15 },
-]
-const MIXED_GROUPS: { group: Group; weight: number }[] = [
-  { group: 'short', weight: 40 }, { group: 'medium', weight: 35 }, { group: 'long', weight: 25 },
-]
+type Groups = { group: Group; weight: number }[]
+const g = (tiny: number, short: number, medium: number, long: number, xlong = 0): Groups =>
+  (['tiny', 'short', 'medium', 'long', 'xlong'] as const).map((group, i) => ({ group, weight: [tiny, short, medium, long, xlong][i] }))
+    .filter((x) => x.weight > 0)
+
 /** How close a password's load must be to its level's. */
 export const LOAD_TOLERANCE = 0.15
 const MAX_EXTRAS = 12
 
 /**
  * What a load allows, so passwords look like ordinary ones early and stay mixed later:
- * - `words`: chances of 1 / 2 / 3 words; `mixed`: the share of multi-word passwords with longer words (4–9 letters)
- *   instead of only 3–5 letter ones (they carry more of a high load in words, not in a long string of extras);
+ * - `words`: chances of 1 / 2 / 3 words;
+ * - `single` / `multi`: word lengths for one word, and for each word of several: longer words at higher levels (more of
+ *   a high load in words, not in a long string of extras), and no 3-letter words from level 14 (load 11.5) on: they
+ *   are there so early levels can combine words without getting long;
  * - `changes`: the most changed letters (up to load 6: one);
  * - `minChanges` / `minExtras`: at least this many changed letters (counted up to half of each word, as in the load)
  *   and extra characters, growing with the level, so a level is never filled by extras or by changes alone.
  */
 export function limitsFor(load: number) {
   const at = (minChanges: number, minExtras: number) => ({ minChanges, minExtras })
-  if (load <= 6) return { words: [1], mixed: 0, changes: 1, ...at(0, 0) }
-  if (load <= 8) return { words: [50, 35], mixed: 0, changes: Infinity, ...at(0, 0) }
+  // Word lengths: 3 / 4–5 / 6 / 7–9 / 10–12 letters, for a single word and for each word of several.
+  const early = { single: g(0, 30, 30, 25, 15), multi: g(1, 2, 0, 0) }
+  if (load <= 6) return { words: [1], changes: 1, ...early, ...at(0, 0) }
+  if (load <= 8) return { words: [50, 35], changes: Infinity, ...early, ...at(0, 0) }
   const mins = load <= 10 ? at(1, 1) : load <= 13 ? at(2, 2) : load <= 16 ? at(3, 2) : at(3, 3)
-  if (load <= 11) return { words: [45, 40, 15], mixed: 0.3, changes: Infinity, ...mins }
-  if (load <= 14) return { words: [35, 40, 25], mixed: 0.5, changes: Infinity, ...mins }
-  return { words: [25, 45, 30], mixed: 0.5, changes: Infinity, ...mins }
+  if (load <= 11) return { words: [45, 40, 15], changes: Infinity, single: g(0, 25, 30, 30, 15), multi: g(20, 50, 20, 10), ...mins }
+  if (load <= 14) return { words: [35, 40, 25], changes: Infinity, single: g(0, 15, 30, 35, 20), multi: g(0, 45, 35, 20), ...mins }
+  return { words: [25, 45, 30], changes: Infinity, single: g(0, 10, 25, 40, 25), multi: g(0, 35, 35, 30), ...mins }
 }
 
 /** Changed letters counted up to half of each word (past half, more changes don't make a word harder). */
@@ -268,14 +271,12 @@ export function countedChanges(p: Pick<Password, 'words' | 'changes'>) {
   return p.words.reduce((n, w, i) => n + Math.min(p.changes.filter((c) => c.word === i).length, w.length / 2), 0)
 }
 
-/** Words for a password: one from any group, or several short ones, or (a share of the time) several longer ones. */
-function wordsFor(n: number, mixed: number, rand: Rand) {
-  if (n === 1) return pickWords(POOLS[pickWeighted(SINGLE_GROUPS, rand).item.group], 1, rand)
-  if (rand() >= mixed) return pickWords(POOLS.combo, n, rand)
+/** Different words for a password, each from a group picked by its weight. */
+function wordsFor(n: number, groups: Groups, rand: Rand) {
   const words: string[] = []
   let wordBits = 0
   while (words.length < n) {
-    const pool = POOLS[pickWeighted(MIXED_GROUPS, rand).item.group]
+    const pool = POOLS[pickWeighted(groups, rand).item.group]
     const w = pick(pool, rand)
     if (words.includes(w)) continue
     words.push(w)
@@ -300,7 +301,7 @@ export function passwordForLoad(target: number, showMs: number, rand: Rand = Mat
   let bestOff = Infinity
   for (let tries = 0; tries < 20000; tries++) {
     const n = tries < 4000 ? firstN : pickWeighted(counts, rand).item.n
-    const picked = wordsFor(n, limits.mixed, rand)
+    const picked = wordsFor(n, n === 1 ? limits.single : limits.multi, rand)
     const wordsLoad = partsLoad({ words: picked.words, sep: '-', changes: [], extras: '' })
     const rest = target - timeLoad - wordsLoad
     if (rest < -LOAD_TOLERANCE) continue

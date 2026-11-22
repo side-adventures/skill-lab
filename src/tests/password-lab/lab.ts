@@ -40,7 +40,7 @@ const LAB_SEPARATORS = (words: number) =>
 
 /** The lab's frozen word lists (see labWords.ts), grouped like Password Memory's. */
 const LAB_POOLS: Record<Group, string[]> = {
-  short: SHORT_WORDS, medium: MEDIUM_WORDS, long: LONG_WORDS, xlong: XLONG_WORDS, combo: [...TINY_WORDS, ...SHORT_WORDS],
+  tiny: TINY_WORDS, short: SHORT_WORDS, medium: MEDIUM_WORDS, long: LONG_WORDS, xlong: XLONG_WORDS, combo: [...TINY_WORDS, ...SHORT_WORDS],
 }
 
 export interface LabPassword { password: Password; group: Group; parts: number; showMs: number }

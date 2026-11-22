@@ -7,7 +7,7 @@ import {
 
 describe('password memory: words', () => {
   it('has different lowercase words per group, in the right lengths and sizes', () => {
-    const groups = { short: [4, 5, 256], medium: [6, 6, 256], long: [7, 9, 256], xlong: [10, 12, 64], combo: [3, 5, 384] } as const
+    const groups = { tiny: [3, 3, 128], short: [4, 5, 256], medium: [6, 6, 256], long: [7, 9, 256], xlong: [10, 12, 64], combo: [3, 5, 384] } as const
     for (const [group, words] of Object.entries(POOLS) as [keyof typeof groups, string[]][]) {
       const [min, max, size] = groups[group]
       expect(words.length).toBe(size)
@@ -154,6 +154,11 @@ describe('password memory: load', () => {
     const ps = Array.from({ length: 300 }, () => passwordForLevel(14))
     expect([...new Set(ps.map((p) => p.words.length))].sort()).toEqual([1, 2, 3])
     expect(ps.some((p) => p.words.length > 1 && p.words.some((w) => w.length >= 6))).toBe(true)
+    // 3-letter words only below level 14.
+    expect(Array.from({ length: 300 }, () => passwordForLevel(10)).some((p) => p.words.some((w) => w.length === 3))).toBe(true)
+    for (let level = 14; level <= 30; level++) {
+      for (let i = 0; i < 20; i++) expect(passwordForLevel(level).words.every((w) => w.length >= 4)).toBe(true)
+    }
     expect(ps.some((p) => p.extras.length >= 4)).toBe(true)
   })
 
@@ -169,6 +174,8 @@ describe('password memory: load', () => {
     expect(avg(10, (p) => p.words.length)).toBeGreaterThan(1.5)
     expect(avg(22, (p) => p.words.length)).toBeGreaterThan(1.85)
     expect(avg(18, (p) => p.extras.length)).toBeLessThan(4)
+    // Longer words at higher levels: letters of all words together.
+    expect(avg(22, (p) => p.words.join('').length)).toBeGreaterThan(avg(10, (p) => p.words.join('').length) + 2)
   })
 })
 
