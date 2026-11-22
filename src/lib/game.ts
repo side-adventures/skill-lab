@@ -67,8 +67,15 @@ export function useContinue(onContinue: () => void, { enabled = true, pointer = 
   useEffect(() => {
     if (!enabled) return
     armed.current = false
-    const arm = window.setTimeout(() => (armed.current = true), 300)
-    const go = () => armed.current && cont.current()
+    let arm = window.setTimeout(() => (armed.current = true), 300)
+    // Fires once, then waits 300 ms again: a quick double Enter / click must not continue twice (it once saved a
+    // run's result twice) before the re-render turns this off.
+    const go = () => {
+      if (!armed.current) return
+      armed.current = false
+      arm = window.setTimeout(() => (armed.current = true), 300)
+      cont.current()
+    }
     const onKey = (e: KeyboardEvent) => {
       if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && !e.repeat) {
         e.preventDefault()

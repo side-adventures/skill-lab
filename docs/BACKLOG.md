@@ -30,10 +30,9 @@ Ideas and TODOs for later. Not planned yet; move an item into the work when it's
   | Number Memory | 6–7 digits | | forward digit span 7 ± 2, likely higher here (visual, chunking) |
   | Flash Order | | ~200 ms (~15 rounds) | Inoue & Matsuzawa 2007, practiced humans |
 
-- **Number Memory → Backward Span.** Decided 2026-11-16: Backward Span (prototype) will replace Number Memory as the
-  digit-span test (it measures working memory, closer to the WAIS). Keep Number Memory until then.
-- **Password Memory**: prototype since 2026-11-19 (see the Prototypes table in `docs/SPEC.md`); it will replace Number
-  Memory once promoted.
+- **Password Memory** replaced Number Memory on 2026-11-22 (Number Memory and the Password Lab are hidden, code and
+  data kept). Later: Password Lab data from 2–3 more players (a newcomer, a non-native speaker) to check the load
+  weights (fit on one player), before the score could switch from levels to a unit (see `docs/reviews/2026-11-21-password-memory.md`).
 
 - **Spot the Difference** (idea, 2026-11-16): two pictures side by side, one (or a few) things differ; click the
   change as fast as you can. Research: comparative visual search (Pomplun et al.) and, as a variant, the flicker

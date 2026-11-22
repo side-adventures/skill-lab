@@ -181,29 +181,29 @@ export const TESTS: TestDefinition[] = [
 
   // ---------- batch 2 ----------
   {
-    id: 'number-memory',
-    name: 'Number Memory',
-    icon: '🔢',
+    id: 'password-memory',
+    name: 'Password Memory',
+    icon: '🔑',
     category: 'Memory',
-    tagline: 'Remember an ever-longer number.',
-    skill: 'short-term memory for numbers',
+    tagline: 'Remember a password, then confirm it.',
+    skill: 'short-term memory for words and small changes',
     howTo: [
-      'A number appears for a moment, then disappears.',
-      'Type it back from memory, then press Enter.',
-      'It starts with 3 digits and gets one digit longer every round.',
-      'You have 2 lives: a mistake costs one.',
+      'A password appears for a few seconds, then disappears.',
+      'Type it back exactly, then press Enter.',
+      'Every level is harder to remember.',
+      'You have 3 lives: a mistake costs one.',
       'Out of lives ends the test.',
     ],
     scoring: [
-      'Your longest number typed back correctly.',
+      'Your highest level typed back correctly. Levels go by how hard a password is to remember, not by its length.',
     ],
-    durationHint: '~2 min',
-    scoreLabel: 'Longest number',
+    durationHint: '~3 min',
+    scoreLabel: 'Highest level',
     higherIsBetter: true,
-    formatScore: (s) => count(s, 'digit'),
+    formatScore: (s) => `Level ${s}`,
     start: 'quick',
-    layout: 'prompt',
-    Component: lazyTest(() => import('./number-memory/NumberMemoryTest')),
+    layout: 'full',
+    Component: lazyTest(() => import('./password-memory/PasswordMemoryTest')),
   },
   {
     id: 'sequence-memory',
@@ -653,57 +653,6 @@ export const TESTS: TestDefinition[] = [
  */
 export const PROTOTYPES: TestDefinition[] = [
   {
-    id: 'password-memory',
-    name: 'Password Memory',
-    icon: '🔑',
-    category: 'Memory',
-    tagline: 'Remember a password, then confirm it.',
-    skill: 'short-term memory for words and small changes',
-    howTo: [
-      'A password appears for a few seconds, then disappears.',
-      'Type it back exactly on the keyboard, then press Enter.',
-      'Every level is harder to remember.',
-      'You have 3 lives: a mistake costs one.',
-      'Out of lives ends the test.',
-    ],
-    scoring: [
-      'Your highest level typed back correctly. Levels go by how hard a password is to remember, not by its length.',
-    ],
-    durationHint: '~3 min',
-    scoreLabel: 'Highest level',
-    higherIsBetter: true,
-    formatScore: (s) => `Level ${s}`,
-    start: 'quick',
-    layout: 'full',
-    Component: lazyTest(() => import('./password-memory/PasswordMemoryTest')),
-  },
-  {
-    // A practice tool, not a real test: collects data to weight Password Memory's parts (see password-lab/lab.ts).
-    id: 'password-lab',
-    name: 'Password Lab',
-    icon: '🧪',
-    category: 'Memory',
-    tagline: 'Memorize passwords for as long as you like, to tune Password Memory.',
-    skill: 'nothing yet: it collects data on which parts of a password are hard to remember',
-    howTo: [
-      'A password shows for 4 s (sometimes 3 s), then disappears. Type it back, then press Enter.',
-      'Every password mixes its parts at random: one to three words, changed letters, extra characters.',
-      'It gets one part longer after a right answer and one part shorter after a wrong one.',
-      'No lives, no end: stop with Finish whenever you like. Your answers stay saved in this browser.',
-      'Download data saves everything as a file.',
-    ],
-    scoring: [
-      'Your number of passwords in this visit.',
-    ],
-    durationHint: 'as long as you like',
-    scoreLabel: 'Passwords this visit',
-    higherIsBetter: true,
-    formatScore: (s) => count(s, 'password'),
-    start: 'none',
-    layout: 'full',
-    Component: lazyTest(() => import('./password-lab/PasswordLabTest')),
-  },
-  {
     id: 'next-in-line',
     name: 'Next in Line',
     icon: '➡️',
@@ -776,4 +725,64 @@ export const PROTOTYPES: TestDefinition[] = [
   },
 ]
 
-export const getTest = (id: string) => TESTS.find((t) => t.id === id) ?? PROTOTYPES.find((t) => t.id === id)
+/**
+ * Hidden: kept in the code (and their saved scores / data kept in the browser) but shown nowhere: not on the home page,
+ * in stats, "Next test" or sharing. A direct link (#/test/<id>) still opens them.
+ * - Number Memory: replaced by Password Memory (2026-11-22).
+ * - Password Lab: the data tool Password Memory's load weights come from; may come back for more players' data.
+ */
+export const HIDDEN: TestDefinition[] = [
+  {
+    id: 'number-memory',
+    name: 'Number Memory',
+    icon: '🔢',
+    category: 'Memory',
+    tagline: 'Remember an ever-longer number.',
+    skill: 'short-term memory for numbers',
+    howTo: [
+      'A number appears for a moment, then disappears.',
+      'Type it back from memory, then press Enter.',
+      'It starts with 3 digits and gets one digit longer every round.',
+      'You have 2 lives: a mistake costs one.',
+      'Out of lives ends the test.',
+    ],
+    scoring: [
+      'Your longest number typed back correctly.',
+    ],
+    durationHint: '~2 min',
+    scoreLabel: 'Longest number',
+    higherIsBetter: true,
+    formatScore: (s) => count(s, 'digit'),
+    start: 'quick',
+    layout: 'prompt',
+    Component: lazyTest(() => import('./number-memory/NumberMemoryTest')),
+  },
+  {
+    // A practice tool, not a real test: collects data to weight Password Memory's parts (see password-lab/lab.ts).
+    id: 'password-lab',
+    name: 'Password Lab',
+    icon: '🧪',
+    category: 'Memory',
+    tagline: 'Memorize passwords for as long as you like, to tune Password Memory.',
+    skill: 'nothing yet: it collects data on which parts of a password are hard to remember',
+    howTo: [
+      'A password shows for 4 s (sometimes 3 s), then disappears. Type it back, then press Enter.',
+      'Every password mixes its parts at random: one to three words, changed letters, extra characters.',
+      'It gets one part longer after a right answer and one part shorter after a wrong one.',
+      'No lives, no end: stop with Finish whenever you like. Your answers stay saved in this browser.',
+      'Download data saves everything as a file.',
+    ],
+    scoring: [
+      'Your number of passwords in this visit.',
+    ],
+    durationHint: 'as long as you like',
+    scoreLabel: 'Passwords this visit',
+    higherIsBetter: true,
+    formatScore: (s) => count(s, 'password'),
+    start: 'none',
+    layout: 'full',
+    Component: lazyTest(() => import('./password-lab/PasswordLabTest')),
+  },
+]
+
+export const getTest = (id: string) => [...TESTS, ...PROTOTYPES, ...HIDDEN].find((t) => t.id === id)

@@ -83,3 +83,19 @@ Kept tests measure something no other test does, feel good to play, and give a u
   broke the build; a merge that ran the checks without stopping on failure let it through.
 - **Bots in the browser pane:** the pane draws few frames per second, so a bot must wait for a drawn frame before
   pressing; odd timings are usually the pane, not the game.
+
+## Password Memory (2026-11-19 – 2026-11-22)
+
+- **Tune difficulty from data, not guesses.** A separate lab tool (Password Lab) collected right / wrong answers on
+  random passwords; a logistic model of the parts gave the load weights. Surprises only the data showed: a word is
+  hardest with about half its letters changed and easier fully changed (it reads as one pattern), and capitals and
+  look-alikes cost the same per letter.
+- **Keep the lab frozen while it collects data** (its own copy of the word lists and options), so its answers stay
+  comparable while the game changes.
+- **A generator aimed at a load needs guard rails**, or it finds cheap ways to fill a level: minimums and maximums that
+  grow with the level (changed letters, extras), a word count picked first (multi-word tries fail more often and would
+  otherwise be rarer than their share), and a length cap so the text never has to shrink.
+- **Units that sound concrete can mislead**: "as hard as 13 random digits" was the load's unit (one more digit after
+  a word), not loose digits; the score stays "Level N" until the unit means something to a player.
+- **An endless climb still needs an end**: a top level far beyond honest play (and a shorter show time on the way)
+  keeps runs finite and flags copying.
