@@ -1,0 +1,2011 @@
+{
+ "version": 1,
+ "parts": 8,
+ "records": [
+  {
+   "at": 1795136387139,
+   "parts": 4,
+   "text": "lidShirt3",
+   "typed": "lidShirt3",
+   "ok": true,
+   "typeMs": 12117,
+   "bits": 27.66,
+   "group": "combo",
+   "words": [
+    {
+     "word": "lid",
+     "length": 3
+    },
+    {
+     "word": "shirt",
+     "length": 5
+    }
+   ],
+   "sep": "",
+   "changes": [
+    {
+     "word": 1,
+     "index": 0,
+     "from": "s",
+     "to": "S",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "3",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136397977,
+   "parts": 5,
+   "text": "Fl4gfin0",
+   "typed": "Fl4gfin0",
+   "ok": true,
+   "typeMs": 6123,
+   "bits": 30.05,
+   "group": "combo",
+   "words": [
+    {
+     "word": "flag",
+     "length": 4
+    },
+    {
+     "word": "fin",
+     "length": 3
+    }
+   ],
+   "sep": "",
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "f",
+     "to": "F",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "a",
+     "to": "4",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "0",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136409656,
+   "parts": 6,
+   "text": "goat-bell70$8",
+   "typed": "goat-bell70$8",
+   "ok": true,
+   "typeMs": 6958,
+   "bits": 36.17,
+   "group": "combo",
+   "words": [
+    {
+     "word": "goat",
+     "length": 4
+    },
+    {
+     "word": "bell",
+     "length": 4
+    }
+   ],
+   "sep": "-",
+   "changes": [],
+   "extras": [
+    {
+     "char": "7",
+     "kind": "digit"
+    },
+    {
+     "char": "0",
+     "kind": "digit"
+    },
+    {
+     "char": "$",
+     "kind": "symbol"
+    },
+    {
+     "char": "8",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136421804,
+   "parts": 7,
+   "text": "hawk-fin78@32",
+   "typed": "hawk-fin78@23",
+   "ok": false,
+   "typeMs": 7431,
+   "bits": 40.34,
+   "group": "combo",
+   "words": [
+    {
+     "word": "hawk",
+     "length": 4
+    },
+    {
+     "word": "fin",
+     "length": 3
+    }
+   ],
+   "sep": "-",
+   "changes": [],
+   "extras": [
+    {
+     "char": "7",
+     "kind": "digit"
+    },
+    {
+     "char": "8",
+     "kind": "digit"
+    },
+    {
+     "char": "@",
+     "kind": "symbol"
+    },
+    {
+     "char": "3",
+     "kind": "digit"
+    },
+    {
+     "char": "2",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136515733,
+   "parts": 6,
+   "text": "RaiN sunny#5",
+   "typed": "RaiN sunny$5",
+   "ok": false,
+   "typeMs": 10333,
+   "bits": 35,
+   "group": "combo",
+   "words": [
+    {
+     "word": "rain",
+     "length": 4
+    },
+    {
+     "word": "sunny",
+     "length": 5
+    }
+   ],
+   "sep": " ",
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "r",
+     "to": "R",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "n",
+     "to": "N",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "#",
+     "kind": "symbol"
+    },
+    {
+     "char": "5",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136627884,
+   "parts": 5,
+   "text": "PeNcil5?",
+   "typed": "PeNcil5?",
+   "ok": true,
+   "typeMs": 5209,
+   "bits": 22.25,
+   "group": "medium",
+   "words": [
+    {
+     "word": "pencil",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "p",
+     "to": "P",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "n",
+     "to": "N",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "5",
+     "kind": "digit"
+    },
+    {
+     "char": "?",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795136642234,
+   "parts": 6,
+   "text": "wristw@tch#264",
+   "typed": "wristw@tch#264",
+   "ok": true,
+   "typeMs": 9644,
+   "bits": 27,
+   "group": "xlong",
+   "words": [
+    {
+     "word": "wristwatch",
+     "length": 10
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 6,
+     "from": "a",
+     "to": "@",
+     "kind": "symbol",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "#",
+     "kind": "symbol"
+    },
+    {
+     "char": "2",
+     "kind": "digit"
+    },
+    {
+     "char": "6",
+     "kind": "digit"
+    },
+    {
+     "char": "4",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136659354,
+   "parts": 7,
+   "text": "Dre@M_P3a",
+   "typed": "Dre@M_Pe4",
+   "ok": false,
+   "typeMs": 12403,
+   "bits": 30.3,
+   "group": "combo",
+   "words": [
+    {
+     "word": "dream",
+     "length": 5
+    },
+    {
+     "word": "pea",
+     "length": 3
+    }
+   ],
+   "sep": "_",
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "a",
+     "to": "@",
+     "kind": "symbol",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 4,
+     "from": "m",
+     "to": "M",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    },
+    {
+     "word": 1,
+     "index": 0,
+     "from": "p",
+     "to": "P",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 1,
+     "from": "e",
+     "to": "3",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": []
+  },
+  {
+   "at": 1795136700337,
+   "parts": 6,
+   "text": "8laCk80aRd",
+   "typed": "8lack8road",
+   "ok": false,
+   "typeMs": 16098,
+   "bits": 18.98,
+   "group": "xlong",
+   "words": [
+    {
+     "word": "blackboard",
+     "length": 10
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "b",
+     "to": "8",
+     "kind": "digit",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "c",
+     "to": "C",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 5,
+     "from": "b",
+     "to": "8",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 6,
+     "from": "o",
+     "to": "0",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 8,
+     "from": "r",
+     "to": "R",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": []
+  },
+  {
+   "at": 1795136729044,
+   "parts": 5,
+   "text": "candlestick3&79",
+   "typed": "candlestick3&79",
+   "ok": true,
+   "typeMs": 5156,
+   "bits": 22.68,
+   "group": "xlong",
+   "words": [
+    {
+     "word": "candlestick",
+     "length": 11
+    }
+   ],
+   "sep": null,
+   "changes": [],
+   "extras": [
+    {
+     "char": "3",
+     "kind": "digit"
+    },
+    {
+     "char": "&",
+     "kind": "symbol"
+    },
+    {
+     "char": "7",
+     "kind": "digit"
+    },
+    {
+     "char": "9",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136740079,
+   "parts": 6,
+   "text": "poemSTeaM9",
+   "typed": "poemSTeam9",
+   "ok": false,
+   "typeMs": 6315,
+   "bits": 33.05,
+   "group": "combo",
+   "words": [
+    {
+     "word": "poem",
+     "length": 4
+    },
+    {
+     "word": "steam",
+     "length": 5
+    }
+   ],
+   "sep": "",
+   "changes": [
+    {
+     "word": 1,
+     "index": 0,
+     "from": "s",
+     "to": "S",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 1,
+     "from": "t",
+     "to": "T",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 4,
+     "from": "m",
+     "to": "M",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "9",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136753461,
+   "parts": 5,
+   "text": "carrot%@?1",
+   "typed": "carrot%@?1",
+   "ok": true,
+   "typeMs": 5595,
+   "bits": 24.68,
+   "group": "medium",
+   "words": [
+    {
+     "word": "carrot",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [],
+   "extras": [
+    {
+     "char": "%",
+     "kind": "symbol"
+    },
+    {
+     "char": "@",
+     "kind": "symbol"
+    },
+    {
+     "char": "?",
+     "kind": "symbol"
+    },
+    {
+     "char": "1",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136762323,
+   "parts": 6,
+   "text": "Dew.sad50$",
+   "typed": "Dew.sad50$",
+   "ok": true,
+   "typeMs": 4142,
+   "bits": 35.59,
+   "group": "combo",
+   "words": [
+    {
+     "word": "dew",
+     "length": 3
+    },
+    {
+     "word": "sad",
+     "length": 3
+    }
+   ],
+   "sep": ".",
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "5",
+     "kind": "digit"
+    },
+    {
+     "char": "0",
+     "kind": "digit"
+    },
+    {
+     "char": "$",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795136780082,
+   "parts": 7,
+   "text": "raFt.h0uS39",
+   "typed": "raFt.house39",
+   "ok": false,
+   "typeMs": 13044,
+   "bits": 34.64,
+   "group": "combo",
+   "words": [
+    {
+     "word": "raft",
+     "length": 4
+    },
+    {
+     "word": "house",
+     "length": 5
+    }
+   ],
+   "sep": ".",
+   "changes": [
+    {
+     "word": 0,
+     "index": 2,
+     "from": "f",
+     "to": "F",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 1,
+     "from": "o",
+     "to": "0",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 3,
+     "from": "s",
+     "to": "S",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 4,
+     "from": "e",
+     "to": "3",
+     "kind": "digit",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "9",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136800870,
+   "parts": 6,
+   "text": "BunDLE!",
+   "typed": "BunDLE!",
+   "ok": true,
+   "typeMs": 3329,
+   "bits": 20.08,
+   "group": "medium",
+   "words": [
+    {
+     "word": "bundle",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "b",
+     "to": "B",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 4,
+     "from": "l",
+     "to": "L",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 5,
+     "from": "e",
+     "to": "E",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "!",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795136817420,
+   "parts": 7,
+   "text": "canDLe63#7",
+   "typed": "CanDLe63#7",
+   "ok": false,
+   "typeMs": 11831,
+   "bits": 30.59,
+   "group": "medium",
+   "words": [
+    {
+     "word": "candle",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 3,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 4,
+     "from": "l",
+     "to": "L",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "6",
+     "kind": "digit"
+    },
+    {
+     "char": "3",
+     "kind": "digit"
+    },
+    {
+     "char": "#",
+     "kind": "symbol"
+    },
+    {
+     "char": "7",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136860257,
+   "parts": 6,
+   "text": "plate-cabin-den#&8",
+   "typed": "plate.den.cabin#&8",
+   "ok": false,
+   "typeMs": 31828,
+   "bits": 40.26,
+   "group": "combo",
+   "words": [
+    {
+     "word": "plate",
+     "length": 5
+    },
+    {
+     "word": "cabin",
+     "length": 5
+    },
+    {
+     "word": "den",
+     "length": 3
+    }
+   ],
+   "sep": "-",
+   "changes": [],
+   "extras": [
+    {
+     "char": "#",
+     "kind": "symbol"
+    },
+    {
+     "char": "&",
+     "kind": "symbol"
+    },
+    {
+     "char": "8",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795136907541,
+   "parts": 5,
+   "text": "swaN-Wo0l",
+   "typed": "swaN-Wo0L",
+   "ok": false,
+   "typeMs": 6106,
+   "bits": 28.3,
+   "group": "combo",
+   "words": [
+    {
+     "word": "swan",
+     "length": 4
+    },
+    {
+     "word": "wool",
+     "length": 4
+    }
+   ],
+   "sep": "-",
+   "changes": [
+    {
+     "word": 0,
+     "index": 3,
+     "from": "n",
+     "to": "N",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    },
+    {
+     "word": 1,
+     "index": 0,
+     "from": "w",
+     "to": "W",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 2,
+     "from": "o",
+     "to": "0",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": []
+  },
+  {
+   "at": 1795137003378,
+   "parts": 4,
+   "text": "c4rrot%7",
+   "typed": "c4rrot%7",
+   "ok": true,
+   "typeMs": 4137,
+   "bits": 19.92,
+   "group": "medium",
+   "words": [
+    {
+     "word": "carrot",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 1,
+     "from": "a",
+     "to": "4",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "%",
+     "kind": "symbol"
+    },
+    {
+     "char": "7",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137014960,
+   "parts": 5,
+   "text": "sand pie oaK8",
+   "typed": "sand pie oaK8",
+   "ok": true,
+   "typeMs": 6868,
+   "bits": 36.25,
+   "group": "combo",
+   "words": [
+    {
+     "word": "sand",
+     "length": 4
+    },
+    {
+     "word": "pie",
+     "length": 3
+    },
+    {
+     "word": "oak",
+     "length": 3
+    }
+   ],
+   "sep": " ",
+   "changes": [
+    {
+     "word": 2,
+     "index": 2,
+     "from": "k",
+     "to": "K",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "8",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137034830,
+   "parts": 6,
+   "text": "coin daisy ink!1%",
+   "typed": "coin daisy ink!1%",
+   "ok": true,
+   "typeMs": 15151,
+   "bits": 40.26,
+   "group": "combo",
+   "words": [
+    {
+     "word": "coin",
+     "length": 4
+    },
+    {
+     "word": "daisy",
+     "length": 5
+    },
+    {
+     "word": "ink",
+     "length": 3
+    }
+   ],
+   "sep": " ",
+   "changes": [],
+   "extras": [
+    {
+     "char": "!",
+     "kind": "symbol"
+    },
+    {
+     "char": "1",
+     "kind": "digit"
+    },
+    {
+     "char": "%",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795137061456,
+   "parts": 7,
+   "text": "slED%76$",
+   "typed": "slED%76$",
+   "ok": true,
+   "typeMs": 21908,
+   "bits": 29.26,
+   "group": "short",
+   "words": [
+    {
+     "word": "sled",
+     "length": 4
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 2,
+     "from": "e",
+     "to": "E",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "%",
+     "kind": "symbol"
+    },
+    {
+     "char": "7",
+     "kind": "digit"
+    },
+    {
+     "char": "6",
+     "kind": "digit"
+    },
+    {
+     "char": "$",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795137078358,
+   "parts": 8,
+   "text": "P34RL$%",
+   "typed": "P34RL%&",
+   "ok": false,
+   "typeMs": 12182,
+   "bits": 21.34,
+   "group": "short",
+   "words": [
+    {
+     "word": "pearl",
+     "length": 5
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "p",
+     "to": "P",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 1,
+     "from": "e",
+     "to": "3",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "a",
+     "to": "4",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "r",
+     "to": "R",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 4,
+     "from": "l",
+     "to": "L",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "$",
+     "kind": "symbol"
+    },
+    {
+     "char": "%",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795137094732,
+   "parts": 7,
+   "text": "shark-gem@2816",
+   "typed": "shark-gem@2618",
+   "ok": false,
+   "typeMs": 7108,
+   "bits": 40.34,
+   "group": "combo",
+   "words": [
+    {
+     "word": "shark",
+     "length": 5
+    },
+    {
+     "word": "gem",
+     "length": 3
+    }
+   ],
+   "sep": "-",
+   "changes": [],
+   "extras": [
+    {
+     "char": "@",
+     "kind": "symbol"
+    },
+    {
+     "char": "2",
+     "kind": "digit"
+    },
+    {
+     "char": "8",
+     "kind": "digit"
+    },
+    {
+     "char": "1",
+     "kind": "digit"
+    },
+    {
+     "char": "6",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137125488,
+   "parts": 6,
+   "text": "bone-king61@2",
+   "typed": "bone-king61@2",
+   "ok": true,
+   "typeMs": 7027,
+   "bits": 36.17,
+   "group": "combo",
+   "words": [
+    {
+     "word": "bone",
+     "length": 4
+    },
+    {
+     "word": "king",
+     "length": 4
+    }
+   ],
+   "sep": "-",
+   "changes": [],
+   "extras": [
+    {
+     "char": "6",
+     "kind": "digit"
+    },
+    {
+     "char": "1",
+     "kind": "digit"
+    },
+    {
+     "char": "@",
+     "kind": "symbol"
+    },
+    {
+     "char": "2",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137147770,
+   "parts": 7,
+   "text": "wristwatch*1&5%9",
+   "typed": "wristwatch*1&5%9",
+   "ok": true,
+   "typeMs": 17565,
+   "bits": 31.02,
+   "group": "xlong",
+   "words": [
+    {
+     "word": "wristwatch",
+     "length": 10
+    }
+   ],
+   "sep": null,
+   "changes": [],
+   "extras": [
+    {
+     "char": "*",
+     "kind": "symbol"
+    },
+    {
+     "char": "1",
+     "kind": "digit"
+    },
+    {
+     "char": "&",
+     "kind": "symbol"
+    },
+    {
+     "char": "5",
+     "kind": "digit"
+    },
+    {
+     "char": "%",
+     "kind": "symbol"
+    },
+    {
+     "char": "9",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137163580,
+   "parts": 8,
+   "text": "b@T_carD_sUgar3",
+   "typed": "b@t_card_sugar",
+   "ok": false,
+   "typeMs": 11094,
+   "bits": 44.88,
+   "group": "combo",
+   "words": [
+    {
+     "word": "bat",
+     "length": 3
+    },
+    {
+     "word": "card",
+     "length": 4
+    },
+    {
+     "word": "sugar",
+     "length": 5
+    }
+   ],
+   "sep": "_",
+   "changes": [
+    {
+     "word": 0,
+     "index": 1,
+     "from": "a",
+     "to": "@",
+     "kind": "symbol",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "t",
+     "to": "T",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    },
+    {
+     "word": 1,
+     "index": 3,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    },
+    {
+     "word": 2,
+     "index": 1,
+     "from": "u",
+     "to": "U",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "3",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137200209,
+   "parts": 7,
+   "text": "friD9e857!",
+   "typed": "frid9en",
+   "ok": false,
+   "typeMs": 18139,
+   "bits": 30.59,
+   "group": "medium",
+   "words": [
+    {
+     "word": "fridge",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 3,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 4,
+     "from": "g",
+     "to": "9",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "8",
+     "kind": "digit"
+    },
+    {
+     "char": "5",
+     "kind": "digit"
+    },
+    {
+     "char": "7",
+     "kind": "digit"
+    },
+    {
+     "char": "!",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795137230059,
+   "parts": 6,
+   "text": "5h4Dow%0",
+   "typed": "5h4dow%&",
+   "ok": false,
+   "typeMs": 11780,
+   "bits": 23.66,
+   "group": "medium",
+   "words": [
+    {
+     "word": "shadow",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "s",
+     "to": "5",
+     "kind": "digit",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "a",
+     "to": "4",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "%",
+     "kind": "symbol"
+    },
+    {
+     "char": "0",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137266609,
+   "parts": 5,
+   "text": "gadget*124",
+   "typed": "gadget*124",
+   "ok": true,
+   "typeMs": 9686,
+   "bits": 24.68,
+   "group": "medium",
+   "words": [
+    {
+     "word": "gadget",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [],
+   "extras": [
+    {
+     "char": "*",
+     "kind": "symbol"
+    },
+    {
+     "char": "1",
+     "kind": "digit"
+    },
+    {
+     "char": "2",
+     "kind": "digit"
+    },
+    {
+     "char": "4",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137276450,
+   "parts": 6,
+   "text": "Ne5t-Fast4",
+   "typed": "Ne5t-fast4",
+   "ok": false,
+   "typeMs": 5126,
+   "bits": 32.47,
+   "group": "combo",
+   "words": [
+    {
+     "word": "nest",
+     "length": 4
+    },
+    {
+     "word": "fast",
+     "length": 4
+    }
+   ],
+   "sep": "-",
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "n",
+     "to": "N",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "s",
+     "to": "5",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 0,
+     "from": "f",
+     "to": "F",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "4",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137287342,
+   "parts": 5,
+   "text": "tap.shoE.sun!",
+   "typed": "tap.shoE.sun!",
+   "ok": true,
+   "typeMs": 4261,
+   "bits": 36.25,
+   "group": "combo",
+   "words": [
+    {
+     "word": "tap",
+     "length": 3
+    },
+    {
+     "word": "shoe",
+     "length": 4
+    },
+    {
+     "word": "sun",
+     "length": 3
+    }
+   ],
+   "sep": ".",
+   "changes": [
+    {
+     "word": 1,
+     "index": 3,
+     "from": "e",
+     "to": "E",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "!",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795137309931,
+   "parts": 6,
+   "text": "Wo0dpecKer%9",
+   "typed": "Wo0dpecKer%9",
+   "ok": true,
+   "typeMs": 17871,
+   "bits": 24.25,
+   "group": "xlong",
+   "words": [
+    {
+     "word": "woodpecker",
+     "length": 10
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "w",
+     "to": "W",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "o",
+     "to": "0",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 7,
+     "from": "k",
+     "to": "K",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "%",
+     "kind": "symbol"
+    },
+    {
+     "char": "9",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137354503,
+   "parts": 7,
+   "text": "DANCEr1",
+   "typed": "DANCEr1",
+   "ok": true,
+   "typeMs": 39856,
+   "bits": 19.75,
+   "group": "medium",
+   "words": [
+    {
+     "word": "dancer",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "d",
+     "to": "D",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 1,
+     "from": "a",
+     "to": "A",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "n",
+     "to": "N",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "c",
+     "to": "C",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 4,
+     "from": "e",
+     "to": "E",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "1",
+     "kind": "digit"
+    }
+   ]
+  },
+  {
+   "at": 1795137488028,
+   "parts": 8,
+   "text": "83@R85#",
+   "typed": "83@R85#",
+   "ok": true,
+   "typeMs": 128804,
+   "bits": 24.51,
+   "group": "short",
+   "words": [
+    {
+     "word": "bear",
+     "length": 4
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "b",
+     "to": "8",
+     "kind": "digit",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 1,
+     "from": "e",
+     "to": "3",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "a",
+     "to": "@",
+     "kind": "symbol",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "r",
+     "to": "R",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "8",
+     "kind": "digit"
+    },
+    {
+     "char": "5",
+     "kind": "digit"
+    },
+    {
+     "char": "#",
+     "kind": "symbol"
+    }
+   ]
+  },
+  {
+   "at": 1795137501977,
+   "parts": 9,
+   "text": "FAlC0N*97",
+   "typed": "FAlCON*97",
+   "ok": false,
+   "typeMs": 9237,
+   "bits": 28.09,
+   "group": "medium",
+   "words": [
+    {
+     "word": "falcon",
+     "length": 6
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "f",
+     "to": "F",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 1,
+     "from": "a",
+     "to": "A",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "c",
+     "to": "C",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 4,
+     "from": "o",
+     "to": "0",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 5,
+     "from": "n",
+     "to": "N",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "*",
+     "kind": "symbol"
+    },
+    {
+     "char": "9",
+     "kind": "digit"
+    },
+    {
+     "char": "7",
+     "kind": "digit"
+    }
+   ],
+   "skipped": true
+  },
+  {
+   "at": 1795138014976,
+   "parts": 9,
+   "text": "CoT7aGe&8#?",
+   "typed": "x",
+   "ok": false,
+   "typeMs": 19059,
+   "bits": 33.81,
+   "group": "long",
+   "words": [
+    {
+     "word": "cottage",
+     "length": 7
+    }
+   ],
+   "sep": null,
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "c",
+     "to": "C",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "t",
+     "to": "T",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 3,
+     "from": "t",
+     "to": "7",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 5,
+     "from": "g",
+     "to": "G",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    }
+   ],
+   "extras": [
+    {
+     "char": "&",
+     "kind": "symbol"
+    },
+    {
+     "char": "8",
+     "kind": "digit"
+    },
+    {
+     "char": "#",
+     "kind": "symbol"
+    },
+    {
+     "char": "?",
+     "kind": "symbol"
+    }
+   ],
+   "skipped": true
+  },
+  {
+   "at": 1795138043002,
+   "parts": 9,
+   "text": "CR4b foX*7!",
+   "typed": "CR4b Fox*7!",
+   "ok": false,
+   "typeMs": 16173,
+   "bits": 41.13,
+   "group": "combo",
+   "words": [
+    {
+     "word": "crab",
+     "length": 4
+    },
+    {
+     "word": "fox",
+     "length": 3
+    }
+   ],
+   "sep": " ",
+   "changes": [
+    {
+     "word": 0,
+     "index": 0,
+     "from": "c",
+     "to": "C",
+     "kind": "upper",
+     "first": true,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 1,
+     "from": "r",
+     "to": "R",
+     "kind": "upper",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 0,
+     "index": 2,
+     "from": "a",
+     "to": "4",
+     "kind": "digit",
+     "first": false,
+     "last": false
+    },
+    {
+     "word": 1,
+     "index": 2,
+     "from": "x",
+     "to": "X",
+     "kind": "upper",
+     "first": false,
+     "last": true
+    }
+   ],
+   "extras": [
+    {
+     "char": "*",
+     "kind": "symbol"
+    },
+    {
+     "char": "7",
+     "kind": "digit"
+    },
+    {
+     "char": "!",
+     "kind": "symbol"
+    }
+   ]
+  }
+ ]
+}

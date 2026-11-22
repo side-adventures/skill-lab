@@ -1,6 +1,6 @@
 """Password Lab analysis: which parts of a password are hard to remember.
 
-Usage: python3 scripts/password-lab-analysis.py lab1.json [lab2.json ...]  (the Password Lab downloads)
+Usage: python3 scripts/password-lab-analysis.py data/password-lab/*.json  (the Password Lab downloads, see its README)
 Pure Python (no numpy). Reads the lab downloads, finds what went wrong in each answer, and reports error rates per
 part plus a small model of what makes a whole password fail.
 """
