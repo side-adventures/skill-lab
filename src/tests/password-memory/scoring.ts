@@ -243,6 +243,8 @@ const g = (tiny: number, short: number, medium: number, long: number, xlong = 0)
 /** How close a password's load must be to its level's. */
 export const LOAD_TOLERANCE = 0.15
 const MAX_EXTRAS = 12
+/** The longest a password gets: it fits the field at full size (a longer one would need smaller, harder to read text). */
+export const MAX_LENGTH = 26
 
 /**
  * What a load allows, so passwords look like ordinary ones early and stay mixed later:
@@ -312,7 +314,7 @@ export function passwordForLoad(target: number, showMs: number, rand: Rand = Mat
     const changes = randInt(limits.minChanges, most, rand)
     const extras = Math.max(limits.minExtras, Math.min(MAX_EXTRAS, Math.round((rest - changes * 1.3) / 1.25)))
     const p = buildPassword({ ...picked, changes, extras }, rand)
-    if (isBareWord(p) || countedChanges(p) < limits.minChanges) continue
+    if (isBareWord(p) || countedChanges(p) < limits.minChanges || p.text.length > MAX_LENGTH) continue
     const off = Math.abs(loadOf(p, showMs) - target)
     if (off <= LOAD_TOLERANCE) return p
     if (off < bestOff) [best, bestOff] = [p, off]
@@ -329,6 +331,9 @@ export const LIVES = 3
 /**
  * Each level's load and show time. Level 1 is a fixed recipe (a 6-letter word and one extra digit or symbol, ~3.5);
  * levels 2–4 add 1 load each with the show time growing to 5 s; from level 4 on, 0.5 load per level at 5 s.
+ * From level 20 the show time shrinks by 0.25 s a level, to 2 s at level 31 (the shorter time is part of the level's
+ * load, so the password itself grows a little slower; with passwords capped at MAX_LENGTH, time carries the climb).
+ * TOP_LEVEL ends the run: far beyond what people remember (a player 5 load above the lab player gets ~1 % there).
  */
 const FIRST_LEVELS = [
   { load: 3.5, showMs: 3500 },
@@ -338,7 +343,9 @@ const FIRST_LEVELS = [
 ]
 export const loadOfLevel = (level: number) =>
   level <= FIRST_LEVELS.length ? FIRST_LEVELS[level - 1].load : FIRST_LEVELS[FIRST_LEVELS.length - 1].load + (level - FIRST_LEVELS.length) / 2
-export const showMsOfLevel = (level: number) => (level <= FIRST_LEVELS.length ? FIRST_LEVELS[level - 1].showMs : 5000)
+export const showMsOfLevel = (level: number) =>
+  level <= FIRST_LEVELS.length ? FIRST_LEVELS[level - 1].showMs : Math.max(2000, 5000 - 250 * Math.max(0, level - 19))
+export const TOP_LEVEL = 40
 
 /** A password for a level: level 1 is a 6-letter word and one extra character; the others are made by load. */
 export function passwordForLevel(level: number, rand: Rand = Math.random): Password {
@@ -349,9 +356,10 @@ export function passwordForLevel(level: number, rand: Rand = Math.random): Passw
 /**
  * Where the run is: the current level, the last level confirmed (none yet: null), and whether a life was lost yet.
  * Until the first miss each right answer skips a level (+2); after it, +1. The first miss goes on one level above the
- * last confirmed one (a smaller step); any later miss replays the same level with a new password.
+ * last confirmed one (a smaller step); any later miss replays the same level with a new password. A skip never
+ * passes TOP_LEVEL.
  */
 export interface Climb { level: number; cleared: number | null; missed: boolean }
 export const startClimb = (): Climb => ({ level: 1, cleared: null, missed: false })
-export const afterRight = (c: Climb): Climb => ({ level: c.level + (c.missed ? 1 : 2), cleared: c.level, missed: c.missed })
+export const afterRight = (c: Climb): Climb => ({ level: Math.min(TOP_LEVEL, c.level + (c.missed ? 1 : 2)), cleared: c.level, missed: c.missed })
 export const afterMiss = (c: Climb): Climb => ({ level: c.cleared === null ? c.level : c.cleared + 1, cleared: c.cleared, missed: true })

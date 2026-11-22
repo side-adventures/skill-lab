@@ -12,11 +12,11 @@ export type FormPhase = 'show' | 'input' | 'correct' | 'wrong'
 const visible = (c: string) => (c === ' ' ? <span className="opacity-40">␣</span> : c)
 
 /**
- * Monospace text, smaller for long passwords so they fit the field (36 rem wide): up to 26 characters at 30 px, 33 at
- * 24 px, 39 at 20 px (the longest a password at high levels gets, ~34, plus the 5 extra you may type).
+ * Monospace text. A password is at most 26 characters (MAX_LENGTH), which fits the field (36 rem) at 30 px; only an
+ * answer typed longer (up to 5 more) is shown smaller after a mismatch, at 24 px (fits 33).
  */
 const textFor = (length: number) =>
-  `font-mono font-semibold tracking-[0.08em] whitespace-pre ${length <= 26 ? 'text-3xl' : length <= 33 ? 'text-2xl' : 'text-xl'}`
+  `font-mono font-semibold tracking-[0.08em] whitespace-pre ${length <= 26 ? 'text-3xl' : 'text-2xl'}`
 
 /** A labelled box that looks like a form field. */
 function Field({ label, children, tone = '' }: { label: string; children: ReactNode; tone?: string }) {
@@ -97,7 +97,7 @@ export function PasswordForm({ phase, target, input, onInput, onSubmit, flash, w
             <span className={`${text} text-zinc-50`}>{[...target].map((c, i) => <span key={i}>{visible(c)}</span>)}</span>
           )}
           {(phase === 'input' || phase === 'correct') && (
-            <span className={`${target.length <= 22 ? 'text-2xl tracking-[0.25em]' : 'text-lg tracking-[0.2em]'} text-zinc-400`}>{'●'.repeat(target.length)}</span>
+            <span className={`${target.length <= 22 ? 'text-2xl tracking-[0.25em]' : 'text-xl tracking-[0.2em]'} text-zinc-400`}>{'●'.repeat(target.length)}</span>
           )}
         </Field>
 

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { GameInfo, InfoValue, Lives } from '../../components/game/GameInfo'
-import { useAnswerFlash, useContinue, useLater } from '../../lib/game'
+import { END_MOMENT_MS, useAnswerFlash, useContinue, useLater } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { PasswordForm, type FormPhase } from './PasswordForm'
 import {
-  LIVES, SYMBOL_KEYS, afterMiss, afterRight, matches, passwordForLevel, showMsOfLevel, startClimb,
+  LIVES, SYMBOL_KEYS, TOP_LEVEL, afterMiss, afterRight, matches, passwordForLevel, showMsOfLevel, startClimb,
   type Climb, type Password,
 } from './scoring'
 
@@ -44,7 +44,8 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
     if (ok) {
       if (!best || climb.level > best.level) setBest({ text: target, level: climb.level })
       setPhase('correct')
-      later(900, () => play(afterRight(climb)))
+      // The top level ends the run (see TOP_LEVEL).
+      later(climb.level === TOP_LEVEL ? END_MOMENT_MS : 900, () => (climb.level === TOP_LEVEL ? finish(climb.level, target) : play(afterRight(climb))))
       return
     }
     setMissed([...missed, climb.level])
@@ -52,12 +53,14 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
     setPhase('wrong')
   }
 
-  const finish = () => {
+  /** Ends the run; `top` is the password of the top level when it was just confirmed (state isn't updated yet). */
+  const finish = (topLevel?: number, topText?: string) => {
+    const hardest = topLevel ? { text: topText!, level: topLevel } : best
     onFinish({
-      score,
+      score: hardest?.level ?? 0,
       details: {
         stats: [
-          ...(best ? [{ label: 'Hardest password', value: best.text }] : []),
+          ...(hardest ? [{ label: 'Hardest password', value: hardest.text }] : []),
           ...(missed.length ? [{ label: 'Missed at', value: `level ${missed.join(', ')}` }] : []),
         ],
       },
@@ -76,7 +79,7 @@ export default function PasswordMemoryTest({ onFinish }: TestComponentProps) {
           <span className={phase === 'wrong' ? 'text-rose-300' : ''}>
             {phase === 'show' ? 'Memorize'
               : phase === 'input' ? 'Type it, then Enter'
-              : phase === 'correct' ? 'Saved'
+              : phase === 'correct' ? (climb.level === TOP_LEVEL ? 'Top level reached' : 'Saved')
               : lives === 0 ? 'Out of lives'
               : next.level < climb.level ? `No match · next: level ${next.level}`
               : 'No match · new password, same level'}

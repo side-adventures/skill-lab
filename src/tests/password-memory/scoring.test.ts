@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CHANGES, EXTRA_CHARS, LIVES, LOAD_TOLERANCE, POOLS, SYMBOL_KEYS, afterMiss, afterRight,
+  CHANGES, EXTRA_CHARS, LIVES, LOAD_TOLERANCE, MAX_LENGTH, POOLS, TOP_LEVEL, SYMBOL_KEYS, afterMiss, afterRight,
   buildPassword, changeOptions, countedChanges, hasDigitRun, isBareWord, limitsFor, loadOf, loadOfLevel, makeExtras, matches, partsLoad,
   passwordForLevel, pickWords, showMsOfLevel, startClimb,
 } from './scoring'
@@ -180,9 +180,23 @@ describe('password memory: load', () => {
 })
 
 describe('password memory: levels and the climb', () => {
-  it('goes up 1 load a level to level 4, then 0.5, with the show time growing to 5 s', () => {
+  it('goes up 1 load a level to level 4, then 0.5, with the show time growing to 5 s and shrinking from level 20', () => {
     expect([1, 2, 3, 4, 5, 6, 12].map(loadOfLevel)).toEqual([3.5, 4.5, 5.5, 6.5, 7, 7.5, 10.5])
-    expect([1, 2, 3, 4, 5, 12].map(showMsOfLevel)).toEqual([3500, 4000, 4500, 5000, 5000, 5000])
+    expect([1, 2, 3, 4, 5, 12, 19].map(showMsOfLevel)).toEqual([3500, 4000, 4500, 5000, 5000, 5000, 5000])
+    expect([20, 24, 31, 32, 40].map(showMsOfLevel)).toEqual([4750, 3750, 2000, 2000, 2000])
+  })
+
+  it('keeps every password within the length that fits the field, up to the top level', () => {
+    expect(MAX_LENGTH).toBe(26)
+    for (let level = 1; level <= TOP_LEVEL; level++) {
+      for (let i = 0; i < 30; i++) expect(passwordForLevel(level).text.length).toBeLessThanOrEqual(MAX_LENGTH)
+    }
+  })
+
+  it('never skips past the top level', () => {
+    expect(TOP_LEVEL).toBe(40)
+    expect(afterRight({ level: 39, cleared: 37, missed: false }).level).toBe(40)
+    expect(afterRight({ level: 38, cleared: 36, missed: false }).level).toBe(40)
   })
 
   it('skips a level after each right answer until the first miss, then goes one at a time', () => {
