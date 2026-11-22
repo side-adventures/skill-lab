@@ -331,7 +331,7 @@ export const LIVES = 3
 /**
  * Each level's load and show time. Level 1 is a fixed recipe (a 6-letter word and one extra digit or symbol, ~3.5);
  * levels 2–4 add 1 load each with the show time growing to 5 s; from level 4 on, 0.5 load per level at 5 s.
- * From level 20 the show time shrinks by 0.25 s a level, to 2 s at level 31 (the shorter time is part of the level's
+ * From level 25 the show time shrinks by 0.5 s a level, to 2 s at level 30 (the shorter time is part of the level's
  * load, so the password itself grows a little slower; with passwords capped at MAX_LENGTH, time carries the climb).
  * TOP_LEVEL ends the run: far beyond what people remember (a player 5 load above the lab player gets ~1 % there).
  */
@@ -344,7 +344,7 @@ const FIRST_LEVELS = [
 export const loadOfLevel = (level: number) =>
   level <= FIRST_LEVELS.length ? FIRST_LEVELS[level - 1].load : FIRST_LEVELS[FIRST_LEVELS.length - 1].load + (level - FIRST_LEVELS.length) / 2
 export const showMsOfLevel = (level: number) =>
-  level <= FIRST_LEVELS.length ? FIRST_LEVELS[level - 1].showMs : Math.max(2000, 5000 - 250 * Math.max(0, level - 19))
+  level <= FIRST_LEVELS.length ? FIRST_LEVELS[level - 1].showMs : Math.max(2000, 5000 - 500 * Math.max(0, level - 24))
 export const TOP_LEVEL = 40
 
 /** A password for a level: level 1 is a 6-letter word and one extra character; the others are made by load. */

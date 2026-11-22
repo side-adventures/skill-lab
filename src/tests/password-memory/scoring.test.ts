@@ -180,10 +180,10 @@ describe('password memory: load', () => {
 })
 
 describe('password memory: levels and the climb', () => {
-  it('goes up 1 load a level to level 4, then 0.5, with the show time growing to 5 s and shrinking from level 20', () => {
+  it('goes up 1 load a level to level 4, then 0.5, with the show time growing to 5 s and shrinking from level 25', () => {
     expect([1, 2, 3, 4, 5, 6, 12].map(loadOfLevel)).toEqual([3.5, 4.5, 5.5, 6.5, 7, 7.5, 10.5])
-    expect([1, 2, 3, 4, 5, 12, 19].map(showMsOfLevel)).toEqual([3500, 4000, 4500, 5000, 5000, 5000, 5000])
-    expect([20, 24, 31, 32, 40].map(showMsOfLevel)).toEqual([4750, 3750, 2000, 2000, 2000])
+    expect([1, 2, 3, 4, 5, 12, 24].map(showMsOfLevel)).toEqual([3500, 4000, 4500, 5000, 5000, 5000, 5000])
+    expect([25, 26, 29, 30, 40].map(showMsOfLevel)).toEqual([4500, 4000, 2500, 2000, 2000])
   })
 
   it('keeps every password within the length that fits the field, up to the top level', () => {
