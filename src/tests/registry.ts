@@ -645,6 +645,34 @@ export const TESTS: TestDefinition[] = [
     layout: 'prompt',
     Component: lazyTest(() => import('./symbol-code/SymbolCodeTest')),
   },
+  // ---------- batch 4 ----------
+  {
+    id: 'spot-difference',
+    name: 'Spot the Difference',
+    icon: '👀',
+    category: 'Focus',
+    tagline: 'Two pictures, five differences: can you spot them all in a minute?',
+    skill: 'visual attention to detail',
+    howTo: [
+      'Two pictures side by side: the right one has 5 differences.',
+      'Click a difference in either picture, right on the part that changed.',
+      '5 rounds, one picture each. You have 60 seconds per picture to score.',
+      'After the 60 seconds you can keep looking, but finds no longer count.',
+      'A round ends when you find all 5, or with Show answers; then click Next.',
+    ],
+    scoring: [
+      'Your points: 10 per difference found in time, plus the seconds left when you find all 5.',
+      'Each wrong click costs more than the last, over the whole test: 1, 3, 5, 7, then 10 points, so guessing does not pay off.',
+      'Clicks after the 60 seconds are free.',
+    ],
+    durationHint: '~4 min',
+    scoreLabel: 'Points',
+    higherIsBetter: true,
+    formatScore: (s) => `${s} pts`,
+    start: 'countdown',
+    layout: 'full',
+    Component: lazyTest(() => import('./spot-difference/SpotDifferenceTest')),
+  },
 ]
 
 /**

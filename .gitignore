@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# built pages of the Spot the Difference lab (python3 scripts/spot-difference/build.py)
+scripts/spot-difference/out
