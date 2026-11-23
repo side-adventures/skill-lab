@@ -49,10 +49,9 @@ Wait for the user's OK or changes. Show changed versions as the full table again
 - Play it in the browser preview (localhost, desktop) yourself: a full run, the result screen, mouse and keys.
 - Work on a `feat/<id>-prototype` branch; `npm test`, `npm run lint`, `npm run build` pass; merge into `develop`.
   Let the checks gate the merge (`npm test && npm run lint && npm run build && git merge …`), never just run them.
-- **Build in a separate copy** when the user may be playing at the same time: a git worktree (`../skill-lab-protos`)
-  with its own `node_modules` copy minus `.vite` (`cp -al ../skill-lab/node_modules node_modules && rm -rf
-  node_modules/.vite`), a temporary `protos` launch config on port 5174, and **your own browser tab** (the user plays on
-  5173 in theirs; never navigate their tab). Remove the config, the server, your tab and the worktree when done.
+- **Build in a separate copy** when the user may be playing or other sessions are open: your own worktree, port slot
+  (`wt-1` … `wt-4`) and browser tab, as in "Parallel sessions" in `CLAUDE.md`. Remove the server, your tab and the
+  worktree when done.
 - Bots in the browser pane: it draws few frames per second, so wait for a drawn frame before pressing; odd timings are
   usually the pane, not the game.
 - Report: what you built, what you checked, anything you chose yourself that the user may want to change.

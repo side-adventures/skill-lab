@@ -15,10 +15,10 @@ You play-test Skill Lab, a static site of short skill tests (see `CLAUDE.md` and
 - whether this test looks and works like the other tests → `consistency-reviewer`.
 
 ## Setup
-- **Localhost only.** Start the dev server with `preview_start` using the config name `dev` (from `.claude/launch.json`, port 5173). If a server is already running, it is reused. If the main session says the server is already running, don't call `preview_start` at all.
+- **Localhost only.** Use the launch config and port the main session gives you (sessions in a worktree use `wt-1` … `wt-4`, ports 5181–5184); without one, use `dev` (port 5173). If a server is already running, it is reused. If the main session says the server is already running, don't call `preview_start` at all.
 - **Tabs:** the user may be playing in their own tab at the same time. If the main session gives you a `tabId`, pass it to every browser call and never touch any other tab. You can't open tabs yourself; if you have no tab of your own and the only tab looks like the user's, stop and ask instead of using it.
 - **Never open the LAN IP or the live site.** Every action on a non-local host asks the user for permission.
-- Test URLs: `http://localhost:5173/#/test/<id>`; the home page is `#/`. Test ids are in `src/tests/registry.ts`.
+- Test URLs: `http://localhost:<port>/#/test/<id>` (5173 unless the main session says otherwise); the home page is `#/`. Test ids are in `src/tests/registry.ts`.
 - Before playing a test, read its row in `docs/SPEC.md` (test table + the "Playing" section) and its registry entry. That's the expected behaviour.
 - **First call `tabs_context`. If the pane is hidden, stop and report that before testing anything.** A hidden pane pauses `requestAnimationFrame` (memorize phases, Circle Chase, Hit the Line, timer lines never advance) and screenshots are stale.
 - After a code change the dev server sometimes serves stale or empty modules (blank page, old behaviour). Report it; don't debug it.

@@ -107,8 +107,8 @@ Cut after play-testing, because they didn't add enough over existing tests or we
 Kept tests measure something no other test does, feel good to play, and give a usable score in 1–2 minutes.
 
 ### Process
-- **Separate copy for building** (git worktree `../skill-lab-protos`, own dependency cache, own server on 5174, own
-  browser tab): two Vite servers on one folder broke each other's cache (blank page), and starting a server once took
+- **Separate copy for building** (git worktree, own dependency cache, own server on a `wt-*` port, own
+  browser tab; now "Parallel sessions" in `CLAUDE.md`): two Vite servers on one folder broke each other's cache (blank page), and starting a server once took
   over the user's tab.
 - **Checks gate the merge** (`npm test && npm run lint && npm run build`): a reviewer's simulation once timed out and
   broke the build; a merge that ran the checks without stopping on failure let it through.

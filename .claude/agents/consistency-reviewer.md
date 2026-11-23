@@ -28,7 +28,7 @@ You review Skill Lab for consistency. Skill Lab is a static site of short skill 
 
 ## How to look
 - Read the code first: `grep` across `src/tests/*/` is the fastest way to compare (keys, timers, hand-made buttons, colors, wording).
-- Then check in the browser pane on **localhost only** (`preview_start` with config `dev`, port 5173; never the LAN IP or the live site). First call `tabs_context`; if the pane is hidden, say so and rely on code only. Test URLs: `http://localhost:5173/#/test/<id>`.
+- Then check in the browser pane on **localhost only** (`preview_start` with the launch config and port the main session gives you, default `dev` on 5173; never the LAN IP or the live site). If it gives you a `tabId`, use only that tab and never touch the user's. First call `tabs_context`; if the pane is hidden, say so and rely on code only. Test URLs: `http://localhost:<port>/#/test/<id>`.
 - Drive tests with `javascript_tool`: tests react to `pointerdown`, not `click` (`new PointerEvent('pointerdown', { bubbles: true, clientX, clientY, button: 0 })`); keys with `new KeyboardEvent('keydown', { key, code, bubbles: true })` on `window`. Wait 50–100 ms after each input. Tool calls time out after ~45 s: run long loops async and poll a `window.__result`.
 - Screenshots at `scale: 0.5`, only where looks matter. Put two tests side by side mentally: same phase, same element, same look?
 - Desktop and dark theme only (the current focus). Reset the viewport with `resize_window` preset `desktop` if you changed it.
