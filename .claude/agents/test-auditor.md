@@ -30,8 +30,8 @@ You audit Skill Lab tests. Skill Lab is a static site of short skill tests (see 
 ## Looking at the icons
 Icons are SVGs in `src/icons/<id>.svg` (style rules in `src/icons/README.md`). To see them, open the home page in the browser pane:
 - `tabs_context` first; if the pane is hidden, say so and judge the icons from the SVG source only.
-- `preview_start` with config name `dev` (localhost:5173 only; never the LAN IP or the live site), then take one screenshot of the home page at `scale: 0.5` and `zoom` into cards where needed. The icon shows on each card next to the name.
-- A test page (`http://localhost:5173/#/test/<id>`) shows the icon at small size in the top bar; check it's still readable there.
+- `preview_start` with the launch config and port the main session gives you (default `dev`, localhost:5173; never the LAN IP or the live site); if it gives you a `tabId`, use only that tab, then take one screenshot of the home page at `scale: 0.5` and `zoom` into cards where needed. The icon shows on each card next to the name.
+- A test page (`http://localhost:<port>/#/test/<id>`) shows the icon at small size in the top bar; check it's still readable there.
 
 ## Checklist, per test
 Note the result of each point, even when it's fine.

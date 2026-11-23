@@ -30,8 +30,34 @@ Vite + React 19 + TypeScript + Tailwind v4 (`@tailwindcss/vite`), react-router `
   the user says to publish. Never commit directly on `main`.
 - After a branch is merged, delete it locally and on GitHub.
 
+## Parallel sessions
+Several sessions may run at once (each on its own test / branch), plus the user playing and subagents checking.
+- **The main folder (`skill-lab`) stays on `develop`.** It's where the user plays (5173) and where merges happen.
+  No session runs `git checkout` there while other sessions are open or the user is playing.
+- **One worktree per session**, on its own `feat/<topic>` branch off `develop`: a worktree session from the app, or
+  `git worktree add ../skill-lab-<topic>`. Edit only files in your own worktree. Dependencies:
+  `cp -al ../skill-lab/node_modules node_modules && rm -rf node_modules/.vite` (two Vite servers sharing a `.vite`
+  cache break each other). Remove the worktree when its branch is merged.
+- **One port per worktree:** 5173 = main folder (`dev`), 5175 = spot-lab, worktrees take the first free slot of
+  `wt-1` … `wt-4` (5181–5184, `--strictPort`) and say in chat which one they use. Never stop a server you didn't
+  start. Scores are stored per port (localStorage), so runs on 518x don't touch the user's bests on 5173.
+- **Browser: one tab each.** The user's tabs are theirs: never navigate, reload or click in them. Each session
+  works in its own background tab (`tabs_create`) on its own port, and closes it and stops its server when done.
+  Background tabs throttle timers and frames, so check logic and flow there; for timing-sensitive checks (ms
+  values, flashes) ask the user before bringing your tab to the front.
+- **Subagents** work in their session's worktree and port; the session creates their browser tab and passes the
+  tabId and URL in the prompt. At most about 2 browser-driving agents across all sessions at once.
+- **Merging:** first merge `develop` into your branch in your worktree, resolve conflicts there, and run
+  `npm test && npm run lint && npm run build`. Then merge from the main folder without a checkout
+  (`git -C ../skill-lab merge --no-ff feat/<topic>`), one merge at a time and only when the main folder is clean
+  (`git status`). If another session is merging, wait.
+- **Shared files** (`src/tests/registry.ts`, `docs/SPEC.md`, `docs/BACKLOG.md`, `CLAUDE.md`, icons README):
+  keep edits small and additive; don't reorder or reformat what's there.
+- Only the session that merges into `develop` updates the "skill-lab status" memory. Publishing (`develop` → `main`)
+  stays a single step, from one session, when the user says so.
+
 ## Commands
-- `npm run dev` — dev server (browser preview: `.claude/launch.json` config `dev`, port 5173; always test on localhost)
+- `npm run dev` — dev server (browser preview: `.claude/launch.json` config `dev`, port 5173; worktrees use `wt-1` … `wt-4`, see "Parallel sessions"; always test on localhost)
 - `npm test` · `npm run lint` · `npm run build` — all three must pass before committing.
 
 ## Adding a test
