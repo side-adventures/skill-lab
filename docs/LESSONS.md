@@ -4,6 +4,37 @@ Problems we ran into and how we solved them **for that test**. These are example
 general defaults they led to are in `CLAUDE.md` ("Design defaults"), and a new test may solve the same problem
 differently. Newest first. Details and numbers are in the review reports (`docs/reviews/`) and the SPEC rows.
 
+## Batch 4 (2026-11-20 – 2026-11-23): Spot the Difference
+
+### Content made by a generator
+- **Hand-drawn scenes don't scale; generated ones need their own checks.** 13 scenes are a fixed backbone with random
+  slots and details, and each item lists the changes it can make. *Solved:* a lab next to the app
+  (`scripts/spot-difference/`): a scene check (always the full count, no overlapping change boxes), share tables per
+  item, and a headless-Chrome **pixel check** that renders every change and counts changed pixels. The pixel check found
+  ~15 changes that were invisible or faint (white stripes on a white shirt, hair colour under a hat, a symmetric object
+  "flipped", near-identical trouser greys, an extinguisher hose the colour of the wall).
+- **Colour-blind players.** A deuteranopia / protanopia simulation in the pixel check showed red ↔ brown, purple ↔ blue
+  and pink ↔ light-blue changes nearly vanish. *Solved:* colour **changes** must stay distinct under the simulation
+  (starting colours are not limited); fixed two-colour pairs that failed were replaced.
+- **"The left picture is correct".** Anything that looks broken when missing (a teapot lid, rabbit ears, a deer's
+  antlers) always starts whole; the change only removes it on the right.
+
+### Picking what changes
+- **A category-first picker favoured lone items.** Picking an area first, then a change in it, gave the hens 25 % and
+  each knight 13 %. *Solved:* pick a unit first (an item, or a group of copies such as the windows), weighted by
+  (changes per item)^0.5 × (group size)^0.05, then one of its changes; only changes that fit the rules right now take
+  part (a big group got extra retries otherwise).
+- **Finding one change in a group ruled out the rest.** *Solved:* the last of the 5 changes is free (any item, group or
+  area again; no click-area overlap; another kind of change on the same item / group).
+
+### Scoring
+- **A time penalty didn't stop guessing.** The k-th wrong click costing k s still let random clicking reach ~44 points:
+  a lost second can't take back an early lucky find. A flat −2 still let "educated" guesses pay. *Solved:* points that
+  grow over the whole run (1, 3, 5, 7, then 10 each); the cap at 10 keeps honest but sloppy players above a random
+  clicker's 0 (uncapped, 20 wrong clicks cost 776).
+- **Small changes were hard to click, not just to see.** *Solved:* a click area of at least 6 × 6 units plus slack,
+  separate from the drawn answer box; in an overlap the nearest real box wins.
+
 ## Batch 3 (2026-11-15 – 2026-11-17): Advent Calendar, Odd One Out, Backward Span, Change Detection, Symbol Code
 
 ### Feedback and getting stuck

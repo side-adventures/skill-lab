@@ -76,6 +76,9 @@ Design rules for every test:
   the time, and a shorter version wouldn't work; say why in its SPEC row.
 - **Never use color as the only cue**: add a shape, text or position (Go / No-Go: green circle vs red square). Stroop
   is the exception, because color is the task itself.
+- **Colour differences that matter for play stay distinct for red-green colour blindness** (~8 % of men): avoid
+  red ↔ green, red ↔ brown, purple ↔ blue, pink ↔ light blue as the only difference; check with a deuteranopia /
+  protanopia simulation (Spot the Difference's lab has one, `scripts/spot-difference/`).
 - **Lives work the same everywhere**: a lost life replays the same level / round with a new layout, `<Lives>` in the
   info row, "Out of lives" ends the run, and the score is still the best level reached. **How many** lives is up to
   the test: more lives smooth out luck and a single slip, fewer keep a run short and tense. Pick what fits; there's

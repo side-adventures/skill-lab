@@ -34,12 +34,14 @@ Ideas and TODOs for later. Not planned yet; move an item into the work when it's
   data kept). Later: Password Lab data from 2–3 more players (a newcomer, a non-native speaker) to check the load
   weights (fit on one player), before the score could switch from levels to a unit (see `docs/reviews/2026-11-21-password-memory.md`).
 
-- **Spot the Difference** (idea, 2026-11-16): two pictures side by side, one (or a few) things differ; click the
-  change as fast as you can. Research: comparative visual search (Pomplun et al.) and, as a variant, the flicker
-  paradigm of change blindness (Rensink et al. 1997: one picture alternates with its changed version, a blank between).
-  Tests search and comparison speed, not memory (both pictures stay visible), so Focus. Open: generated scenes (shapes
-  on a grid) vs drawn ones, keeping difficulty even between runs (time depends a lot on the scene, so luck), how many
-  rounds, and the overlap with Odd One Out (also visual search).
+- **Spot the Difference** became a regular test on 2026-11-23 (13 generated scenes, lab in `scripts/spot-difference/`).
+  Later:
+  - record how long players take per change type and per scene, and rebalance the picker weights from real data;
+  - more variety in the small scenes (bookshelf, lab and space have only ~40 possible changes each, so regular
+    players learn what tends to change);
+  - result-screen reference bands once there is data (lab anchor: ~10–11 s per difference, Pomplun et al. 2001);
+  - the colour-blind check still flags a few small items on similar backgrounds (armour-stand plume, a forge shield,
+    a patch flower); outlines were declined, so they stay for now.
 
 ## New test ideas
 From the test-auditor sweep (2026-11-13), each a well-known paradigm no test covers yet
