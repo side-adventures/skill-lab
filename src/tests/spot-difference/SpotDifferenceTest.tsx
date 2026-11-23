@@ -37,6 +37,8 @@ export default function SpotDifferenceTest({ onFinish }: TestComponentProps) {
   const [penalty, setPenalty] = useState<number | null>(null)
   const [results, setResults] = useState<PictureResult[]>([])
   const [scored, setScored] = useState(0)
+  // where the pointer is (scene units, which picture), mirrored as a marker in the other picture
+  const [hover, setHover] = useState<{ side: 0 | 1; x: number; y: number } | null>(null)
   const inTime = useRef(0)
   const leftAtEnd = useRef<number | null>(null)
   const clicks = useRef(0)
@@ -148,6 +150,14 @@ export default function SpotDifferenceTest({ onFinish }: TestComponentProps) {
           <rect key={i} x={x - 1.5} y={y - 1.5} width={w + 3} height={h + 3} rx={2} fill="none" stroke={BAD} strokeWidth={0.9} strokeDasharray="2 1.5" />
         ) : null,
       )}
+      {hover && hover.side !== side && phase !== 'ready' && (
+        // the pointer's spot in the other picture: a white ring with a dark edge and a dot, unlike anything in a scene
+        <g opacity={0.9}>
+          <circle cx={hover.x} cy={hover.y} r={2.3} fill="none" stroke="#0a0a0a" strokeWidth={0.9} opacity={0.55} />
+          <circle cx={hover.x} cy={hover.y} r={2.3} fill="none" stroke="#ffffff" strokeWidth={0.4} />
+          <circle cx={hover.x} cy={hover.y} r={0.35} fill="#ffffff" stroke="#0a0a0a" strokeWidth={0.15} />
+        </g>
+      )}
       {misses.filter((m) => m.side === side).map((m) => (
         <path key={m.id} d={`M${m.x - 2.5} ${m.y - 2.5}L${m.x + 2.5} ${m.y + 2.5}M${m.x + 2.5} ${m.y - 2.5}L${m.x - 2.5} ${m.y + 2.5}`} stroke={BAD} strokeWidth={1.2} strokeLinecap="round" />
       ))}
@@ -194,6 +204,11 @@ export default function SpotDifferenceTest({ onFinish }: TestComponentProps) {
               className={`relative cursor-crosshair overflow-hidden rounded-lg ${phase === 'ready' ? '' : 'ring-1 ring-zinc-500/80'}`}
               style={{ width: PIC_W, height: PIC_H }}
               onPointerDown={(e) => click(side as 0 | 1, e)}
+              onPointerMove={(e) => {
+                const r = e.currentTarget.getBoundingClientRect()
+                setHover({ side: side as 0 | 1, x: ((e.clientX - r.left) / r.width) * 120, y: ((e.clientY - r.top) / r.height) * 90 })
+              }}
+              onPointerLeave={() => setHover(null)}
             >
               <svg viewBox="0 0 120 90" className="block size-full" dangerouslySetInnerHTML={{ __html: svg }} />
               {marks(side as 0 | 1)}
