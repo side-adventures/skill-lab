@@ -662,7 +662,7 @@ export const TESTS: TestDefinition[] = [
     ],
     scoring: [
       'Your points: 20 per difference found in time, plus the seconds left when you find all 5.',
-      'Each wrong click costs more than the last, over the whole test: 1, 3, 5, 7, then 10 points, so guessing does not pay off.',
+      'Each wrong click costs more than the last, over the whole test: 1, 5, 10, 15, then 20 points, so guessing does not pay off.',
       'Clicks after the 60 seconds are free.',
     ],
     durationHint: '~4 min',

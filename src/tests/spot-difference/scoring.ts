@@ -37,12 +37,12 @@ export function makePictures(rand: Rand = Math.random): Picture[] {
 }
 
 /**
- * Points the k-th wrong click of the run costs (k from 1): 1, 3, 5, 7, then 10 each. The count carries over the whole run,
- * so a slip is cheap but from the 5th on a guess costs half of what a find is worth (it only pays when you are more than
- * a third sure). Capped at 10, so an honest but sloppy player isn't pushed down to a random clicker's 0. Clicks after the
+ * Points the k-th wrong click of the run costs (k from 1): 1, 5, 10, 15, then 20 each. The count carries over the whole run,
+ * so a first slip is cheap but from the 5th on a guess costs as much as a find is worth (it only pays when you are more
+ * than half sure). Capped at 20, so an honest but sloppy player isn't pushed down to a random clicker's 0. Clicks after the
  * points time and on found changes are free.
  */
-export const wrongCost = (k: number) => (k <= 4 ? 2 * k - 1 : 10)
+export const wrongCost = (k: number) => (k === 1 ? 1 : Math.min(20, 5 * (k - 1)))
 
 /** What wrong clicks number `from + 1` … `from + n` of the run cost together. */
 export const wrongCosts = (from: number, n: number) => Array.from({ length: n }, (_, i) => wrongCost(from + i + 1)).reduce((a, b) => a + b, 0)

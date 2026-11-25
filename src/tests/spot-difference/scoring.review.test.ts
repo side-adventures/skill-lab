@@ -110,16 +110,16 @@ describe('review: degenerate strategies', () => {
   })
 })
 
-describe('review (applied): wrong-click cost capped at 10', () => {
-  it('10 / 15 / 20 wrong clicks in a run cost 76 / 126 / 176 points (was 151 / 401 / 776 uncapped)', () => {
-    expect([wrongCosts(0, 10), wrongCosts(0, 15), wrongCosts(0, 20)]).toEqual([76, 126, 176])
+describe('review (applied): wrong-click cost capped (now at 20, a find)', () => {
+  it('10 / 15 / 20 wrong clicks in a run cost 151 / 251 / 351 points (uncapped +10 each: 501 / 1301 / 2601)', () => {
+    expect([wrongCosts(0, 10), wrongCosts(0, 15), wrongCosts(0, 20)]).toEqual([151, 251, 351])
   })
 
-  it('an honest player who finds 16 of 25 with 3 wrong clicks per picture keeps 194 points (was 0 uncapped, with 10 per find)', () => {
+  it('an honest player who finds 16 of 25 with 3 wrong clicks per picture keeps 69 points (was 0 uncapped)', () => {
     const rs: PictureResult[] = []
     let w = 0
     for (let i = 0; i < PICTURES; i++) { rs.push({ scene: 's', found: i === 0 ? 4 : 3, leftMs: null, wrong: 3, penalty: wrongCosts(w, 3), skipped: false }); w += 3 }
-    expect(runScore(rs)).toBe(194)
+    expect(runScore(rs)).toBe(69)
   })
 
   it('model: weak but sloppy players stay well above 0; random clicking stays at about 0', () => {
