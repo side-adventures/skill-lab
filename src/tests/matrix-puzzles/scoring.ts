@@ -285,28 +285,3 @@ export function makePuzzle(level: number, rand: Rand = Math.random): Puzzle {
 }
 
 export const sameCell = (a: Cell, b: Cell) => ATTRS.every((k) => a[k] === b[k])
-
-// ---- the rules in words, for the screen after a mistake ------------------------------------------------------------
-
-const NAME: Record<Attr, string> = { shape: 'Shape', count: 'Number', size: 'Size', fill: 'Fill', dots: 'Dots', stripe: 'Stripes' }
-
-export function describeRules(p: Puzzle): string[] {
-  const lines = p.rules.map(({ attr, kind, dir, step }) => {
-    const name = NAME[attr]
-    const line = dir === 'row' ? 'row' : 'column'
-    const along = dir === 'row' ? 'along each row' : 'down each column'
-    if (kind === 'same') return `${name}: the same in each ${line}`
-    if (kind === 'three') return `${name}: 3 values, each once in every ${line}`
-    if (kind === 'or') return `Dots: the 3rd cell has all dots of the first two, ${along}`
-    if (kind === 'xor') return `Dots: the 3rd cell has the dots of the first two, shared dots disappear, ${along}`
-    if (kind === 'rowcol') return "Dots: every cell has its row's dot and its column's dot"
-    const s = step!
-    if (attr === 'dots') return `Dots: move ${Math.abs(s)} ${Math.abs(s) === 1 ? 'spot' : 'spots'} ${s > 0 ? 'clockwise' : 'counterclockwise'} per cell, ${along}`
-    if (attr === 'stripe') return `Stripes: turn 45° ${s > 0 ? 'clockwise' : 'counterclockwise'} per cell, ${along}`
-    const word = { count: ['one more', 'one fewer'], size: ['one size bigger', 'one size smaller'], fill: ['one step lighter', 'one step darker'] }[attr as 'count' | 'size' | 'fill']
-    return `${name}: ${word[s > 0 ? 0 : 1]} per cell, ${along}`
-  })
-  const fixed = ATTRS.filter((a) => !p.rules.some((r) => r.attr === a) && !(a === 'size' && p.cells.some((c) => c.count > 1)) && !(a === 'stripe' && !p.stripes))
-  if (fixed.length) lines.push(`Always the same: ${fixed.map((a) => NAME[a].toLowerCase()).join(', ')}`)
-  return lines
-}

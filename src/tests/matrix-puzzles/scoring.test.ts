@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ATTRS, MIN_PENALTY_MS, PENALTY_MS, RANGE, bits, describeRules, isUnique, levelOf, levelSpec, makePuzzle, penaltyMs,
+  ATTRS, MIN_PENALTY_MS, PENALTY_MS, RANGE, bits, isUnique, levelOf, levelSpec, makePuzzle, penaltyMs,
   predictions, rot, sameCell, type Cell,
 } from './scoring'
 
@@ -80,12 +80,11 @@ describe('matrix puzzles: generation', () => {
     expect([0, 1, 2, 3, 4, 6, 7, 9, 10, 30].map(levelOf)).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5])
   })
 
-  it('level 1 has no stripes: no option differs in them, and the rules do not mention them', () => {
+  it('level 1 has no stripes: no option differs in them', () => {
     for (let n = 0; n < 300; n++) {
       const p = makePuzzle(1)
       expect(p.stripes).toBe(false)
       expect(new Set(p.options.map((o) => o.stripe)).size).toBe(1)
-      expect(describeRules(p).join(' ')).not.toMatch(/stripes/i)
     }
     expect(makePuzzle(2).stripes).toBe(true)
   })
@@ -97,12 +96,4 @@ describe('matrix puzzles: generation', () => {
     expect(penaltyMs(60_000)).toBe(MIN_PENALTY_MS)
   })
 
-  it('describes every rule, then the fixed features', () => {
-    for (let n = 0; n < 300; n++) {
-      const p = makePuzzle(1 + (n % 5))
-      const lines = describeRules(p)
-      expect(lines.length).toBeGreaterThanOrEqual(p.rules.length)
-      expect(lines.at(-1)).toMatch(/^Always the same: /)
-    }
-  })
 })

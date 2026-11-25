@@ -711,13 +711,13 @@ export const PROTOTYPES: TestDefinition[] = [
     tagline: 'Find the missing piece of a 3 × 3 grid of figures.',
     skill: 'reasoning with several rules at once',
     howTo: [
-      'You see a 3 × 3 grid with the last cell missing. Shape, number, size, fill, the dots around the edge and the background stripes can follow rules.',
+      'You see a 3 × 3 grid with the last cell missing. Shape, number, size, fill, the dots around the edge and the background stripes follow rules along the rows or down the columns.',
       'Click the cell that completes the grid, or press 1–8.',
-      'You have 5 minutes: solve as many as you can. The rules get harder after 2, 4, 7 and 10 solved puzzles.',
-      'A wrong answer costs at least 15 s on that puzzle: the time you already spent on it counts, but you always lose at least 5 s.',
+      'You have 5 minutes: solve as many as you can. The rules get harder as you progress.',
     ],
     scoring: [
       'Your number of puzzles solved.',
+      'Each wrong answer costs time: 15 s minus the time you already spent on that puzzle, but at least 5 s.',
     ],
     durationHint: '5 min',
     scoreLabel: 'Puzzles solved',
