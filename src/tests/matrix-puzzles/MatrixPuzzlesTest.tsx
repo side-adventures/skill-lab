@@ -8,6 +8,8 @@ import type { TestComponentProps } from '../types'
 import { DURATION_MS, describeRules, levelOf, makePuzzle, penaltyMs, type Cell } from './scoring'
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8']
+/** Answers in the first moment after a new puzzle shows are ignored, so a double click can't answer it unseen. */
+const INPUT_LOCK_MS = 400
 
 /** Where the copies go for 1–6 of them (in a 100 × 100 box), and how much smaller they get. */
 const SPOTS: [number, number][][] = [
@@ -155,6 +157,7 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
   const answer = (i: number) => {
     if (phase !== 'play' || remaining <= 0) return
     const spent = performance.now() - shownAt.current
+    if (spent < INPUT_LOCK_MS) return
     if (i !== puzzle.answer) {
       const cost = Math.min(penaltyMs(spent), remaining)
       setWrong((w) => w + 1)
