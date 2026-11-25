@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { GENS, rnd } from './scenes.gen.js'
-import { DIFFS, PICTURES, POINTS_MS, clickArea, hitDiff, makePictures, pictureScore, runScore, wrongCost, wrongCosts, type Picture, type PictureResult } from './scoring'
+import { DIFFS, PER_FIND, PICTURES, POINTS_MS, clickArea, hitDiff, makePictures, pictureScore, runScore, wrongCost, wrongCosts, type Picture, type PictureResult } from './scoring'
 
 type Rng = () => number
 const PER_SCENE = 24
@@ -52,7 +52,7 @@ const randomRun = (n: number, r: Rng, cost: Cost = wrongCosts) => {
     const f = Array(DIFFS).fill(false)
     for (let c = 0; c < n; c++) {
       const k = hitDiff(p.diffs, r() * 120, r() * 90, f)
-      if (k >= 0) { f[k] = true; tot += 10 } else { tot -= cost(w, 1); w++ }
+      if (k >= 0) { f[k] = true; tot += PER_FIND } else { tot -= cost(w, 1); w++ }
     }
   }
   return Math.max(0, tot)
@@ -89,7 +89,7 @@ describe('review: degenerate strategies', () => {
     const r = rnd(101)
     const out = [1, 2, 5, 20].map((n) => ({ n, mean: many(400, () => randomRun(n, r)).mean, best10: best10(80, () => randomRun(n, r)) }))
     console.log('random clicker (clicks per picture → mean, best of 10)', out)
-    for (const o of out) expect(o.best10).toBeLessThan(10) // at most one lucky find survives the costs
+    for (const o of out) expect(o.best10).toBeLessThan(PER_FIND) // at most one lucky find survives the costs
   })
 
   it('a grid sweep (every 8 units) within the minute ends at 0', () => {
@@ -97,7 +97,7 @@ describe('review: degenerate strategies', () => {
     let tot = 0, w = 0
     for (let x = 4; x < 120; x += 8) for (let y = 4; y < 90; y += 8) {
       const k = hitDiff(p.diffs, x, y, f)
-      if (k >= 0) { f[k] = true; tot += 10 } else tot -= wrongCost(++w)
+      if (k >= 0) { f[k] = true; tot += PER_FIND } else tot -= wrongCost(++w)
     }
     expect(Math.max(0, tot)).toBe(0)
   })
@@ -115,11 +115,11 @@ describe('review (applied): wrong-click cost capped at 10', () => {
     expect([wrongCosts(0, 10), wrongCosts(0, 15), wrongCosts(0, 20)]).toEqual([76, 126, 176])
   })
 
-  it('an honest player who finds 16 of 25 with 3 wrong clicks per picture keeps 34 points (was 0 uncapped)', () => {
+  it('an honest player who finds 16 of 25 with 3 wrong clicks per picture keeps 194 points (was 0 uncapped, with 10 per find)', () => {
     const rs: PictureResult[] = []
     let w = 0
     for (let i = 0; i < PICTURES; i++) { rs.push({ scene: 's', found: i === 0 ? 4 : 3, leftMs: null, wrong: 3, penalty: wrongCosts(w, 3), skipped: false }); w += 3 }
-    expect(runScore(rs)).toBe(34)
+    expect(runScore(rs)).toBe(194)
   })
 
   it('model: weak but sloppy players stay well above 0; random clicking stays at about 0', () => {
@@ -129,7 +129,7 @@ describe('review (applied): wrong-click cost capped at 10', () => {
     const random = [1, 5, 20].map((n) => best10(80, () => randomRun(n, r)))
     console.log('random clicker best of 10', random)
     expect(sloppy[2].s.mean).toBeGreaterThan(130)
-    for (const b of random) expect(b).toBeLessThan(15)
+    for (const b of random) expect(b).toBeLessThan(PER_FIND) // at most one lucky find
   })
 })
 
@@ -181,8 +181,8 @@ describe('review: luck vs skill (model)', () => {
 
 describe('review: edges', () => {
   it('whole seconds: the 5th find with 0.9 s left gives no bonus; 4 finds never give one; an empty run is 0', () => {
-    expect(pictureScore({ scene: 's', found: 5, leftMs: 900, wrong: 0, penalty: 0, skipped: false })).toBe(50)
-    expect(pictureScore({ scene: 's', found: 4, leftMs: 30_000, wrong: 0, penalty: 0, skipped: false })).toBe(40)
+    expect(pictureScore({ scene: 's', found: 5, leftMs: 900, wrong: 0, penalty: 0, skipped: false })).toBe(100)
+    expect(pictureScore({ scene: 's', found: 4, leftMs: 30_000, wrong: 0, penalty: 0, skipped: false })).toBe(80)
     expect(runScore([])).toBe(0)
   })
 })

@@ -8,7 +8,7 @@ export const DIFFS = 5
 /** Points time per picture: finds after it still show, but score nothing. */
 export const POINTS_MS = 60_000
 /** Points per difference found in time. */
-export const PER_FIND = 10
+export const PER_FIND = 20
 /** Extra room around a hitbox (scene units of 120 × 90), so a click on the edge of a small change counts. */
 export const HIT_PAD = 2.5
 
@@ -38,8 +38,8 @@ export function makePictures(rand: Rand = Math.random): Picture[] {
 
 /**
  * Points the k-th wrong click of the run costs (k from 1): 1, 3, 5, 7, then 10 each. The count carries over the whole run,
- * so a slip is cheap but from the 5th on a guess costs as much as a find is worth (it only pays when you are more than
- * half sure). Capped at 10, so an honest but sloppy player isn't pushed down to a random clicker's 0. Clicks after the
+ * so a slip is cheap but from the 5th on a guess costs half of what a find is worth (it only pays when you are more than
+ * a third sure). Capped at 10, so an honest but sloppy player isn't pushed down to a random clicker's 0. Clicks after the
  * points time and on found changes are free.
  */
 export const wrongCost = (k: number) => (k <= 4 ? 2 * k - 1 : 10)
@@ -93,7 +93,7 @@ export interface PictureResult {
   skipped: boolean
 }
 
-/** A round's points before wrong clicks: 10 per difference found in time, plus the whole seconds left when all were found in time. */
+/** A round's points before wrong clicks: 20 per difference found in time, plus the whole seconds left when all were found in time. */
 export const roundPoints = (r: PictureResult) => PER_FIND * r.found + (r.found === DIFFS && r.leftMs !== null ? Math.floor(r.leftMs / 1000) : 0)
 
 /** A round's points minus its wrong-click cost. */

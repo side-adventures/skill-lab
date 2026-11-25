@@ -661,7 +661,7 @@ export const TESTS: TestDefinition[] = [
       'A round ends when you find all 5, or with Show answers; then click Next.',
     ],
     scoring: [
-      'Your points: 10 per difference found in time, plus the seconds left when you find all 5.',
+      'Your points: 20 per difference found in time, plus the seconds left when you find all 5.',
       'Each wrong click costs more than the last, over the whole test: 1, 3, 5, 7, then 10 points, so guessing does not pay off.',
       'Clicks after the 60 seconds are free.',
     ],
