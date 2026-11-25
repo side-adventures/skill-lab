@@ -39,7 +39,7 @@ export default function BrokenPatternTest({ onFinish }: TestComponentProps) {
       ...(answers.length === 0 && { failed: 'No clicks — try again!' }),
       details: {
         stats: [
-          { label: 'Wrong clicks', value: `${wrong} (−${(wrong * PENALTY_MS) / 1000} s)` },
+          { label: 'Wrong clicks', value: wrong ? `${wrong} (−${(wrong * PENALTY_MS) / 1000} s)` : '0' },
           ...(found.length ? [{ label: 'Avg per pattern', value: fmtMs(found.reduce((t, a) => t + a.ms, 0) / found.length) }] : []),
           { label: 'Highest level', value: String(Math.max(1, ...answers.map((a) => a.level))) },
         ],
