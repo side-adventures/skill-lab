@@ -713,7 +713,7 @@ export const PROTOTYPES: TestDefinition[] = [
     howTo: [
       'You see a 3 × 3 grid with the last cell missing. Shape, number, size, fill, the dots around the edge and the background stripes can follow rules.',
       'Click the cell that completes the grid, or press 1–8.',
-      'You have 5 minutes: solve as many as you can. Every 2 solved puzzles, the rules get harder.',
+      'You have 5 minutes: solve as many as you can. The rules get harder after 2, 4, 7 and 10 solved puzzles.',
       'A wrong answer costs at least 15 s on that puzzle: the time you already spent on it counts, but you always lose at least 5 s.',
     ],
     scoring: [
