@@ -7,7 +7,7 @@ import { useContinue, useLater } from '../../lib/game'
 import { useCountdown } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import { renderItems } from './scenes.gen.js'
-import { DIFFS, PICTURES, POINTS_MS, hitDiff, makePictures, pictureScore, roundPoints, runScore, wrongCost, wrongCosts, type PictureResult } from './scoring'
+import { DIFFS, PER_FIND, PICTURES, POINTS_MS, hitDiff, makePictures, pictureScore, roundPoints, runScore, wrongCost, wrongCosts, type PictureResult } from './scoring'
 
 /** Two pictures side by side in the 768 × 512 stage (4:3 each). */
 const PIC_W = 376
@@ -139,7 +139,7 @@ export default function SpotDifferenceTest({ onFinish }: TestComponentProps) {
     }
   }
 
-  const score = Math.max(0, results.reduce((s, r) => s + pictureScore(r), 0) + (phase === 'play' ? 10 * scored - wrongCosts(wrongBefore, wrong) : 0))
+  const score = Math.max(0, results.reduce((s, r) => s + pictureScore(r), 0) + (phase === 'play' ? PER_FIND * scored - wrongCosts(wrongBefore, wrong) : 0))
   const last = results[results.length - 1]
   const marks = (side: 0 | 1) => (
     <svg viewBox="0 0 120 90" className="pointer-events-none absolute inset-0 size-full">

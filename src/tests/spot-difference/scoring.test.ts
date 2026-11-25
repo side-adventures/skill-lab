@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GENS, rnd, renderItems } from './scenes.gen.js'
-import { DIFFS, HIT_MIN, HIT_PAD, PICTURES, wrongCost, wrongCosts, clickArea, hitDiff, makePictures, pictureScore, runScore, type PictureResult } from './scoring'
+import { DIFFS, HIT_MIN, HIT_PAD, PER_FIND, PICTURES, wrongCost, wrongCosts, clickArea, hitDiff, makePictures, pictureScore, runScore, type PictureResult } from './scoring'
 
 const res = (found: number, leftMs: number | null, wrong = 0, penalty = wrong): PictureResult => ({ scene: 'x', found, leftMs, wrong, penalty, skipped: false })
 
@@ -71,18 +71,18 @@ describe('hitDiff', () => {
 })
 
 describe('scoring', () => {
-  it('10 points per difference found in time, plus whole seconds left when all 5 are found', () => {
-    expect(pictureScore(res(5, 20_900))).toBe(70)
-    expect(pictureScore(res(4, null))).toBe(40)
+  it('20 points per difference found in time, plus whole seconds left when all 5 are found', () => {
+    expect(pictureScore(res(5, 20_900))).toBe(120)
+    expect(pictureScore(res(4, null))).toBe(80)
     expect(pictureScore(res(0, null))).toBe(0)
-    expect(pictureScore(res(5, null))).toBe(50) // all found, the last one after time ran out: no bonus
+    expect(pictureScore(res(5, null))).toBe(100) // all found, the last one after time ran out: no bonus
   })
 
   it('wrong clicks cost 1, 3, 5, 7, then 10 each, counted over the whole run', () => {
     expect([1, 2, 3, 4, 5, 6, 7, 8, 9].map(wrongCost)).toEqual([1, 3, 5, 7, 10, 10, 10, 10, 10])
     expect(wrongCosts(0, 3)).toBe(9)
     expect(wrongCosts(3, 2)).toBe(17) // the 4th and 5th of the run, even in a new picture
-    expect(pictureScore(res(5, 20_900, 2, wrongCosts(0, 2)))).toBe(70 - 4)
+    expect(pictureScore(res(5, 20_900, 2, wrongCosts(0, 2)))).toBe(120 - 4)
   })
 
   it('the run never goes below 0; random clicking ends at 0', () => {
@@ -90,12 +90,12 @@ describe('scoring', () => {
     expect(runScore([res(1, null, 150, wrongCosts(0, 150)), res(1, null, 150, wrongCosts(150, 150))])).toBe(0)
   })
 
-  it('from the 5th miss a guess costs as much as a find is worth', () => {
-    expect(wrongCost(5)).toBeGreaterThanOrEqual(10)
+  it('from the 5th miss a guess costs half of what a find is worth', () => {
+    expect(wrongCost(5)).toBe(PER_FIND / 2)
   })
 
   it('a complete slow picture beats 4 quick finds; the run is the sum', () => {
     expect(pictureScore(res(5, 1000))).toBeGreaterThan(pictureScore(res(4, null)))
-    expect(runScore([res(5, 10_000), res(4, null), res(1, null)])).toBe(60 + 40 + 10)
+    expect(runScore([res(5, 10_000), res(4, null), res(1, null)])).toBe(110 + 80 + 20)
   })
 })
