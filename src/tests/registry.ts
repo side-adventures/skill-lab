@@ -38,7 +38,7 @@ export const TESTS: TestDefinition[] = [
   {
     id: 'visual-memory',
     name: 'Pattern Memory',
-    icon: '🧩',
+    icon: '💡',
     category: 'Memory',
     tagline: 'Remember which tiles lit up.',
     skill: 'short-term visual memory',
@@ -711,13 +711,14 @@ export const PROTOTYPES: TestDefinition[] = [
     tagline: 'Find the missing piece of a 3 × 3 grid of figures.',
     skill: 'reasoning with several rules at once',
     howTo: [
-      'You see a 3 × 3 grid with the last cell missing. Shape, number, size, fill, the dots around the edge and the background stripes follow rules along the rows or down the columns.',
-      'Click the cell that completes the grid, or press 1–8.',
+      'You see a 3 × 3 grid with the last cell missing.',
+      'Shape, number, size, fill, the dots around the edge and the background stripes follow rules along the rows or down the columns.',
+      'Click the cell that completes the grid.',
       'You have 5 minutes: solve as many as you can. The rules get harder as you progress.',
+      'A wrong answer takes time off the clock and gives you a new puzzle: 15 s minus the time you already spent on it, but at least 5 s.',
     ],
     scoring: [
       'Your number of puzzles solved.',
-      'Each wrong answer costs time: 15 s minus the time you already spent on that puzzle, but at least 5 s.',
     ],
     durationHint: '5 min',
     scoreLabel: 'Puzzles solved',

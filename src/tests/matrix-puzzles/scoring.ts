@@ -238,10 +238,14 @@ function makeRules(spec: LevelSpec, rand: Rand): Rule[] {
   return rules
 }
 
-export function makePuzzle(level: number, rand: Rand = Math.random): Puzzle {
+/**
+ * A new puzzle for `level`. With `keep` (the rules of a puzzle just answered wrong), it uses the same rules with new
+ * values, so a quick wrong guess can't swap a hard puzzle for an easier one; new rules if those find no valid grid.
+ */
+export function makePuzzle(level: number, rand: Rand = Math.random, keep?: Rule[]): Puzzle {
   const spec = levelSpec(level)
-  for (;;) {
-    const rules = makeRules(spec, rand)
+  for (let tries = 0; ; tries++) {
+    const rules = keep && tries < 200 ? keep.map((r) => ({ ...r })) : makeRules(spec, rand)
     const ruleOf = (a: Attr) => rules.find((r) => r.attr === a)
     const g = {} as Record<Attr, number[]>
     for (const a of ATTRS) {

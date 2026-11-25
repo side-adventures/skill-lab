@@ -89,6 +89,15 @@ describe('matrix puzzles: generation', () => {
     expect(makePuzzle(2).stripes).toBe(true)
   })
 
+  it('a retry keeps the rules (kind, feature, direction) with new values', () => {
+    for (let n = 0; n < 300; n++) {
+      const first = makePuzzle(1 + (n % 5))
+      const again = makePuzzle(first.level, Math.random, first.rules)
+      expect(again.rules).toEqual(first.rules)
+      expect(isUnique(again.cells)).toBe(true)
+    }
+  })
+
   it('a wrong answer costs at least 15 s on the puzzle, and always at least 5 s', () => {
     expect(penaltyMs(0)).toBe(PENALTY_MS)
     expect(penaltyMs(6_000)).toBe(9_000)

@@ -5,9 +5,8 @@ import { feedbackRing, useAnswerFlash, useContinue } from '../../lib/game'
 import { useLatest } from '../../lib/hooks'
 import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
-import { DURATION_MS, levelOf, makePuzzle, penaltyMs, type Cell } from './scoring'
+import { DURATION_MS, PENALTY_MS, levelOf, makePuzzle, penaltyMs, type Cell, type Rule } from './scoring'
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8']
 /** Answers in the first moment after a new puzzle shows are ignored, so a double click can't answer it unseen. */
 const INPUT_LOCK_MS = 400
 
@@ -117,6 +116,9 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
   const shownAt = useRef(0)
   const solveTimes = useRef<number[]>([])
   const highest = useRef(1)
+  // A quick miss (under 15 s) gets the same rules once more with new values, so guessing can't skip a hard puzzle.
+  const retryRules = useRef<Rule[] | undefined>(undefined)
+  const isRetry = useRef(false)
   useEffect(() => {
     shownAt.current = performance.now()
   }, [puzzle])
@@ -128,9 +130,9 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
       ...(solved + wrong === 0 && { failed: 'No answers — try again!' }),
       details: {
         stats: [
-          { label: 'Highest level', value: String(highest.current) },
           { label: 'Wrong answers', value: wrong ? `${wrong} (−${Math.round(lost / 1000)} s)` : '0' },
           ...(times.length ? [{ label: 'Avg time per solved puzzle', value: fmtMs(times.reduce((a, b) => a + b, 0) / times.length) }] : []),
+          { label: 'Highest level', value: String(highest.current) },
         ],
       },
     })
@@ -138,10 +140,11 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
 
   const remaining = useRunClock(DURATION_MS, phase === 'play', lost, finish)
 
-  const next = (s: number) => {
+  const next = (s: number, keep?: Rule[]) => {
     const level = levelOf(s)
     highest.current = Math.max(highest.current, level)
-    setPuzzle(makePuzzle(level))
+    isRetry.current = !!keep
+    setPuzzle(makePuzzle(level, Math.random, keep))
   }
 
   // The mistake stays on screen until you go on (click anywhere, Enter or Space); the clock waits.
@@ -150,7 +153,7 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
       if (remaining <= 0) return finish()
       setPicked(null)
       setPhase('play')
-      next(solved)
+      next(solved, retryRules.current)
     },
     { enabled: phase === 'reveal' },
   )
@@ -161,6 +164,7 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
     if (spent < INPUT_LOCK_MS) return
     if (i !== puzzle.answer) {
       const cost = Math.min(penaltyMs(spent), remaining)
+      retryRules.current = spent < PENALTY_MS && !isRetry.current ? puzzle.rules : undefined
       setWrong((w) => w + 1)
       setLost((l) => l + cost)
       setPicked({ i, cost })
@@ -174,19 +178,6 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
     setSolved(s)
     next(s)
   }
-  const answerRef = useLatest(answer)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return
-      const i = KEYS.indexOf(e.key)
-      if (i < 0) return
-      e.preventDefault()
-      answerRef.current(i)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [answerRef])
-
   const secs = Math.ceil(remaining / 1000)
   return (
     <>
@@ -220,7 +211,7 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
                 <p className="-mt-2 text-center text-xs text-rose-300">Your answer</p>
                 <p className="-mt-2 text-center text-xs text-emerald-300">Right answer</p>
               </div>
-              <p className="mt-auto text-center text-sm text-zinc-500">
+              <p className="mt-auto text-center text-xs text-zinc-600">
                 {remaining > 0 ? 'Click anywhere to continue' : 'Click anywhere to see your result'}
               </p>
             </div>
@@ -235,11 +226,10 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
                     e.preventDefault()
                     answer(i)
                   }}
-                  className="play-area relative cursor-pointer overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 transition-colors hover:border-zinc-500"
+                  className="play-area cursor-pointer overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 transition-colors hover:border-zinc-500"
                   style={stripes(c.stripe, !plain)}
                 >
                   <CellView cell={c} />
-                  <span className="absolute top-[24%] left-1 rounded bg-zinc-900/80 px-0.5 text-[11px] font-medium text-zinc-500">{KEYS[i]}</span>
                 </button>
               ))}
             </div>
