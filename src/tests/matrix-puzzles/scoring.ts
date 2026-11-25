@@ -2,8 +2,8 @@ import { randInt, shuffle, type Rand } from '../../lib/random'
 
 /** A run lasts 5 minutes: solve as many puzzles as you can. */
 export const DURATION_MS = 300_000
-/** Solved puzzles per level. */
-export const PER_LEVEL = 2
+/** Solved puzzles at which each level starts: 2 puzzles on levels 1 and 2, 3 on levels 3 and 4, then level 5. */
+export const LEVEL_AT = [0, 2, 4, 7, 10]
 /**
  * A wrong answer costs at least PENALTY_MS on that puzzle: the time already spent counts towards it, but the clock
  * always loses at least MIN_PENALTY_MS. A quick guess costs the whole PENALTY_MS, so random guessing doesn't pay.
@@ -45,6 +45,8 @@ export interface Rule { attr: Attr; kind: RuleKind; dir: Dir; step?: number }
 
 export interface Puzzle {
   level: number
+  /** False: the cells have a plain background (the `stripe` values are then not drawn). */
+  stripes: boolean
   rules: Rule[]
   /** 3 × 3, row by row; the last one is the answer. */
   cells: Cell[]
@@ -52,16 +54,19 @@ export interface Puzzle {
   answer: number
 }
 
-export const levelOf = (solved: number) => Math.min(LEVELS.length, 1 + Math.floor(solved / PER_LEVEL))
+export const levelOf = (solved: number) => LEVEL_AT.filter((n) => solved >= n).length
 
-/** What each level may use. Level 3 adds a 3rd feature and dots A + B = C, 4 columns and xor, 5 everything. */
-interface LevelSpec { changing: number; attrs: Attr[]; twists: RuleKind[]; cols: boolean }
+/**
+ * What each level may use. Level 1 has no background stripes at all; 3 adds a 3rd feature and dots A + B = C,
+ * 4 columns and xor, 5 everything.
+ */
+interface LevelSpec { changing: number; attrs: Attr[]; twists: RuleKind[]; cols: boolean; stripes: boolean }
 const LEVELS: LevelSpec[] = [
-  { changing: 1, attrs: FIGURE, twists: [], cols: false },
-  { changing: 2, attrs: ATTRS, twists: [], cols: false },
-  { changing: 3, attrs: ATTRS, twists: ['or'], cols: false },
-  { changing: 3, attrs: ATTRS, twists: ['or', 'xor'], cols: true },
-  { changing: 3, attrs: ATTRS, twists: ['or', 'xor', 'rowcol'], cols: true },
+  { changing: 1, attrs: FIGURE, twists: [], cols: false, stripes: false },
+  { changing: 2, attrs: ATTRS, twists: [], cols: false, stripes: true },
+  { changing: 3, attrs: ATTRS, twists: ['or'], cols: false, stripes: true },
+  { changing: 3, attrs: ATTRS, twists: ['or', 'xor'], cols: true, stripes: true },
+  { changing: 3, attrs: ATTRS, twists: ['or', 'xor', 'rowcol'], cols: true, stripes: true },
 ]
 export const levelSpec = (level: number) => LEVELS[Math.min(level, LEVELS.length) - 1]
 
@@ -263,6 +268,7 @@ export function makePuzzle(level: number, rand: Rand = Math.random): Puzzle {
     const wrongs: number[] = []
     for (const a of [...changing, ...fixed]) {
       if (optAttrs.length === 3) break
+      if (a === 'stripe' && !spec.stripes) continue
       if (a === 'size' && (answerCell.count > 1 || optAttrs.includes('count'))) continue
       if (a === 'count' && (answerCell.size !== 1 || optAttrs.includes('size'))) continue
       const w = wrongValue(a, cells, ruleOf(a), rand)
@@ -274,7 +280,7 @@ export function makePuzzle(level: number, rand: Rand = Math.random): Puzzle {
     let opts: Cell[] = [answerCell]
     optAttrs.forEach((a, i) => { opts = opts.flatMap((o) => [o, { ...o, [a]: wrongs[i] }]) })
     const options = shuffle(opts, rand)
-    return { level, rules, cells, options, answer: options.findIndex((o) => sameCell(o, answerCell)) }
+    return { level, stripes: spec.stripes, rules, cells, options, answer: options.findIndex((o) => sameCell(o, answerCell)) }
   }
 }
 
@@ -300,7 +306,7 @@ export function describeRules(p: Puzzle): string[] {
     const word = { count: ['one more', 'one fewer'], size: ['one size bigger', 'one size smaller'], fill: ['one step lighter', 'one step darker'] }[attr as 'count' | 'size' | 'fill']
     return `${name}: ${word[s > 0 ? 0 : 1]} per cell, ${along}`
   })
-  const fixed = ATTRS.filter((a) => !p.rules.some((r) => r.attr === a) && !(a === 'size' && p.cells.some((c) => c.count > 1)))
+  const fixed = ATTRS.filter((a) => !p.rules.some((r) => r.attr === a) && !(a === 'size' && p.cells.some((c) => c.count > 1)) && !(a === 'stripe' && !p.stripes))
   if (fixed.length) lines.push(`Always the same: ${fixed.map((a) => NAME[a].toLowerCase()).join(', ')}`)
   return lines
 }

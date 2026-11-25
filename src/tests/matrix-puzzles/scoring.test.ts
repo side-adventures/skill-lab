@@ -76,8 +76,18 @@ describe('matrix puzzles: generation', () => {
     expect(rot(0b10000001, 1)).toBe(0b11)
   })
 
-  it('levels: 2 solved each, 5 levels', () => {
-    expect([0, 1, 2, 4, 6, 8, 30].map(levelOf)).toEqual([1, 1, 2, 3, 4, 5, 5])
+  it('levels: 2, 2, 3, 3 solved puzzles, then level 5', () => {
+    expect([0, 1, 2, 3, 4, 6, 7, 9, 10, 30].map(levelOf)).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5])
+  })
+
+  it('level 1 has no stripes: no option differs in them, and the rules do not mention them', () => {
+    for (let n = 0; n < 300; n++) {
+      const p = makePuzzle(1)
+      expect(p.stripes).toBe(false)
+      expect(new Set(p.options.map((o) => o.stripe)).size).toBe(1)
+      expect(describeRules(p).join(' ')).not.toMatch(/stripes/i)
+    }
+    expect(makePuzzle(2).stripes).toBe(true)
   })
 
   it('a wrong answer costs at least 15 s on the puzzle, and always at least 5 s', () => {
