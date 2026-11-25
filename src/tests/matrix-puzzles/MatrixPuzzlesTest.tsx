@@ -110,8 +110,10 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
   const [lost, setLost] = useState(0)
   const [puzzle, setPuzzle] = useState(() => makePuzzle(1))
   const [phase, setPhase] = useState<Phase>('play')
-  // After a mistake: the picked option and the time it cost; the right one shows in green.
+  // After an answer: the picked option and the time it cost (0 when right); the right one shows in green.
+  // Prototype: the rules screen also shows after a right answer, so puzzles can be checked.
   const [picked, setPicked] = useState<{ i: number; cost: number } | null>(null)
+  const right = picked !== null && picked.i === puzzle.answer
   const [flash, signal] = useAnswerFlash()
   const shownAt = useRef(0)
   const solveTimes = useRef<number[]>([])
@@ -143,7 +145,7 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
     setPuzzle(makePuzzle(level))
   }
 
-  // The mistake stays on screen with the rules until you go on (click anywhere, Enter or Space); the clock waits.
+  // The answer stays on screen with the rules until you go on (click anywhere, Enter or Space); the clock waits.
   useContinue(
     () => {
       if (remaining <= 0) return finish()
@@ -169,9 +171,9 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
     }
     solveTimes.current.push(spent)
     signal(true)
-    const s = solved + 1
-    setSolved(s)
-    next(s)
+    setSolved((s) => s + 1)
+    setPicked({ i, cost: 0 })
+    setPhase('reveal')
   }
   const answerRef = useLatest(answer)
   useEffect(() => {
@@ -191,7 +193,11 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
     <>
       <GameInfo
         left={<><InfoValue value={`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`} unit="left" /><InfoValue label="Level" value={puzzle.level} /></>}
-        middle={picked ? <span className="text-rose-300">Not this one · −{Math.round(picked.cost / 1000)} s</span> : 'Which figure completes the grid?'}
+        middle={
+          !picked ? 'Which figure completes the grid?'
+          : right ? <span className="text-emerald-300">Correct</span>
+          : <span className="text-rose-300">Not this one · −{Math.round(picked.cost / 1000)} s</span>
+        }
         right={<InfoValue label="Solved" value={solved} />}
         timer={remaining / DURATION_MS}
       />
@@ -213,12 +219,19 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
         panel={
           picked ? (
             <div className="flex h-full flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <CellBox cell={puzzle.options[picked.i]} className="aspect-square border-2 border-rose-400" />
-                <CellBox cell={puzzle.options[puzzle.answer]} className="aspect-square border-2 border-emerald-400" />
-                <p className="-mt-2 text-center text-xs text-rose-300">Your answer</p>
-                <p className="-mt-2 text-center text-xs text-emerald-300">Right answer</p>
-              </div>
+              {right ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <CellBox cell={puzzle.options[puzzle.answer]} className="aspect-square border-2 border-emerald-400" />
+                  <p className="self-center text-sm text-emerald-300">Your answer is right</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <CellBox cell={puzzle.options[picked.i]} className="aspect-square border-2 border-rose-400" />
+                  <CellBox cell={puzzle.options[puzzle.answer]} className="aspect-square border-2 border-emerald-400" />
+                  <p className="-mt-2 text-center text-xs text-rose-300">Your answer</p>
+                  <p className="-mt-2 text-center text-xs text-emerald-300">Right answer</p>
+                </div>
+              )}
               <ul className="space-y-1 text-sm text-zinc-300">
                 {describeRules(puzzle).map((line) => <li key={line}>{line}</li>)}
               </ul>
