@@ -78,11 +78,11 @@ describe('scoring', () => {
     expect(pictureScore(res(5, null))).toBe(100) // all found, the last one after time ran out: no bonus
   })
 
-  it('wrong clicks cost 1, 3, 5, 7, then 10 each, counted over the whole run', () => {
-    expect([1, 2, 3, 4, 5, 6, 7, 8, 9].map(wrongCost)).toEqual([1, 3, 5, 7, 10, 10, 10, 10, 10])
-    expect(wrongCosts(0, 3)).toBe(9)
-    expect(wrongCosts(3, 2)).toBe(17) // the 4th and 5th of the run, even in a new picture
-    expect(pictureScore(res(5, 20_900, 2, wrongCosts(0, 2)))).toBe(120 - 4)
+  it('wrong clicks cost 1, 5, 10, 15, then 20 each, counted over the whole run', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 8, 9].map(wrongCost)).toEqual([1, 5, 10, 15, 20, 20, 20, 20, 20])
+    expect(wrongCosts(0, 3)).toBe(16)
+    expect(wrongCosts(3, 2)).toBe(35) // the 4th and 5th of the run, even in a new picture
+    expect(pictureScore(res(5, 20_900, 2, wrongCosts(0, 2)))).toBe(120 - 6)
   })
 
   it('the run never goes below 0; random clicking ends at 0', () => {
@@ -90,8 +90,8 @@ describe('scoring', () => {
     expect(runScore([res(1, null, 150, wrongCosts(0, 150)), res(1, null, 150, wrongCosts(150, 150))])).toBe(0)
   })
 
-  it('from the 5th miss a guess costs half of what a find is worth', () => {
-    expect(wrongCost(5)).toBe(PER_FIND / 2)
+  it('from the 5th miss a guess costs as much as a find is worth', () => {
+    expect(wrongCost(5)).toBe(PER_FIND)
   })
 
   it('a complete slow picture beats 4 quick finds; the run is the sum', () => {
