@@ -5,7 +5,7 @@ import { feedbackRing, useAnswerFlash, useContinue } from '../../lib/game'
 import { useLatest } from '../../lib/hooks'
 import { fmtMs } from '../../lib/resultFormat'
 import type { TestComponentProps } from '../types'
-import { DURATION_MS, describeRules, levelOf, makePuzzle, penaltyMs, type Cell } from './scoring'
+import { DURATION_MS, levelOf, makePuzzle, penaltyMs, type Cell } from './scoring'
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8']
 /** Answers in the first moment after a new puzzle shows are ignored, so a double click can't answer it unseen. */
@@ -144,7 +144,7 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
     setPuzzle(makePuzzle(level))
   }
 
-  // The mistake stays on screen with the rules until you go on (click anywhere, Enter or Space); the clock waits.
+  // The mistake stays on screen until you go on (click anywhere, Enter or Space); the clock waits.
   useContinue(
     () => {
       if (remaining <= 0) return finish()
@@ -220,9 +220,6 @@ export default function MatrixPuzzlesTest({ onFinish }: TestComponentProps) {
                 <p className="-mt-2 text-center text-xs text-rose-300">Your answer</p>
                 <p className="-mt-2 text-center text-xs text-emerald-300">Right answer</p>
               </div>
-              <ul className="space-y-1 text-sm text-zinc-300">
-                {describeRules(puzzle).map((line) => <li key={line}>{line}</li>)}
-              </ul>
               <p className="mt-auto text-center text-sm text-zinc-500">
                 {remaining > 0 ? 'Click anywhere to continue' : 'Click anywhere to see your result'}
               </p>
