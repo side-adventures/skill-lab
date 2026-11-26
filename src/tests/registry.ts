@@ -812,6 +812,31 @@ export const HIDDEN: TestDefinition[] = [
     layout: 'full',
     Component: lazyTest(() => import('./password-lab/PasswordLabTest')),
   },
+  {
+    // A practice tool, not a real test: random puzzles from new figure ideas for Matrix Puzzles (see matrix-lab/lab.ts).
+    id: 'matrix-lab',
+    name: 'Matrix Lab',
+    icon: '🧪',
+    category: 'Thinking',
+    tagline: 'Try new kinds of matrix puzzles, to tune Matrix Puzzles.',
+    skill: 'nothing yet: it tries out new figures and rules',
+    howTo: [
+      'Each puzzle is a 3 × 3 grid with the last cell missing. Click the option that completes it.',
+      'After each answer you see the right one and the rules behind the puzzle.',
+      'On the right you pick which figures and rules may come up.',
+      'No time limit, no end: stop with Finish whenever you like. The log keeps your times per rule in this browser.',
+    ],
+    scoring: [
+      'Your number of right answers in this visit.',
+    ],
+    durationHint: 'as long as you like',
+    scoreLabel: 'Right answers this visit',
+    higherIsBetter: true,
+    formatScore: (s) => count(s, 'right answer'),
+    start: 'none',
+    layout: 'full',
+    Component: lazyTest(() => import('./matrix-lab/MatrixLabTest')),
+  },
 ]
 
 export const getTest = (id: string) => [...TESTS, ...PROTOTYPES, ...HIDDEN].find((t) => t.id === id)
