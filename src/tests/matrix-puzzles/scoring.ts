@@ -100,7 +100,12 @@ const three = (attr: Attr, rand: Rand) => (attr === 'dots' ? distinctMasks(3, 1,
 function grid(rule: Rule, rand: Rand): number[] {
   const { attr, kind } = rule
   let g: number[]
-  if (kind === 'same') g = three(attr, rand).flatMap((v) => [v, v, v])
+  if (kind === 'same') {
+    // Sometimes two lines share a value, so "the value seen exactly twice" isn't always the answer.
+    const t = three(attr, rand)
+    if (rand() < 0.35) t[rand() < 0.5 ? 2 : 1] = t[0]
+    g = t.flatMap((v) => [v, v, v])
+  }
   else if (kind === 'three') {
     const t = three(attr, rand)
     const shift = pick([1, 2], rand)
@@ -114,7 +119,10 @@ function grid(rule: Rule, rand: Rand): number[] {
     } else {
       const [lo, hi] = RANGE[attr]
       const starts = shuffle(values(attr).filter((v) => v + 2 * step >= lo && v + 2 * step <= hi), rand)
-      g = [0, 1, 2].flatMap((r) => [0, 1, 2].map((c) => starts[r % starts.length] + c * step))
+      // Sometimes two lines start the same (never all three).
+      const rows = [0, 1, 2].map((r) => starts[r % starts.length])
+      if (starts.length > 1 && rand() < 0.35) rows[rand() < 0.5 ? 2 : 1] = rows[0]
+      g = rows.flatMap((s0) => [0, 1, 2].map((c) => s0 + c * step))
     }
   } else if (kind === 'or' || kind === 'xor') {
     g = [0, 1, 2].flatMap(() => {
@@ -189,25 +197,37 @@ export function isUnique(cells: Cell[]) {
 
 // ---- options ---------------------------------------------------------------------------------------------------------
 
-/** A wrong value for the answer's feature: a slip of the rule, a neighbour, or a value from the last row / column. */
-function wrongValue(attr: Attr, cells: Cell[], rule: Rule | undefined, rand: Rand) {
+/**
+ * Wrong values for one feature, as a player who misreads the rule would pick them: the other way of combining dots,
+ * the rule read the other way (rows / columns), a step too far or the wrong way, a dot moved, a value from the last
+ * line. Among those, the ones that show in the 8 cells about as often as the answer come first, so counting how often
+ * a value shows ("a dot pattern not in the grid yet", "the value seen twice") doesn't find the answer.
+ */
+export function wrongValues(attr: Attr, cells: Cell[], rule: Rule | undefined, n: number, rand: Rand): number[] | undefined {
   const a = cells[8][attr]
-  const near = [cells[2], cells[5], cells[6], cells[7]].map((c) => c[attr])
+  const v = (i: number) => cells[i][attr]
+  const near = [2, 5, 6, 7].map(v)
+  // The last line's two cells, along the rule and across it.
+  const [x, y] = rule?.dir === 'col' ? [v(2), v(5)] : [v(6), v(7)]
+  const [p, q] = rule?.dir === 'col' ? [v(6), v(7)] : [v(2), v(5)]
   let cands: number[]
   if (attr === 'dots') {
-    const [x, y] = rule?.dir === 'col' ? [cells[2].dots, cells[5].dots] : [cells[6].dots, cells[7].dots]
-    const flips = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => a ^ (1 << i)).filter((m) => bits(m) >= 1 && bits(m) <= Math.max(3, bits(a)))
-    cands = [...near, ...flips]
-    // The other way of combining is the strongest distractor.
-    if (rule?.kind === 'or') cands = [x ^ y, x ^ y, ...cands]
-    if (rule?.kind === 'xor') cands = [x | y, x | y, ...cands]
-    if (rule?.kind === 'step') cands = [rot(a, rule.step!), rot(a, -rule.step!), ...cands]
+    const moved = [0, 1, 2, 3, 4, 5, 6, 7].filter((i) => (a >> i) & 1).flatMap((i) => [-1, 1].map((d) => (a & ~(1 << i)) | (1 << ((i + d + 8) % 8))))
+    const flips = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => a ^ (1 << i))
+    const ops = (s: number, t: number) => [s | t, s ^ t, s & t, s & ~t & 255, t & ~s & 255]
+    cands = [...ops(x, y), ...ops(p, q), rot(a, 1), rot(a, -1), rot(a, 4), ...moved, ...flips, ...near]
+    if (rule?.kind === 'step') cands.push(rot(y, -rule.step!), rot(y, 2 * rule.step!), rot(y, rule.step! > 0 ? rule.step! + 1 : rule.step! - 1))
   } else {
-    cands = [a - 1, a + 1, ...near].map((v) => wrap(attr, v))
-    if (rule?.kind === 'step') cands.push(wrap(attr, a + rule.step!), wrap(attr, a - 2 * rule.step!))
+    const k = rule?.kind === 'step' ? rule.step! : 1
+    cands = [y + k, y + 2 * k + k, y - k, q + k, a - 1, a + 1, a - 2, a + 2, ...near, ...values(attr)].map((w) => wrap(attr, w))
   }
-  const ok = cands.filter((v) => v !== a && (attr === 'dots' ? v > 0 : inRange(attr, v)))
-  return ok.length ? pick(ok, rand) : undefined
+  const seen = (w: number) => cells.slice(0, 8).filter((c) => c[attr] === w).length
+  const ok = [...new Set(cands)].filter((w) => w !== a && (attr === 'dots' ? w > 0 && bits(w) <= 6 : inRange(attr, w)))
+  if (ok.length < n) return undefined
+  const sa = seen(a)
+  // Closest in how often it shows first; earlier (more plausible) candidates win ties, with a little shuffling.
+  const keyed = ok.map((w, i) => ({ w, k: Math.abs(seen(w) - sa) * 100 + i / ok.length * 10 + rand() * 4 }))
+  return keyed.sort((m, o) => m.k - o.k).slice(0, n).map((m) => m.w)
 }
 
 // ---- puzzles ---------------------------------------------------------------------------------------------------------
@@ -262,27 +282,36 @@ export function makePuzzle(level: number, rand: Rand = Math.random, keep?: Rule[
     const cells: Cell[] = Array.from({ length: 9 }, (_, i) => Object.fromEntries(ATTRS.map((a) => [a, g[a][i]])) as unknown as Cell)
     if (!isUnique(cells)) continue
 
-    // 8 options = 2 × 2 × 2 values on three features (I-RAVEN): every value is in exactly half the options, so the
-    // answer can't be found from the options alone. Changing features first. Number and size are never both used
-    // (with 2+ copies the size doesn't show), and number only when the answer is medium-sized for the same reason.
+    // 8 options from the changing features only, so a glance at a feature that never changes rules none out:
+    // 2 × 2 × 2 values with 3 changing features (I-RAVEN: every value in exactly half the options), 4 × 2 with 2.
+    // With 1 (level 1): 4 values of it × 2 of a fixed feature. Number and size are never both used (with 2+ copies
+    // the size doesn't show), and number only when the answer is medium-sized for the same reason.
     const answerCell = cells[8]
-    const changing = shuffle(rules.map((r) => r.attr), rand)
+    const usable = (a: Attr, used: Attr[]) =>
+      !(a === 'stripe' && !spec.stripes) &&
+      !(a === 'size' && (answerCell.count > 1 || used.includes('count'))) &&
+      !(a === 'count' && (answerCell.size !== 1 || used.includes('size')))
+    const changing = shuffle(rules.map((r) => r.attr), rand).filter((a) => usable(a, []))
     const fixed = shuffle(ATTRS.filter((a) => !ruleOf(a)), rand)
-    const optAttrs: Attr[] = []
-    const wrongs: number[] = []
-    for (const a of [...changing, ...fixed]) {
-      if (optAttrs.length === 3) break
-      if (a === 'stripe' && !spec.stripes) continue
-      if (a === 'size' && (answerCell.count > 1 || optAttrs.includes('count'))) continue
-      if (a === 'count' && (answerCell.size !== 1 || optAttrs.includes('size'))) continue
-      const w = wrongValue(a, cells, ruleOf(a), rand)
-      if (w === undefined) continue
-      optAttrs.push(a)
-      wrongs.push(w)
+    const shapes = changing.length >= 3 ? [[2, 2, 2]] : changing.length === 2 ? [[4, 2], [2, 4]] : [[4, 2]]
+    let plan: { attr: Attr; vals: number[] }[] | undefined
+    for (const sizes of shapes) {
+      const attrs = changing.length >= 2 ? changing.slice(0, sizes.length) : [changing[0], ...fixed.filter((a) => usable(a, changing))]
+      if (attrs[0] === undefined) break
+      const out: { attr: Attr; vals: number[] }[] = []
+      for (const a of attrs) {
+        const k = sizes[out.length]
+        if (k === undefined) break
+        if (!usable(a, out.map((o) => o.attr))) continue
+        const w = wrongValues(a, cells, ruleOf(a), k - 1, rand)
+        if (w) out.push({ attr: a, vals: [answerCell[a], ...w] })
+        else if (changing.length >= 2 || out.length === 0) break
+      }
+      if (out.length === sizes.length) { plan = out; break }
     }
-    if (optAttrs.length < 3) continue
+    if (!plan) continue
     let opts: Cell[] = [answerCell]
-    optAttrs.forEach((a, i) => { opts = opts.flatMap((o) => [o, { ...o, [a]: wrongs[i] }]) })
+    for (const { attr, vals } of plan) opts = opts.flatMap((o) => vals.map((w) => ({ ...o, [attr]: w })))
     const options = shuffle(opts, rand)
     return { level, stripes: spec.stripes, rules, cells, options, answer: options.findIndex((o) => sameCell(o, answerCell)) }
   }
