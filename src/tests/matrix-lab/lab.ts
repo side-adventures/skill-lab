@@ -24,7 +24,7 @@ export const KIND_NAMES: Record<Kind, string> = {
  * - shape 0–8, count 1–8, fill 0–2 (black, grey, white): the copies;
  * - order: 3 shape ids, drawn left to right;
  * - nest: [outer, inner] shape ids; ofill / ifill: their fills;
- * - set: bit mask over the 9 shapes (1–4 small shapes);
+ * - set: bit mask over 4 fixed slots (2 × 2), each slot always holding the same shape (`LabPuzzle.setShapes`);
  * - quad: 4 colours (0 black, 1 grey, 2 white): top left, top right, bottom left, bottom right;
  * - dots: bit mask over the 8 edge spots (bit 0 top left, clockwise); stripe: −1 none, 0–3 direction.
  */
@@ -73,15 +73,9 @@ export const PARTS: Record<Part, PartType> = {
     near: (v) => bitsOf(v as number, 8).flatMap((i) => [-1, 1].map((d) => ((v as number) & ~(1 << i)) | (1 << ((i + d + 8) % 8)))),
   },
   set: {
-    valid: (v) => typeof v === 'number' && v > 0 && bitCount(v) <= 4,
-    ops: maskOps.map((f) => (a: Val, b: Val) => f(a as number, b as number) & 511),
-    near: (v, rand) => {
-      const m = v as number
-      const out = bitsOf(m, 9).map((i) => m & ~(1 << i))
-      const other = pick(bitsOf(~m & 511, 9), rand)
-      out.push(m | (1 << other), ...bitsOf(m, 9).map((i) => (m & ~(1 << i)) | (1 << other)))
-      return out
-    },
+    valid: (v) => typeof v === 'number' && v > 0 && v < 16,
+    ops: maskOps.map((f) => (a: Val, b: Val) => f(a as number, b as number) & 15),
+    near: (v) => [0, 1, 2, 3].map((i) => (v as number) ^ (1 << i)),
   },
   order: {
     valid: (v) => Array.isArray(v) && v.length === 3,
@@ -238,14 +232,21 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
         return { part, id: 'nest:parts', text: `Shape in shape: the outer and the inner shape each follow their own rule (outer ${along(dir)}, inner ${along(d2)})`, dir, hard: false, grid: o.map((v, n) => [v as number, i[n] as number]) }
       }
       const pair = () => { const s = shuffle(all, rand); return [[s[0], s[1]], [s[2], s[3]]] as [Val, Val] }
-      if (rand() < 0.6) return combineRule(part, pair, PARTS.nest.ops![0], dir, 'nest:combine', `Shape in shape: the 3rd cell has the outer shape of the 1st and the inner shape of the 2nd, ${along(dir)}`)
+      const k = rand()
+      if (k < 0.3) {
+        // A chain: each cell's inner shape is the next cell's outer shape, so each shape shows twice in a line.
+        const t0 = three3(all)
+        const rowsT = rand() < 0.5 ? [0, 1, 2].map(() => three3(all)) : [t0, [t0[1], t0[2], t0[0]], [t0[2], t0[0], t0[1]]]
+        const g = lines((r) => { const t = rowsT[r]; return [[t[0], t[1]], [t[1], t[2]], [t[2], t[0]]] })
+        return { part, id: 'nest:chain', text: `Shape in shape: each cell's inner shape is the next cell's outer shape, so every shape shows twice ${along(dir)} (once outside, once inside)`, dir, hard: true, grid: orient(g, dir) }
+      }
+      if (k < 0.7) return combineRule(part, pair, PARTS.nest.ops![0], dir, 'nest:combine', `Shape in shape: the 3rd cell has the outer shape of the 1st and the inner shape of the 2nd, ${along(dir)}`)
       const starts = [0, 1, 2].map(() => shuffle(all, rand).slice(0, 2))
       return moveRule(part, starts, [PARTS.nest.moves![0], PARTS.nest.moves![0]], dir, 'nest:swap', `Shape in shape: inside and outside swap from cell to cell, ${along(dir)}`, true)
     }
     case 'set': {
       const or = rand() < 0.5
-      const pool = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 5)
-      const sub = () => maskOf(shuffle(pool, rand).slice(0, randInt(1, 2, rand)))
+      const sub = () => sparse(1, 2, 4, rand)
       return combineRule(part, () => [sub(), sub()], or ? (a, b) => (a as number) | (b as number) : (a, b) => (a as number) ^ (b as number), dir,
         `set:${or ? 'or' : 'xor'}`, or ? `Shape sets: A + B = C ${along(dir)}: the 3rd cell has all shapes of the first two` : `Shape sets: shapes in both of the first two disappear, ${along(dir)}`)
     }
@@ -295,8 +296,10 @@ export interface LabPuzzle {
   cells: LabCell[]
   options: LabCell[]
   answer: number
-  /** The rule the 4-way options split on. */
+  /** The rule the options split on (4 ways, or all 8 when nothing else changes). */
   focus: Part
+  /** Shape sets: the shape in each of the 4 slots (top left, top right, bottom left, bottom right). */
+  setShapes: number[]
 }
 
 /** The parts each kind of figure has, besides dots and stripes. */
@@ -314,7 +317,7 @@ const randomValue = (part: Part, rand: Rand): Val => {
     case 'dots': return sparse(0, 2, 8, rand)
     case 'order': return s9.slice(0, 3)
     case 'nest': return shuffle(ROOMY, rand).slice(0, 2)
-    case 'set': return maskOf(s9.slice(0, 2))
+    case 'set': return 3
     case 'quad': return [0, 1, 2, 3].map(() => randInt(0, 2, rand))
   }
 }
@@ -368,6 +371,7 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
     const parts = [...KIND_PARTS[kind], 'dots', 'stripe'] as Part[]
     const fixed = Object.fromEntries(parts.map((pt) => [pt, randomValue(pt, rand)])) as LabCell
     if (!opts.stripes) fixed.stripe = -1
+    if (opts.dots === 'off') fixed.dots = 0
     if (kind === 'nest' && fixed.ofill === 2) fixed.ifill = 0
     const cells: LabCell[] = Array.from({ length: 9 }, (_, i) => {
       const c: LabCell = { ...fixed }
@@ -384,16 +388,17 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
     const hardOnes = shuffle(rules.filter((r) => r.hard), rand)
     const focusRule = hardOnes[0] ?? pick(rules, rand)
     const others = shuffle(rules.filter((r) => r !== focusRule).map((r) => r.part), rand)
-    const second = [...others, ...shuffle(parts.filter((pt) => !ruleOf(pt) && !(pt === 'stripe' && !opts.stripes)), rand)]
-    const w4 = wrongValues(focusRule, focusRule.part, cells, 3, rand)
-    if (!w4) continue
-    let w2: { part: Part; w: Val } | undefined
-    for (const pt of second) { const w = wrongValues(ruleOf(pt), pt, cells, 1, rand); if (w) { w2 = { part: pt, w: w[0] }; break } }
-    if (!w2) continue
+    // Only parts that change in the grid vary, so a glance at a part that never changes rules nothing out.
+    // With just one changing part, all 8 options differ in it.
     const answerCell = cells[8]
-    const opts8 = [answerCell[focusRule.part]!, ...w4].flatMap((f) => [answerCell[w2!.part]!, w2!.w].map((s) => ({ ...answerCell, [focusRule.part]: f, [w2!.part]: s })))
+    let w2: { part: Part; w: Val } | undefined
+    for (const pt of others) { const w = wrongValues(ruleOf(pt), pt, cells, 1, rand); if (w) { w2 = { part: pt, w: w[0] }; break } }
+    const wf = wrongValues(focusRule, focusRule.part, cells, w2 ? 3 : 7, rand)
+    if (!wf) continue
+    const opts8 = [answerCell[focusRule.part]!, ...wf].flatMap((f) =>
+      (w2 ? [answerCell[w2.part]!, w2.w] : [undefined]).map((s) => ({ ...answerCell, [focusRule.part]: f, ...(w2 && { [w2.part]: s }) })))
     if (kind === 'nest' && opts8.some((o) => o.ofill === o.ifill)) continue
     const options = shuffle(opts8, rand)
-    return { kind, rules, cells, options, answer: options.findIndex((o) => key(o) === key(answerCell)), focus: focusRule.part }
+    return { kind, rules, cells, options, answer: options.findIndex((o) => key(o) === key(answerCell)), focus: focusRule.part, setShapes: shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 4) }
   }
 }

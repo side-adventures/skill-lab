@@ -39,11 +39,12 @@ const SPOTS: [number, number][][] = [
   [[29, 30], [50, 30], [71, 30], [39, 50], [61, 50], [29, 70], [50, 70], [71, 70]],
 ]
 const COPY_R = [17, 10, 10, 9.5, 7.5, 7, 6, 6]
-const SET_SPOTS: [number, number][][] = [[[50, 50]], [[37, 50], [63, 50]], [[28, 50], [50, 50], [72, 50]], [[38, 38], [62, 38], [38, 62], [62, 62]]]
+/** Shape sets: 4 fixed slots, each always holding the same shape. */
+const SET_SLOTS: [number, number][] = [[37, 37], [63, 37], [37, 63], [63, 63]]
 const EDGE: [number, number][] = [[8, 8], [50, 8], [92, 8], [92, 50], [92, 92], [50, 92], [8, 92], [8, 50]]
 const QUAD = ['#09090b', '#71717a', '#f4f4f5']
 
-function Figure({ kind, c }: { kind: LabPuzzle['kind']; c: LabCell }) {
+function Figure({ kind, c, setShapes }: { kind: LabPuzzle['kind']; c: LabCell; setShapes: number[] }) {
   const n = (v: unknown) => v as number
   const l = (v: unknown) => v as number[]
   if (kind === 'copies') {
@@ -56,19 +57,18 @@ function Figure({ kind, c }: { kind: LabPuzzle['kind']; c: LabCell }) {
     return <><Shape s={o} x={50} y={50} r={25} fill={n(c.ofill)} /><Shape s={i} x={50} y={o === 0 ? 55 : 50} r={9} fill={n(c.ifill)} /></>
   }
   if (kind === 'set') {
-    const ids = [0, 1, 2, 3, 4, 5, 6, 7, 8].filter((i) => (n(c.set) >> i) & 1)
-    return <>{ids.map((s, i) => <Shape key={s} s={s} x={SET_SPOTS[ids.length - 1][i][0]} y={SET_SPOTS[ids.length - 1][i][1]} r={ids.length === 4 ? 8 : 9} fill={n(c.fill)} />)}</>
+    return <>{SET_SLOTS.map(([x, y], i) => ((n(c.set) >> i) & 1 ? <Shape key={i} s={setShapes[i]} x={x} y={y} r={9} fill={n(c.fill)} /> : null))}</>
   }
   return <>{l(c.quad).map((v, i) => <rect key={i} x={31 + (i % 2) * 20} y={31 + Math.floor(i / 2) * 20} width={18} height={18} rx={2} fill={QUAD[v]} className="stroke-zinc-200" strokeWidth="1" />)}</>
 }
 
 const stripes = (dir: number): CSSProperties => (dir < 0 ? {} : { backgroundImage: `repeating-linear-gradient(${dir * 45}deg, #3f3f46 0 2px, transparent 2px 12px)` })
 
-function Cell({ kind, c, className = '' }: { kind: LabPuzzle['kind']; c: LabCell; className?: string }) {
+function Cell({ p, c, className = '' }: { p: LabPuzzle; c: LabCell; className?: string }) {
   return (
     <div className={`overflow-hidden rounded-lg border bg-zinc-900 ${className}`} style={stripes(c.stripe as number)}>
       <svg viewBox="0 0 100 100" className="size-full">
-        <Figure kind={kind} c={c} />
+        <Figure kind={p.kind} c={c} setShapes={p.setShapes} />
         {EDGE.map(([x, y], i) => (((c.dots as number) >> i) & 1 ? <circle key={i} cx={x} cy={y} r="3.6" className="fill-violet-400" /> : null))}
       </svg>
     </div>
@@ -172,13 +172,13 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
       <FullLayout className="grid grid-cols-[minmax(0,22rem)_10.5rem_minmax(0,1fr)] items-center gap-3 border border-zinc-800 bg-zinc-900/85 p-3">
         <div className={`grid aspect-square w-full grid-cols-3 gap-1.5 rounded-xl bg-zinc-950/70 p-2 ${feedbackRing(flash)}`}>
           {puzzle.cells.map((c, i) => i < 8 || done
-            ? <Cell key={i} kind={puzzle.kind} c={c} className={i === 8 ? 'border-2 border-emerald-400' : 'border-zinc-800'} />
+            ? <Cell key={i} p={puzzle} c={c} className={i === 8 ? 'border-2 border-emerald-400' : 'border-zinc-800'} />
             : <div key={i} className="grid place-items-center rounded-lg border-2 border-dashed border-zinc-700 text-3xl font-bold text-zinc-600">?</div>)}
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           {puzzle.options.map((c, i) => (
             <button key={i} type="button" className="play-area aspect-square cursor-pointer" onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); answer(i) }}>
-              <Cell kind={puzzle.kind} c={c} className={`size-full ${done && i === puzzle.answer ? 'border-2 border-emerald-400' : done && i === picked ? 'border-2 border-rose-400' : 'border-zinc-700 hover:border-zinc-500'}`} />
+              <Cell p={puzzle} c={c} className={`size-full ${done && i === puzzle.answer ? 'border-2 border-emerald-400' : done && i === picked ? 'border-2 border-rose-400' : 'border-zinc-700 hover:border-zinc-500'}`} />
             </button>
           ))}
         </div>
