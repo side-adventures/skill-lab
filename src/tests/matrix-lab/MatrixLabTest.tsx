@@ -169,8 +169,8 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
         middle={done ? (picked === puzzle.answer ? <span className="text-emerald-300">Right</span> : <span className="text-rose-300">Not this one</span>) : `${KIND_NAMES[puzzle.kind]} · which figure completes the grid?`}
         right={<InfoValue label="Right" value={session.right} />}
       />
-      <FullLayout className="grid grid-cols-[auto_9.5rem_1fr] gap-3 border border-zinc-800 bg-zinc-900/85 p-3">
-        <div className={`grid aspect-square h-full grid-cols-3 gap-1.5 rounded-xl bg-zinc-950/70 p-2 ${feedbackRing(flash)}`}>
+      <FullLayout className="grid grid-cols-[minmax(0,1fr)_9rem_12.5rem] gap-3 border border-zinc-800 bg-zinc-900/85 p-3">
+        <div className={`grid aspect-square h-full max-w-full grid-cols-3 gap-1.5 justify-self-center rounded-xl bg-zinc-950/70 p-2 ${feedbackRing(flash)}`}>
           {puzzle.cells.map((c, i) => i < 8 || done
             ? <Cell key={i} kind={puzzle.kind} c={c} className={i === 8 ? 'border-2 border-emerald-400' : 'border-zinc-800'} />
             : <div key={i} className="grid place-items-center rounded-lg border-2 border-dashed border-zinc-700 text-3xl font-bold text-zinc-600">?</div>)}
