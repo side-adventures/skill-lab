@@ -37,13 +37,13 @@ describe('matrix puzzles: generation', () => {
     })
   }
 
-  it('options are balanced: every value is in exactly half or all of the options', () => {
+  it('options are balanced: every value is in all, half or a quarter of the options', () => {
     for (let n = 0; n < 1500; n++) {
       const p = makePuzzle(1 + (n % 5))
       for (const a of ATTRS) {
         const counts = new Map<number, number>()
         p.options.forEach((o) => counts.set(o[a], (counts.get(o[a]) ?? 0) + 1))
-        expect([...counts.values()].sort().join()).toMatch(/^(8|4,4)$/)
+        expect([...counts.values()].sort().join()).toMatch(/^(8|4,4|2,2,2,2)$/)
       }
     }
   })
@@ -78,6 +78,16 @@ describe('matrix puzzles: generation', () => {
 
   it('levels: 2, 2, 3, 3 solved puzzles, then level 5', () => {
     expect([0, 1, 2, 3, 4, 6, 7, 9, 10, 30].map(levelOf)).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5])
+  })
+
+  it('options only vary features that change in the grid (level 1: plus one fixed feature)', () => {
+    for (let n = 0; n < 1000; n++) {
+      const p = makePuzzle(1 + (n % 5))
+      const varied = ATTRS.filter((a) => new Set(p.options.map((o) => o[a])).size > 1)
+      const changing = varied.filter((a) => p.rules.some((r) => r.attr === a))
+      expect(changing.length).toBe(p.level === 1 ? 1 : p.level === 2 ? 2 : 3)
+      expect(varied.length - changing.length).toBe(p.level === 1 ? 1 : 0)
+    }
   })
 
   it('level 1 has no stripes: no option differs in them', () => {
