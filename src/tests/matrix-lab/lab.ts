@@ -9,6 +9,8 @@ import { randInt, shuffle, type Rand } from '../../lib/random'
 
 /** 9 clearly different shapes (index = shape id). */
 export const SHAPE_NAMES = ['triangle', 'square', 'circle', 'star', 'cross', 'heart', 'moon', 'arrow', 'bolt']
+/** Shapes with room for a shape inside (shape in shape): triangle, square, circle, cross, heart. */
+const ROOMY = [0, 1, 2, 4, 5]
 
 /** What the middle of the cells shows (the dots and stripes go round / behind it). */
 export type Kind = 'copies' | 'order' | 'nest' | 'set' | 'quad'
@@ -91,7 +93,7 @@ export const PARTS: Record<Part, PartType> = {
     valid: (v) => Array.isArray(v) && v.length === 2 && v[0] !== v[1],
     ops: [(a, b) => [(a as number[])[0], (b as number[])[1]], (a, b) => [(b as number[])[0], (a as number[])[1]], (a, b) => [(a as number[])[1], (b as number[])[0]]],
     moves: [(v) => [(v as number[])[1], (v as number[])[0]]],
-    near: (v, rand) => { const [o, i] = v as number[]; const s = pick([0, 1, 2, 3, 4, 5, 6, 7, 8].filter((x) => x !== o && x !== i), rand); return [[i, o], [o, s], [s, i]] },
+    near: (v, rand) => { const [o, i] = v as number[]; const s = pick(ROOMY.filter((x) => x !== o && x !== i), rand); return [[i, o], [o, s], [s, i]] },
   },
   quad: {
     valid: (v) => Array.isArray(v) && v.length === 4,
@@ -225,11 +227,11 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
       return moveRule(part, sets, [M[4], M[4]], dir, 'order:ends', `Shape order: the first and last swap places, per cell ${along(dir)}`, true)
     }
     case 'nest': {
-      const all = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      const all = ROOMY
       if (!hard) {
         // Outer and inner each with their own simple rule (outer along one way, inner the other).
         const os = three3(all)
-        const is2 = three3(all.filter((x) => !os.includes(x)))
+        const is2 = three3(all)
         const d2: Dir = dir === 'row' && opts.cols && rand() < 0.5 ? 'col' : dir
         const o = pick([sameRule, threeRule], rand)('shape', os, dir, '', rand).grid
         const i = (o.some((v, n) => n && v !== o[0]) ? pick([sameRule, threeRule], rand) : threeRule)('shape', is2, d2, '', rand).grid
@@ -311,7 +313,7 @@ const randomValue = (part: Part, rand: Rand): Val => {
     case 'stripe': return randInt(0, 3, rand)
     case 'dots': return sparse(0, 2, 8, rand)
     case 'order': return s9.slice(0, 3)
-    case 'nest': return s9.slice(0, 2)
+    case 'nest': return shuffle(ROOMY, rand).slice(0, 2)
     case 'set': return maskOf(s9.slice(0, 2))
     case 'quad': return [0, 1, 2, 3].map(() => randInt(0, 2, rand))
   }
@@ -372,6 +374,8 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
       for (const r of rules) c[r.part] = r.grid[i]
       return c
     })
+    // The inner shape always stands out from the outer one.
+    if (kind === 'nest' && cells.some((c) => c.ofill === c.ifill || !PARTS.nest.valid(c.nest!))) continue
     // A line rule must not leave the grid looking constant.
     if (rules.some((r) => new Set(r.grid.map(key)).size < 2)) continue
 
@@ -388,6 +392,7 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
     if (!w2) continue
     const answerCell = cells[8]
     const opts8 = [answerCell[focusRule.part]!, ...w4].flatMap((f) => [answerCell[w2!.part]!, w2!.w].map((s) => ({ ...answerCell, [focusRule.part]: f, [w2!.part]: s })))
+    if (kind === 'nest' && opts8.some((o) => o.ofill === o.ifill)) continue
     const options = shuffle(opts8, rand)
     return { kind, rules, cells, options, answer: options.findIndex((o) => key(o) === key(answerCell)), focus: focusRule.part }
   }
