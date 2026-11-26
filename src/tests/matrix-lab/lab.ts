@@ -117,6 +117,8 @@ export interface LabRule {
   /** For misreadings: how the rule builds the 3rd cell of a line from the first two, or each cell from the last. */
   op?: (a: Val, b: Val) => Val
   move?: (v: Val) => Val
+  /** Extra misreadings of the missing cell, when the rule can't give them through `op` / `move`. */
+  wrong?: Val[]
 }
 
 const transpose = <T,>(xs: T[]) => xs.map((_, i) => xs[(i % 3) * 3 + Math.floor(i / 3)])
@@ -213,8 +215,25 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
     }
     case 'order': {
       const sets = rand() < 0.5 ? [0, 1, 2].map(() => three3([0, 1, 2, 3, 4, 5, 6, 7, 8])) : (() => { const t = three3([0, 1, 2, 3, 4, 5, 6, 7, 8]); return [t, swap(t, 0, 1), [t[2], t[0], t[1]]] })()
-      const k = randInt(0, 3, rand)
+      const k = randInt(0, 4, rand)
       const M = PARTS.order.moves!
+      if (k === 4) {
+        // 4 shapes go round, 3 show at a time: 1 2 3 → 2 3 4 → 3 4 1 (or the other way).
+        const d = pick([1, -1], rand)
+        const four = () => shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 4)
+        const t0 = four()
+        const cyc = rand() < 0.5 ? [0, 1, 2].map(four) : [t0, t0, t0]
+        const st = [0, 1, 2].map(() => randInt(0, 3, rand))
+        const win = (t: number[], s0: number) => [0, 1, 2].map((i) => t[(((s0 + i) % 4) + 4) % 4])
+        const g = lines((rr) => [0, 1, 2].map((c) => win(cyc[rr], st[rr] + c * d)))
+        const t = cyc[2], s8 = st[2] + 2 * d
+        const ans = win(t, s8)
+        return {
+          part, id: 'order:window', dir, hard: true, grid: orient(g, dir),
+          text: `Shape order: 4 shapes go round and 3 show at a time; per cell ${along(dir)} they move one place ${d > 0 ? 'left (a new one comes in on the right)' : 'right (a new one comes in on the left)'}`,
+          wrong: [win(t, s8 + d), win(t, s8 - 2 * d), [...ans].reverse(), [ans[0], t[(((s8 + 3) % 4) + 4) % 4], ans[2]]],
+        }
+      }
       if (k === 0) return moveRule(part, sets, [M[0], M[0]], dir, 'order:shift', `Shape order: the last shape jumps to the front, per cell ${along(dir)}`, true)
       if (k === 1) return moveRule(part, sets, [M[1], M[1]], dir, 'order:shift', `Shape order: the first shape jumps to the back, per cell ${along(dir)}`, true)
       if (k === 2) return moveRule(part, sets, [M[2], M[3]], dir, 'order:swaps', `Shape order: swap the first two, then the last two, ${along(dir)}`, true)
@@ -222,6 +241,10 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
     }
     case 'nest': {
       const all = ROOMY
+      if (!hard && rand() < 0.3) {
+        const starts = [0, 1, 2].map(() => shuffle(all, rand).slice(0, 2))
+        return moveRule(part, starts, [PARTS.nest.moves![0], PARTS.nest.moves![0]], dir, 'nest:swap', `Shape in shape: inside and outside swap from cell to cell, ${along(dir)}`, false)
+      }
       if (!hard) {
         // Outer and inner each with their own simple rule (outer along one way, inner the other).
         const os = three3(all)
@@ -233,16 +256,23 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
       }
       const pair = () => { const s = shuffle(all, rand); return [[s[0], s[1]], [s[2], s[3]]] as [Val, Val] }
       const k = rand()
-      if (k < 0.3) {
-        // A chain: each cell's inner shape is the next cell's outer shape, so each shape shows twice in a line.
+      if (k < 0.5) {
+        // A chain: each shape shows twice in a line, once outside and once inside.
+        // Forward: each cell's inner shape is the next cell's outer one; backward: its outer shape is the next one's inner.
+        const fwd = rand() < 0.5
         const t0 = three3(all)
         const rowsT = rand() < 0.5 ? [0, 1, 2].map(() => three3(all)) : [t0, [t0[1], t0[2], t0[0]], [t0[2], t0[0], t0[1]]]
-        const g = lines((r) => { const t = rowsT[r]; return [[t[0], t[1]], [t[1], t[2]], [t[2], t[0]]] })
-        return { part, id: 'nest:chain', text: `Shape in shape: each cell's inner shape is the next cell's outer shape, so every shape shows twice ${along(dir)} (once outside, once inside)`, dir, hard: true, grid: orient(g, dir) }
+        const g = lines((r) => { const t = rowsT[r]; const cells = [[t[0], t[1]], [t[1], t[2]], [t[2], t[0]]]; return fwd ? cells : cells.map(([o, i]) => [i, o]) })
+        return {
+          part, id: fwd ? 'nest:chain' : 'nest:chain-back', dir, hard: true, grid: orient(g, dir),
+          text: fwd
+            ? `Shape in shape: each cell's inner shape is the next cell's outer shape, so every shape shows twice ${along(dir)} (once outside, once inside)`
+            : `Shape in shape: each cell's outer shape is the next cell's inner shape, so every shape shows twice ${along(dir)} (once outside, once inside)`,
+        }
       }
-      if (k < 0.7) return combineRule(part, pair, PARTS.nest.ops![0], dir, 'nest:combine', `Shape in shape: the 3rd cell has the outer shape of the 1st and the inner shape of the 2nd, ${along(dir)}`)
-      const starts = [0, 1, 2].map(() => shuffle(all, rand).slice(0, 2))
-      return moveRule(part, starts, [PARTS.nest.moves![0], PARTS.nest.moves![0]], dir, 'nest:swap', `Shape in shape: inside and outside swap from cell to cell, ${along(dir)}`, true)
+      return rand() < 0.5
+        ? combineRule(part, pair, PARTS.nest.ops![0], dir, 'nest:combine', `Shape in shape: the 3rd cell has the outer shape of the 1st and the inner shape of the 2nd, ${along(dir)}`)
+        : combineRule(part, pair, PARTS.nest.ops![1], dir, 'nest:combine-back', `Shape in shape: the 3rd cell has the inner shape of the 1st and the outer shape of the 2nd, ${along(dir)}`)
     }
     case 'set': {
       const or = rand() < 0.5
@@ -257,7 +287,7 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
         const cw = rand() < 0.6
         const M = PARTS.quad.moves!
         const starts = distinct(3, () => { const q = rq(); return new Set(q).size > 1 && !eq(q, turnQ(turnQ(q))) ? q : [0, 1, 2, 2] })
-        return moveRule(part, starts, [0, 1].map(() => M[cw ? 0 : 1]), dir, 'quad:turn', `2 × 2: the pattern turns a quarter ${cw ? 'clockwise' : 'anticlockwise'} per cell, ${along(dir)}`, true)
+        return moveRule(part, starts, [0, 1].map(() => M[cw ? 0 : 1]), dir, 'quad:turn', `2 × 2: the pattern turns a quarter ${cw ? 'clockwise' : 'anticlockwise'} per cell, ${along(dir)}`, false)
       }
       if (k === 1) {
         const bw = () => [0, 1, 2, 3].map(() => pick([0, 2], rand))
@@ -332,6 +362,7 @@ function wrongValues(rule: LabRule | undefined, part: Part, cells: LabCell[], n:
   const cands: Val[] = []
   for (const op of t.ops ?? []) cands.push(op(x, y), op(p, q), op(y, x))
   for (const mv of t.moves ?? []) cands.push(mv(y), mv(q), mv(a))
+  if (rule?.wrong) cands.unshift(...rule.wrong)
   if (rule?.move) cands.push(rule.move(rule.move(y)), rule.move(x))
   cands.push(...t.near(a, rand), ...t.near(y, rand), v(2), v(5), v(6), v(7))
   const seen = (w: Val) => cells.slice(0, 8).filter((c) => eq(c[part], w)).length
