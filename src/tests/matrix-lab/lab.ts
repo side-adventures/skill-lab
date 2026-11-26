@@ -21,7 +21,7 @@ export const KIND_NAMES: Record<Kind, string> = {
 
 /**
  * The parts of a cell, each a number or a short list:
- * - shape 0–8, count 1–8, fill 0–2 (black, grey, white): the copies;
+ * - shape 0–8, count 1–9 (no tripling: 1 3 9 is too easy), fill 0–2 (black, grey, white): the copies;
  * - order: 3 shape ids, drawn left to right;
  * - nest: [outer, inner] shape ids; ofill / ifill: their fills;
  * - set: bit mask over 4 fixed slots (2 × 2), each slot always holding the same shape (`LabPuzzle.setShapes`);
@@ -58,7 +58,7 @@ const turnQ = (q: number[]) => [q[2], q[0], q[3], q[1]]
 export const PARTS: Record<Part, PartType> = {
   shape: { valid: (v) => typeof v === 'number' && v >= 0 && v <= 8, near: (_, rand) => shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 3) },
   count: {
-    ...num(1, 8),
+    ...num(1, 9),
     ops: [(a, b) => (a as number) + (b as number), (a, b) => Math.abs((a as number) - (b as number)), (a, b) => (a as number) * (b as number)],
     moves: [(v) => (v as number) + 1, (v) => (v as number) - 1, (v) => (v as number) * 2, (v) => (v as number) + 2],
   },
@@ -175,12 +175,13 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
       return moveRule(part, three3([0, 1, 2, 3]), [0, 1].map(() => (v: Val) => ((((v as number) + k) % 4) + 4) % 4), dir, 'stripe:turn', `Stripes: turn 45° ${k > 0 ? 'clockwise' : 'anticlockwise'} per cell, ${along(dir)}`, false)
     }
     case 'count': {
-      const kinds = hard ? opts.numbers : ['step', 'same']
+      const hardNums = opts.numbers.filter((k) => k !== 'step')
+      const kinds = hard ? (opts.twoHard ? (hardNums.length ? hardNums : ['double', 'grid', 'plus']) : opts.numbers) : ['step', 'same']
       const k = pick(kinds.length ? kinds : ['step'], rand)
       if (k === 'same') return sameRule(part, three3([1, 2, 3, 4, 5, 6]), dir, 'Number')
       if (k === 'step') {
         const d = pick([1, -1], rand)
-        const starts = [0, 1, 2].map(() => (d > 0 ? randInt(1, 6, rand) : randInt(3, 8, rand)))
+        const starts = [0, 1, 2].map(() => (d > 0 ? randInt(1, 7, rand) : randInt(3, 9, rand)))
         return moveRule(part, starts, [0, 1].map(() => (v: Val) => (v as number) + d), dir, 'count:step', `Number: one ${d > 0 ? 'more' : 'fewer'} per cell, ${along(dir)}`, false)
       }
       if (k === 'double') {
@@ -282,7 +283,8 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
     }
     case 'quad': {
       const rq = () => [0, 1, 2, 3].map(() => randInt(0, 2, rand))
-      const k = randInt(0, 3, rand)
+      // Hard: mix, darker / lighter; easy: turn, each square its own rule.
+      const k = hard ? randInt(1, 2, rand) : pick([0, 3], rand)
       if (k === 0) {
         const cw = rand() < 0.6
         const M = PARTS.quad.moves!
@@ -317,8 +319,10 @@ export interface LabOptions {
   stripes: boolean
   /** Rules may also run down the columns. */
   cols: boolean
+  /** Exactly 2 changing parts, both hard: one figure rule and one dot rule; everything else stays the same. */
+  twoHard: boolean
 }
-export const DEFAULT_OPTIONS: LabOptions = { kinds: [...KINDS], numbers: ['double', 'grid', 'plus'], dots: 'mixed', stripes: true, cols: true }
+export const DEFAULT_OPTIONS: LabOptions = { kinds: [...KINDS], numbers: ['double', 'grid', 'plus'], dots: 'mixed', stripes: true, cols: true, twoHard: true }
 
 export interface LabPuzzle {
   kind: Kind
@@ -382,27 +386,31 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
     const rules: LabRule[] = []
     const add = (r: LabRule | undefined) => { if (r) rules.push(r) }
     // The figure: one rule to work out, plus at most one easy one.
-    if (kind === 'copies') {
+    if (opts.twoHard) {
+      add(ruleFor(kind === 'copies' ? 'count' : kind, opts, true, rand))
+      add(ruleFor('dots', opts, true, rand))
+      if (rules.length < 2) continue
+    } else if (kind === 'copies') {
       add(ruleFor('count', opts, opts.numbers.length > 0, rand))
       add(ruleFor(pick(['shape', 'fill'] as Part[], rand), opts, false, rand))
     } else if (kind === 'nest') {
       add(ruleFor('nest', opts, rand() < 0.7, rand))
       if (rand() < 0.5) add(ruleFor(pick(['ofill', 'ifill'] as Part[], rand), opts, false, rand))
     } else {
-      add(ruleFor(kind, opts, true, rand))
+      add(ruleFor(kind, opts, kind !== 'quad' || rand() < 0.5, rand))
       if (kind !== 'quad' && rand() < 0.4) add(ruleFor('fill', opts, false, rand))
     }
     if (rules.length === 0) continue
-    if (opts.dots !== 'off') {
+    if (opts.dots !== 'off' && !opts.twoHard) {
       const hard = opts.dots === 'hard' || (opts.dots === 'mixed' && rand() < 0.4)
       if (opts.dots !== 'mixed' || rand() < 0.75) add(ruleFor('dots', opts, hard, rand))
     }
-    if (opts.stripes && rand() < 0.6) add(ruleFor('stripe', opts, false, rand))
+    if (opts.stripes && !opts.twoHard && rand() < 0.6) add(ruleFor('stripe', opts, false, rand))
 
     const parts = [...KIND_PARTS[kind], 'dots', 'stripe'] as Part[]
     const fixed = Object.fromEntries(parts.map((pt) => [pt, randomValue(pt, rand)])) as LabCell
     if (!opts.stripes) fixed.stripe = -1
-    if (opts.dots === 'off') fixed.dots = 0
+    if (opts.dots === 'off' && !opts.twoHard) fixed.dots = 0
     if (kind === 'nest' && fixed.ofill === 2) fixed.ifill = 0
     const cells: LabCell[] = Array.from({ length: 9 }, (_, i) => {
       const c: LabCell = { ...fixed }
