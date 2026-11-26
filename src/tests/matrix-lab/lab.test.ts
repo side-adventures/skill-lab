@@ -56,6 +56,29 @@ describe('matrix lab: puzzles', () => {
     expect(seen).toBeGreaterThan(5)
   })
 
+  it('shape order window: 3 of 4 shapes show, moving one place per cell', () => {
+    let seen = 0
+    for (let n = 0; n < 600 && seen < 30; n++) {
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, kinds: ['order'], cols: false })
+      if (!p.rules.some((r) => r.id === 'order:window')) continue
+      seen++
+      const g = p.cells.map((c) => c.order as number[])
+      for (const r of [0, 3, 6]) for (const c of [0, 1]) {
+        const [a, b] = [g[r + c], g[r + c + 1]]
+        // Two shapes carry over, one place moved along.
+        expect(a[1] === b[0] && a[2] === b[1] || a[0] === b[1] && a[1] === b[2]).toBe(true)
+      }
+      expect(new Set(g.slice(6).flat()).size).toBe(4)
+    }
+    expect(seen).toBeGreaterThan(5)
+  })
+
+  it('shape in shape: both chain directions and both combine orders come up', () => {
+    const ids = new Set<string>()
+    for (let n = 0; n < 600; n++) makeLabPuzzle({ ...DEFAULT_OPTIONS, kinds: ['nest'] }).rules.forEach((r) => ids.add(r.id))
+    for (const id of ['nest:chain', 'nest:chain-back', 'nest:combine', 'nest:combine-back', 'nest:swap']) expect(ids).toContain(id)
+  })
+
   it('no stripes, no dots and rows only when turned off', () => {
     for (let n = 0; n < 200; n++) {
       const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, stripes: false, dots: 'off', cols: false })
