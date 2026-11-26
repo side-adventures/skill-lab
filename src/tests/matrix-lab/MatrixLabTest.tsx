@@ -50,7 +50,7 @@ function Figure({ kind, c }: { kind: LabPuzzle['kind']; c: LabCell }) {
     const count = n(c.count)
     return <>{SPOTS[count - 1].map(([x, y], i) => <Shape key={i} s={n(c.shape)} x={x} y={y} r={COPY_R[count - 1]} fill={n(c.fill)} />)}</>
   }
-  if (kind === 'order') return <>{l(c.order).map((s, i) => <Shape key={i} s={s} x={28 + i * 22} y={50} r={8.5} fill={n(c.fill)} />)}</>
+  if (kind === 'order') return <>{l(c.order).map((s, i) => <Shape key={i} s={s} x={26 + i * 24} y={50} r={10} fill={n(c.fill)} />)}</>
   if (kind === 'nest') {
     const [o, i] = l(c.nest)
     return <><Shape s={o} x={50} y={50} r={25} fill={n(c.ofill)} /><Shape s={i} x={50} y={o === 0 ? 55 : 50} r={9} fill={n(c.ifill)} /></>
@@ -191,6 +191,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
                 <li className="text-zinc-600">Everything else stays the same.</li>
               </ul>
               <button type="button" onPointerDown={(e) => { e.preventDefault(); next() }} className="mt-3 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-500">Next puzzle</button>
+              <p className="mt-1 text-[11px] text-zinc-600">or Enter / Space</p>
             </div>
           ) : (
             <div className="min-h-0 flex-1 space-y-2 overflow-auto">
@@ -215,7 +216,6 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
           )}
           <div className="mt-auto flex gap-1.5">
             <Chip on={showLog} onPress={() => setShowLog((s) => !s)}>{showLog ? 'Close log' : `Log (${log.length})`}</Chip>
-            {done && !showLog && <span className="self-center text-[11px] text-zinc-600">Enter / Space: next</span>}
             <span className="flex-1" />
             <Chip on={false} onPress={finish}>Finish</Chip>
           </div>
