@@ -19,6 +19,10 @@ describe('matrix lab: puzzles', () => {
           }
         // The options split 4 ways on the focus part.
         expect(new Set(p.options.map((o) => key(o[p.focus]))).size).toBe(4)
+        if (kind === 'nest') for (const c of [...p.cells, ...p.options]) {
+          expect(c.ofill).not.toBe(c.ifill)
+          expect((c.nest as number[]).every((x) => [0, 1, 2, 4, 5].includes(x))).toBe(true)
+        }
         p.rules.forEach((r) => ids.add(r.id))
       }
       expect(ids.size).toBeGreaterThan(1)
