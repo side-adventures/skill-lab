@@ -17,14 +17,11 @@ describe('matrix puzzles: generation', () => {
         expect(p.rules.every((r) => spec.attrs.includes(r.attr))).toBe(true)
         expect(p.rules.every((r) => ['same', 'step', 'three', ...spec.twists].includes(r.kind))).toBe(true)
         if (!spec.cols) expect(p.rules.every((r) => r.dir === 'row')).toBe(true)
-        // Number and size never change together; size only varies with a single copy.
-        expect(p.rules.some((r) => r.attr === 'count') && p.rules.some((r) => r.attr === 'size')).toBe(false)
         for (const c of [...p.cells, ...p.options]) {
           for (const a of ATTRS) {
             expect(c[a]).toBeGreaterThanOrEqual(RANGE[a][0])
             expect(c[a]).toBeLessThanOrEqual(RANGE[a][1])
           }
-          if (c.count > 1) expect(c.size).toBe(1)
         }
         // Fixed features are the same everywhere; every feature has exactly one answer, under any rule.
         for (const a of ATTRS) if (!p.rules.some((r) => r.attr === a)) expect(new Set(col(p.cells, a)).size).toBe(1)

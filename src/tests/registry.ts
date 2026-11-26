@@ -712,7 +712,7 @@ export const PROTOTYPES: TestDefinition[] = [
     skill: 'reasoning with several rules at once',
     howTo: [
       'You see a 3 × 3 grid with the last cell missing.',
-      'Shape, number, size, fill, the dots around the edge and the background stripes follow rules along the rows or down the columns.',
+      'Shape, number, fill, the dots around the edge and the background stripes follow rules along the rows or down the columns.',
       'Click the cell that completes the grid.',
       'You have 5 minutes: solve as many as you can. The rules get harder as you progress.',
       'A wrong answer takes time off the clock and gives you a new puzzle: 15 s minus the time you already spent on it, but at least 5 s.',

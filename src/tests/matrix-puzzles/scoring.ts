@@ -16,16 +16,15 @@ export const penaltyMs = (spentMs: number) => Math.max(MIN_PENALTY_MS, PENALTY_M
  * One cell:
  * - `count` copies (1–6) of a `shape` (0 triangle, 1 square, 2 hexagon, 3 circle, 4 star) with a `fill` (0 black,
  *   1 grey, 2 white: in order, so it can step);
- * - `size` (0 small, 1 medium, 2 large) only counts for a single copy; with 2–6 copies it is always 1;
  * - `dots`: which of the 8 spots around the edge have a dot (a bit mask, bit 0 = top left, then clockwise);
  * - `stripe`: the direction of the background stripes (0 horizontal, then 45° clockwise per step).
  */
-export interface Cell { shape: number; count: number; size: number; fill: number; dots: number; stripe: number }
+export interface Cell { shape: number; count: number; fill: number; dots: number; stripe: number }
 export type Attr = keyof Cell
-export const ATTRS: Attr[] = ['shape', 'count', 'size', 'fill', 'dots', 'stripe']
-const FIGURE: Attr[] = ['shape', 'count', 'size', 'fill']
+export const ATTRS: Attr[] = ['shape', 'count', 'fill', 'dots', 'stripe']
+const FIGURE: Attr[] = ['shape', 'count', 'fill']
 export const RANGE: Record<Attr, [number, number]> = {
-  shape: [0, 4], count: [1, 6], size: [0, 2], fill: [0, 2], dots: [0, 255], stripe: [0, 3],
+  shape: [0, 4], count: [1, 6], fill: [0, 2], dots: [0, 255], stripe: [0, 3],
 }
 /** Stripes turn round (4 directions); dots move round the 8 spots. */
 const CYCLE: Partial<Record<Attr, number>> = { stripe: 4 }
@@ -33,7 +32,7 @@ const CYCLE: Partial<Record<Attr, number>> = { stripe: 4 }
 /**
  * Rule kinds (Raven-style, as in RAVEN / I-RAVEN), each along rows or down columns (`dir`):
  * - same: the same within each line, different between lines;
- * - step: one step per cell (number, size, fill: ±1; stripes: turn 45°; dots: move round 1 or 2 spots);
+ * - step: one step per cell (number, fill: ±1; stripes: turn 45°; dots: move round 1 or 2 spots);
  * - three: 3 values, each once in every line;
  * - or / xor (dots only): the 3rd cell has the dots of the first two (xor: shared dots disappear);
  * - rowcol (dots only): every cell has its row's dot and its column's dot.
@@ -240,8 +239,6 @@ function makeRules(spec: LevelSpec, rand: Rand): Rule[] {
   const twist = spec.twists.length && rand() < 0.6 ? pick(spec.twists, rand) : undefined
   let pool = shuffle(spec.attrs, rand)
   if (twist) pool = ['dots', ...pool.filter((a) => a !== 'dots')]
-  // Number and size never change together: size only shows with a single copy.
-  pool = pool.filter((a, _, xs) => a !== (xs.indexOf('count') < xs.indexOf('size') ? 'size' : 'count'))
   const rules = pool.slice(0, spec.changing).map((attr): Rule => {
     if (attr === 'dots' && twist) return { attr, kind: twist, dir: twist === 'rowcol' ? 'row' : dirOf() }
     const kinds: RuleKind[] = spec.changing === 1 ? ['same', 'step'] : ['same', 'step', 'step', 'three']
@@ -273,36 +270,29 @@ export function makePuzzle(level: number, rand: Rand = Math.random, keep?: Rule[
       if (rule) { g[a] = grid(rule, rand); continue }
       const v =
         a === 'dots' ? sparse(0, 2, rand)
-        : a === 'count' ? (ruleOf('size') ? 1 : randInt(1, 6, rand))
+        : a === 'count' ? randInt(1, 6, rand)
         : pick(values(a), rand)
       g[a] = Array(9).fill(v)
     }
-    // Size only counts for a single copy.
-    if (!ruleOf('size') && g.count.some((c) => c > 1)) g.size = Array(9).fill(1)
     const cells: Cell[] = Array.from({ length: 9 }, (_, i) => Object.fromEntries(ATTRS.map((a) => [a, g[a][i]])) as unknown as Cell)
     if (!isUnique(cells)) continue
 
     // 8 options from the changing features only, so a glance at a feature that never changes rules none out:
     // 2 × 2 × 2 values with 3 changing features (I-RAVEN: every value in exactly half the options), 4 × 2 with 2.
-    // With 1 (level 1): 4 values of it × 2 of a fixed feature. Number and size are never both used (with 2+ copies
-    // the size doesn't show), and number only when the answer is medium-sized for the same reason.
+    // With 1 (level 1): 4 values of it × 2 of a fixed feature.
     const answerCell = cells[8]
-    const usable = (a: Attr, used: Attr[]) =>
-      !(a === 'stripe' && !spec.stripes) &&
-      !(a === 'size' && (answerCell.count > 1 || used.includes('count'))) &&
-      !(a === 'count' && (answerCell.size !== 1 || used.includes('size')))
-    const changing = shuffle(rules.map((r) => r.attr), rand).filter((a) => usable(a, []))
+    const usable = (a: Attr) => !(a === 'stripe' && !spec.stripes)
+    const changing = shuffle(rules.map((r) => r.attr), rand).filter(usable)
     const fixed = shuffle(ATTRS.filter((a) => !ruleOf(a)), rand)
     const shapes = changing.length >= 3 ? [[2, 2, 2]] : changing.length === 2 ? [[4, 2], [2, 4]] : [[4, 2]]
     let plan: { attr: Attr; vals: number[] }[] | undefined
     for (const sizes of shapes) {
-      const attrs = changing.length >= 2 ? changing.slice(0, sizes.length) : [changing[0], ...fixed.filter((a) => usable(a, changing))]
+      const attrs = changing.length >= 2 ? changing.slice(0, sizes.length) : [changing[0], ...fixed.filter(usable)]
       if (attrs[0] === undefined) break
       const out: { attr: Attr; vals: number[] }[] = []
       for (const a of attrs) {
         const k = sizes[out.length]
         if (k === undefined) break
-        if (!usable(a, out.map((o) => o.attr))) continue
         const w = wrongValues(a, cells, ruleOf(a), k - 1, rand)
         if (w) out.push({ attr: a, vals: [answerCell[a], ...w] })
         else if (changing.length >= 2 || out.length === 0) break

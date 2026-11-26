@@ -20,7 +20,7 @@ const SPOTS: [number, number][][] = [
   [[21, 32], [50, 32], [79, 32], [21, 68], [50, 68], [79, 68]],
 ]
 const SCALE = [1.55, 0.85, 0.85, 0.8, 0.6, 0.56]
-const RADIUS = [8, 14, 21]
+const RADIUS = 14
 /** The figures stay inside the ring of dots. */
 const INNER = 0.72
 /** The 8 dot spots: corners and side middles, clockwise from the top left. */
@@ -47,7 +47,7 @@ const stripes = (dir: number, on = true): CSSProperties => (!on ? {} : {
 })
 
 export function CellView({ cell }: { cell: Cell }) {
-  const r = RADIUS[cell.count === 1 ? cell.size : 1] * SCALE[cell.count - 1] * INNER
+  const r = RADIUS * SCALE[cell.count - 1] * INNER
   return (
     <svg viewBox="0 0 100 100" className="size-full">
       {SPOTS[cell.count - 1].map(([x, y], i) => (
