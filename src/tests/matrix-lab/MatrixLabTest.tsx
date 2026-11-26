@@ -37,8 +37,9 @@ const SPOTS: [number, number][][] = [
   [[31, 31], [69, 31], [50, 50], [31, 69], [69, 69]], [[29, 38], [50, 38], [71, 38], [29, 62], [50, 62], [71, 62]],
   [[29, 30], [50, 30], [71, 30], [50, 50], [29, 70], [50, 70], [71, 70]],
   [[29, 30], [50, 30], [71, 30], [39, 50], [61, 50], [29, 70], [50, 70], [71, 70]],
+  [[29, 29], [50, 29], [71, 29], [29, 50], [50, 50], [71, 50], [29, 71], [50, 71], [71, 71]],
 ]
-const COPY_R = [17, 10, 10, 9.5, 7.5, 7, 6, 6]
+const COPY_R = [17, 10, 10, 9.5, 7.5, 7, 6, 6, 6]
 /** Shape sets: 4 fixed slots, each always holding the same shape. */
 const SET_SLOTS: [number, number][] = [[37, 37], [63, 37], [37, 63], [63, 63]]
 const EDGE: [number, number][] = [[8, 8], [50, 8], [92, 8], [92, 50], [92, 92], [50, 92], [8, 92], [8, 50]]
@@ -207,6 +208,14 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
               <div>
                 <p className="mb-1 text-zinc-400">Dots</p>
                 <div className="flex flex-wrap gap-1">{DOTS.map((d) => <Chip key={d} on={opts.dots === d} onPress={() => setOpts((o) => ({ ...o, dots: d }))}>{d}</Chip>)}</div>
+              </div>
+              <div>
+                <p className="mb-1 text-zinc-400">Changes per puzzle</p>
+                <div className="flex flex-wrap gap-1">
+                  <Chip on={opts.twoHard} onPress={() => setOpts((o) => ({ ...o, twoHard: true }))}>2 hard (figure + dots)</Chip>
+                  <Chip on={!opts.twoHard} onPress={() => setOpts((o) => ({ ...o, twoHard: false }))}>Mixed</Chip>
+                </div>
+                {opts.twoHard && <p className="mt-1 text-[11px] text-zinc-600">Dots, stripes and fill switches don't apply.</p>}
               </div>
               <div className="flex flex-wrap gap-1">
                 <Chip on={opts.stripes} onPress={() => setOpts((o) => ({ ...o, stripes: !o.stripes }))}>Stripes</Chip>
