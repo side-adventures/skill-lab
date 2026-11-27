@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_OPTIONS, KINDS, PARTS, key, makeLabPuzzle, type LabOptions, type Part } from './lab'
+import { DEFAULT_OPTIONS, KINDS, LEVELS, PARTS, key, makeLabPuzzle, type LabOptions, type Part } from './lab'
 
 describe('matrix lab: puzzles', () => {
   for (const kind of KINDS) {
@@ -77,7 +77,8 @@ describe('matrix lab: puzzles', () => {
   it('shape in shape: both chain directions and both combine orders come up', () => {
     const ids = new Set<string>()
     for (let n = 0; n < 600; n++) makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['nest'] }).rules.forEach((r) => ids.add(r.id))
-    for (const id of ['nest:chain', 'nest:chain-back', 'nest:combine', 'nest:combine-back', 'nest:swap']) expect(ids).toContain(id)
+    for (const id of ['nest:chain', 'nest:chain-back', 'nest:combine', 'nest:combine-back']) expect(ids).toContain(id)
+    expect(ids).not.toContain('nest:swap')
   })
 
   it('2 hard: exactly a hard figure rule and a hard dot rule, options split 4 × 2 between them', () => {
@@ -119,6 +120,23 @@ describe('matrix lab: puzzles', () => {
       }
     }
     expect(seen).toBeGreaterThan(50)
+  })
+
+  it('every rule has a level; A + B never reads as a step; no end swap; nest fills each once and never equal', () => {
+    for (let n = 0; n < 1500; n++) {
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: n % 3 === 0, numbers: ['plus', 'double', 'grid', 'step'] })
+      for (const r of p.rules) {
+        expect(LEVELS[r.id], r.id).toBeDefined()
+        expect(r.level).toBe(LEVELS[r.id])
+        expect(r.id).not.toBe('order:ends')
+        if (r.id === 'count:plus') {
+          const lines = r.dir === 'col' ? [[0, 3, 6], [1, 4, 7], [2, 5, 8]] : [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+          for (const [i, j] of lines) expect(p.cells[j].count).not.toBe(2 * (p.cells[i].count as number))
+        }
+        if (r.part === 'ofill' || r.part === 'ifill') expect(r.id).toMatch(/three$/)
+      }
+      if (p.kind === 'nest') for (const c of p.cells) expect(c.ofill).not.toBe(c.ifill)
+    }
   })
 
   it('no stripes, no dots and rows only when turned off', () => {

@@ -5,7 +5,7 @@ import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import {
-  DEFAULT_OPTIONS, KINDS, KIND_NAMES, makeLabPuzzle, type LabCell, type LabOptions, type LabPuzzle, type NumberRule,
+  DEFAULT_OPTIONS, KINDS, KIND_NAMES, LEVELS, makeLabPuzzle, type Level, type LabCell, type LabOptions, type LabPuzzle, type NumberRule,
 } from './lab'
 
 // ---- drawing ---------------------------------------------------------------------------------------------------------
@@ -106,6 +106,9 @@ function Chip({ on, onPress, children }: { on: boolean; onPress: () => void; chi
 const NUMBER_NAMES: Record<NumberRule, string> = { double: 'Doubling', grid: 'Row × column', plus: 'A + B', step: '±1' }
 const DOTS = ['off', 'easy', 'hard', 'mixed'] as const
 
+const LEVEL_CLASS: Record<Level, string> = { easy: 'text-emerald-300', medium: 'text-amber-300', hard: 'text-rose-300' }
+const LevelTag = ({ level }: { level?: Level }) => (level ? <span className={`ml-1 text-[10px] uppercase tracking-wide ${LEVEL_CLASS[level]}`}>{level}</span> : null)
+
 function median(xs: number[]) { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : 0 }
 
 function LogTable({ log }: { log: LogRow[] }) {
@@ -115,11 +118,12 @@ function LogTable({ log }: { log: LogRow[] }) {
   return (
     <div className="h-full overflow-auto text-xs">
       <table className="w-full tabular-nums">
-        <thead className="text-zinc-500"><tr><th className="text-left font-normal">Rule</th><th className="font-normal">Tried</th><th className="font-normal">Right</th><th className="font-normal">Median time</th></tr></thead>
+        <thead className="text-zinc-500"><tr><th className="text-left font-normal">Rule</th><th className="font-normal">Level</th><th className="font-normal">Tried</th><th className="font-normal">Right</th><th className="font-normal">Median time</th></tr></thead>
         <tbody>
           {rows.map(([id, rs]) => (
             <tr key={id} className="border-t border-zinc-800">
               <td className="py-0.5 text-zinc-300">{id}</td>
+              <td className="text-center"><LevelTag level={LEVELS[id]} /></td>
               <td className="text-center">{rs.length}</td>
               <td className="text-center">{Math.round((100 * rs.filter((r) => r.right).length) / rs.length)} %</td>
               <td className="text-center">{(median(rs.map((r) => r.ms)) / 1000).toFixed(1)} s</td>
@@ -189,7 +193,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
             <div className="min-h-0 flex-1 overflow-auto">
               <p className="mb-1 font-medium text-zinc-300">The rules</p>
               <ul className="list-disc space-y-1 pl-4 text-zinc-400">
-                {puzzle.rules.map((r, i) => <li key={i} className={r.part === puzzle.focus ? 'text-zinc-200' : ''}>{r.text}</li>)}
+                {puzzle.rules.map((r, i) => <li key={i} className={r.part === puzzle.focus ? 'text-zinc-200' : ''}>{r.text}<LevelTag level={r.level} /></li>)}
                 <li className="text-zinc-600">Everything else stays the same.</li>
               </ul>
               <button type="button" onPointerDown={(e) => { e.preventDefault(); next() }} className="mt-3 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-500">Next puzzle</button>
@@ -213,7 +217,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
               <div>
                 <p className="mb-1 text-zinc-400">Changes per puzzle</p>
                 <div className="flex flex-wrap gap-1">
-                  <Chip on={opts.twoHard} onPress={() => setOpts((o) => ({ ...o, twoHard: true }))}>2 hard (figure + dots)</Chip>
+                  <Chip on={opts.twoHard} onPress={() => setOpts((o) => ({ ...o, twoHard: true }))}>2, none easy (figure + dots)</Chip>
                   <Chip on={!opts.twoHard} onPress={() => setOpts((o) => ({ ...o, twoHard: false }))}>Mixed</Chip>
                 </div>
                 {opts.twoHard && <p className="mt-1 text-[11px] text-zinc-600">Dots, stripes and fill switches don't apply.</p>}
