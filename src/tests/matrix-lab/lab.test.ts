@@ -101,6 +101,26 @@ describe('matrix lab: puzzles', () => {
     expect(nine).toBeGreaterThan(0)
   })
 
+  it('shape sets keep reading order: the 1st cell\'s shapes first', () => {
+    let seen = 0
+    for (let n = 0; n < 400; n++) {
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['set'] })
+      const r = p.rules.find((x) => x.part === 'set')!
+      if (!r) continue
+      seen++
+      const g = p.cells.map((c) => c.set as number[])
+      const lines = r.dir === 'col' ? [[0, 3, 6], [1, 4, 7], [2, 5, 8]] : [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+      for (const [i, j, k] of lines) {
+        const [a, b] = [g[i], g[j]]
+        const want = r.id === 'set:or'
+          ? [...a, ...b.filter((x) => !a.includes(x))]
+          : [...a.filter((x) => !b.includes(x)), ...b.filter((x) => !a.includes(x))]
+        expect(g[k]).toEqual(want)
+      }
+    }
+    expect(seen).toBeGreaterThan(50)
+  })
+
   it('no stripes, no dots and rows only when turned off', () => {
     for (let n = 0; n < 200; n++) {
       const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, stripes: false, dots: 'off', cols: false })

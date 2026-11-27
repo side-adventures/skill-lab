@@ -24,7 +24,7 @@ export const KIND_NAMES: Record<Kind, string> = {
  * - shape 0–8, count 1–9 (no tripling: 1 3 9 is too easy), fill 0–2 (black, grey, white): the copies;
  * - order: 3 shape ids, drawn left to right;
  * - nest: [outer, inner] shape ids; ofill / ifill: their fills;
- * - set: bit mask over 4 fixed slots (2 × 2), each slot always holding the same shape (`LabPuzzle.setShapes`);
+ * - set: 1–4 different shape ids in a row, in the order you read them: combining keeps the 1st cell's shapes first;
  * - quad: 4 colours (0 black, 1 grey, 2 white): top left, top right, bottom left, bottom right;
  * - dots: bit mask over the 8 edge spots (bit 0 top left, clockwise); stripe: −1 none, 0–3 direction.
  */
@@ -73,9 +73,16 @@ export const PARTS: Record<Part, PartType> = {
     near: (v) => bitsOf(v as number, 8).flatMap((i) => [-1, 1].map((d) => ((v as number) & ~(1 << i)) | (1 << ((i + d + 8) % 8)))),
   },
   set: {
-    valid: (v) => typeof v === 'number' && v > 0 && v < 16,
-    ops: maskOps.map((f) => (a: Val, b: Val) => f(a as number, b as number) & 15),
-    near: (v) => [0, 1, 2, 3].map((i) => (v as number) ^ (1 << i)),
+    valid: (v) => Array.isArray(v) && v.length >= 1 && v.length <= 4 && new Set(v).size === v.length,
+    // In reading order: what the 1st cell has comes first, then what only the 2nd has.
+    ops: [
+      (a, b) => [...(a as number[]), ...(b as number[]).filter((x) => !(a as number[]).includes(x))],
+      (a, b) => [...(b as number[]), ...(a as number[]).filter((x) => !(b as number[]).includes(x))],
+      (a, b) => [...(a as number[]).filter((x) => !(b as number[]).includes(x)), ...(b as number[]).filter((x) => !(a as number[]).includes(x))],
+      (a, b) => [...(b as number[]).filter((x) => !(a as number[]).includes(x)), ...(a as number[]).filter((x) => !(b as number[]).includes(x))],
+      (a, b) => (a as number[]).filter((x) => (b as number[]).includes(x)),
+    ],
+    near: (v) => { const xs = v as number[]; return [[...xs].reverse(), [...xs.slice(1), xs[0]], xs.slice(1), xs.slice(0, -1)] },
   },
   order: {
     valid: (v) => Array.isArray(v) && v.length === 3,
@@ -277,9 +284,12 @@ function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRu
     }
     case 'set': {
       const or = rand() < 0.5
-      const sub = () => sparse(1, 2, 4, rand)
-      return combineRule(part, () => [sub(), sub()], or ? (a, b) => (a as number) | (b as number) : (a, b) => (a as number) ^ (b as number), dir,
-        `set:${or ? 'or' : 'xor'}`, or ? `Shape sets: A + B = C ${along(dir)}: the 3rd cell has all shapes of the first two` : `Shape sets: shapes in both of the first two disappear, ${along(dir)}`)
+      const pool = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 4)
+      const sub = () => shuffle(pool, rand).slice(0, randInt(1, 2, rand))
+      const first = dir === 'col' ? 'top' : 'left'
+      return combineRule(part, () => [sub(), sub()], PARTS.set.ops![or ? 0 : 2], dir, `set:${or ? 'or' : 'xor'}`, or
+        ? `Shape sets: A + B = C ${along(dir)}: the 3rd cell has all shapes of the first two, the ${first} cell's first, in their order`
+        : `Shape sets: shapes in both of the first two disappear, ${along(dir)}; the rest keep their order, the ${first} cell's first`)
     }
     case 'quad': {
       const rq = () => [0, 1, 2, 3].map(() => randInt(0, 2, rand))
@@ -332,8 +342,6 @@ export interface LabPuzzle {
   answer: number
   /** The rule the options split on (4 ways, or all 8 when nothing else changes). */
   focus: Part
-  /** Shape sets: the shape in each of the 4 slots (top left, top right, bottom left, bottom right). */
-  setShapes: number[]
 }
 
 /** The parts each kind of figure has, besides dots and stripes. */
@@ -351,7 +359,7 @@ const randomValue = (part: Part, rand: Rand): Val => {
     case 'dots': return sparse(0, 2, 8, rand)
     case 'order': return s9.slice(0, 3)
     case 'nest': return shuffle(ROOMY, rand).slice(0, 2)
-    case 'set': return 3
+    case 'set': return s9.slice(0, 2)
     case 'quad': return [0, 1, 2, 3].map(() => randInt(0, 2, rand))
   }
 }
@@ -438,6 +446,6 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
       (w2 ? [answerCell[w2.part]!, w2.w] : [undefined]).map((s) => ({ ...answerCell, [focusRule.part]: f, ...(w2 && { [w2.part]: s }) })))
     if (kind === 'nest' && opts8.some((o) => o.ofill === o.ifill)) continue
     const options = shuffle(opts8, rand)
-    return { kind, rules, cells, options, answer: options.findIndex((o) => key(o) === key(answerCell)), focus: focusRule.part, setShapes: shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 4) }
+    return { kind, rules, cells, options, answer: options.findIndex((o) => key(o) === key(answerCell)), focus: focusRule.part }
   }
 }

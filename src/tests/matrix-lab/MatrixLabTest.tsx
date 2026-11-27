@@ -40,12 +40,12 @@ const SPOTS: [number, number][][] = [
   [[29, 29], [50, 29], [71, 29], [29, 50], [50, 50], [71, 50], [29, 71], [50, 71], [71, 71]],
 ]
 const COPY_R = [17, 10, 10, 9.5, 7.5, 7, 6, 6, 6]
-/** Shape sets: 4 fixed slots, each always holding the same shape. */
-const SET_SLOTS: [number, number][] = [[37, 37], [63, 37], [37, 63], [63, 63]]
+/** Shape sets: 1–4 shapes in one row, in their order. */
+const SET_X = [[50], [38, 62], [28, 50, 72], [23, 41, 59, 77]]
 const EDGE: [number, number][] = [[8, 8], [50, 8], [92, 8], [92, 50], [92, 92], [50, 92], [8, 92], [8, 50]]
 const QUAD = ['#09090b', '#71717a', '#f4f4f5']
 
-function Figure({ kind, c, setShapes }: { kind: LabPuzzle['kind']; c: LabCell; setShapes: number[] }) {
+function Figure({ kind, c }: { kind: LabPuzzle['kind']; c: LabCell }) {
   const n = (v: unknown) => v as number
   const l = (v: unknown) => v as number[]
   if (kind === 'copies') {
@@ -58,7 +58,8 @@ function Figure({ kind, c, setShapes }: { kind: LabPuzzle['kind']; c: LabCell; s
     return <><Shape s={o} x={50} y={50} r={25} fill={n(c.ofill)} /><Shape s={i} x={50} y={o === 0 ? 55 : 50} r={9} fill={n(c.ifill)} /></>
   }
   if (kind === 'set') {
-    return <>{SET_SLOTS.map(([x, y], i) => ((n(c.set) >> i) & 1 ? <Shape key={i} s={setShapes[i]} x={x} y={y} r={9} fill={n(c.fill)} /> : null))}</>
+    const xs = l(c.set)
+    return <>{xs.map((s, i) => <Shape key={i} s={s} x={SET_X[xs.length - 1][i]} y={50} r={xs.length === 4 ? 7.5 : 9} fill={n(c.fill)} />)}</>
   }
   return <>{l(c.quad).map((v, i) => <rect key={i} x={31 + (i % 2) * 20} y={31 + Math.floor(i / 2) * 20} width={18} height={18} rx={2} fill={QUAD[v]} className="stroke-zinc-200" strokeWidth="1" />)}</>
 }
@@ -69,7 +70,7 @@ function Cell({ p, c, className = '' }: { p: LabPuzzle; c: LabCell; className?: 
   return (
     <div className={`overflow-hidden rounded-lg border bg-zinc-900 ${className}`} style={stripes(c.stripe as number)}>
       <svg viewBox="0 0 100 100" className="size-full">
-        <Figure kind={p.kind} c={c} setShapes={p.setShapes} />
+        <Figure kind={p.kind} c={c} />
         {EDGE.map(([x, y], i) => (((c.dots as number) >> i) & 1 ? <circle key={i} cx={x} cy={y} r="3.6" className="fill-violet-400" /> : null))}
       </svg>
     </div>
