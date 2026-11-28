@@ -205,12 +205,13 @@ describe('matrix lab: puzzles', () => {
     expect(kinds.size).toBe(KINDS.length)
   })
 
-  it('what does not change stays plain: no stripes, white shapes', () => {
+  it('what does not change stays plain: no stripes, no dots, white shapes', () => {
     for (let n = 0; n < 600; n++) {
       const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'levels' }, Math.random, 1 + (n % 8))
       const changing = new Set(p.rules.map((r) => r.part))
       for (const c of p.cells) {
         if (!changing.has('stripe')) expect(c.stripe).toBe(-1)
+        if (!changing.has('dots')) expect(c.dots).toBe(0)
         for (const f of ['fill', 'ofill', 'ifill'] as Part[]) if (f in c && !changing.has(f)) expect(c[f]).toBe(2)
       }
     }

@@ -4,7 +4,7 @@ import { MatrixLab } from './MatrixLabTest'
 
 /** The Matrix Data Lab: one fixed setup (`DATA_OPTIONS` in lab.ts), no settings, its own log. */
 /** Bump together with any change to DATA_OPTIONS, so downloads from different setups never mix. */
-const TAG = 'data-1'
+const TAG = 'data-2'
 
 export default function MatrixDataLabTest(props: TestComponentProps) {
   return (
