@@ -103,20 +103,22 @@ interface LogRow {
   dirs?: string[]
   /** The part the options split on. */
   focus?: string
-  /** The part the wrong pick got wrong (its value differed from the answer). */
+  /** The parts the wrong pick got wrong (its value differed from the answer). */
   missed?: string[]
+  /** Which lab and setup the answer came from, e.g. "data-1" (the Matrix Data Lab, first setup). */
+  lab?: string
 }
 const comboOf = (levels: string[]) => [...levels].sort((a, b) => LEVEL_RANK[a as Level] - LEVEL_RANK[b as Level]).join(' + ')
-const STORE = 'skill-lab:matrix-lab'
-function load(): { opts: LabOptions; log: LogRow[] } {
+/** Settings and log, kept in this browser under `store`. With a `fixed` setup the stored settings are ignored. */
+function load(store: string, fixed?: LabOptions): { opts: LabOptions; log: LogRow[] } {
   try {
-    const d = JSON.parse(localStorage.getItem(STORE) ?? 'null')
-    if (d?.opts && Array.isArray(d.log)) return { opts: { ...DEFAULT_OPTIONS, ...d.opts }, log: d.log }
+    const d = JSON.parse(localStorage.getItem(store) ?? 'null')
+    if (Array.isArray(d?.log)) return { opts: fixed ?? { ...DEFAULT_OPTIONS, ...d.opts }, log: d.log }
   } catch { /* fall through */ }
-  return { opts: DEFAULT_OPTIONS, log: [] }
+  return { opts: fixed ?? DEFAULT_OPTIONS, log: [] }
 }
-function save(opts: LabOptions, log: LogRow[]) {
-  try { localStorage.setItem(STORE, JSON.stringify({ opts, log: log.slice(-3000) })) } catch { /* not saved */ }
+function save(store: string, opts: LabOptions, log: LogRow[]) {
+  try { localStorage.setItem(store, JSON.stringify({ opts, log: log.slice(-3000) })) } catch { /* not saved */ }
 }
 
 function Chip({ on, onPress, children }: { on: boolean; onPress: () => void; children: ReactNode }) {
@@ -147,17 +149,17 @@ const keysOf = (r: LogRow, g: Group): string[] =>
   : [`${r.kind} · ${r.combo ?? '?'}`]
 
 /** Saves the log as a JSON file, for a closer look later. */
-function download(log: LogRow[]) {
-  const blob = new Blob([JSON.stringify({ lab: 'matrix-lab', exportedAt: new Date().toISOString(), log }, null, 1)], { type: 'application/json' })
+function download(log: LogRow[], name: string) {
+  const blob = new Blob([JSON.stringify({ lab: name, exportedAt: new Date().toISOString(), log }, null, 1)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `matrix-lab-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = `${name}-${new Date().toISOString().slice(0, 10)}.json`
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function LogTable({ log, onClear }: { log: LogRow[]; onClear: () => void }) {
+function LogTable({ log, onClear, name }: { log: LogRow[]; onClear: () => void; name: string }) {
   // Clearing asks once more: the log can't be brought back (download it first to keep it).
   const [confirm, setConfirm] = useState(false)
   const [group, setGroup] = useState<Group>('combo')
@@ -191,7 +193,7 @@ function LogTable({ log, onClear }: { log: LogRow[]; onClear: () => void }) {
         {!rows.length && <p className="mt-4 text-zinc-500">Nothing answered yet.</p>}
       </div>
       <div className="flex flex-wrap items-center gap-1">
-        <Chip on={false} onPress={() => download(log)}>Download data ({log.length})</Chip>
+        <Chip on={false} onPress={() => download(log, name)}>Download data ({log.length})</Chip>
         {!confirm && log.length > 0 && <Chip on={false} onPress={() => setConfirm(true)}>Clear log</Chip>}
         {confirm && (
           <>
@@ -207,8 +209,18 @@ function LogTable({ log, onClear }: { log: LogRow[]; onClear: () => void }) {
 
 // ---- the lab ---------------------------------------------------------------------------------------------------------
 
-export default function MatrixLabTest({ onFinish }: TestComponentProps) {
-  const [{ opts, log }, setData] = useState(load)
+export default function MatrixLabTest(props: TestComponentProps) {
+  return <MatrixLab {...props} store="skill-lab:matrix-lab" name="matrix-lab" />
+}
+
+/**
+ * The lab page. `fixed`: one setup, no settings panel (the Matrix Data Lab); `store`: where its log lives;
+ * `tag`: written into every log row, so downloads say which lab and setup they came from.
+ */
+export function MatrixLab({ onFinish, fixed, store, name, tag, about }: TestComponentProps & {
+  fixed?: LabOptions; store: string; name: string; tag?: string; about?: ReactNode
+}) {
+  const [{ opts, log }, setData] = useState(() => load(store, fixed))
   const [puzzle, setPuzzle] = useState(() => makeLabPuzzle(opts))
   const [picked, setPicked] = useState<number | null>(null)
   const [showLog, setShowLog] = useState(false)
@@ -216,7 +228,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
   const [flash, signal] = useAnswerFlash()
   const shownAt = useRef(0)
   useEffect(() => { shownAt.current = performance.now() }, [puzzle])
-  useEffect(() => save(opts, log), [opts, log])
+  useEffect(() => save(store, opts, log), [store, opts, log])
 
   const setOpts = (f: (o: LabOptions) => LabOptions) => setData((d) => ({ ...d, opts: f(d.opts) }))
   const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
@@ -231,7 +243,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
     const row: LogRow = {
       ids: puzzle.rules.map((r) => r.id), kind: puzzle.kind, ms: Math.round(performance.now() - shownAt.current), right,
       at: new Date().toISOString(), mode: opts.mode, level: puzzle.level, combo: comboOf(puzzle.rules.map((r) => r.level)),
-      dirs: puzzle.rules.map((r) => r.dir), focus: puzzle.focus,
+      dirs: puzzle.rules.map((r) => r.dir), focus: puzzle.focus, ...(tag && { lab: tag }),
       ...(!right && { missed: (Object.keys(pick) as Part[]).filter((pt) => JSON.stringify(pick[pt]) !== JSON.stringify(puzzle.cells[8][pt])) }),
     }
     setData((d) => ({ ...d, log: [...d.log, row] }))
@@ -274,7 +286,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
           ))}
         </div>
         <div className="flex h-full min-h-0 flex-col gap-2 self-stretch text-xs">
-          {showLog ? <LogTable log={log} onClear={() => setData((d) => ({ ...d, log: [] }))} /> : done ? (
+          {showLog ? <LogTable log={log} name={name} onClear={() => setData((d) => ({ ...d, log: [] }))} /> : done ? (
             <div className="min-h-0 flex-1 overflow-auto">
               <p className="mb-1 font-medium text-zinc-300">The rules</p>
               <ul className="list-disc space-y-1 pl-4 text-zinc-400">
@@ -284,6 +296,8 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
               <button type="button" onPointerDown={(e) => { e.preventDefault(); next() }} className="mt-3 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-500">Next puzzle</button>
               <p className="mt-1 text-[11px] text-zinc-600">or Enter / Space</p>
             </div>
+          ) : fixed ? (
+            <div className="min-h-0 flex-1 overflow-auto text-zinc-400">{about}</div>
           ) : (
             <div className="min-h-0 flex-1 space-y-2 overflow-auto">
               <p className="text-zinc-500">Changes apply from the next puzzle.</p>

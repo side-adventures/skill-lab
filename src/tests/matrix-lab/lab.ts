@@ -395,6 +395,22 @@ export interface LabOptions {
 }
 export const DEFAULT_OPTIONS: LabOptions = { kinds: [...KINDS], numbers: ['double', 'grid', 'plus'], dots: 'mixed', stripes: true, cols: true, mode: 'levels', fixedLevel: null }
 
+/**
+ * The Matrix Data Lab: one fixed setup, no settings, its own log. For timing every rule: each puzzle has 2 random rules
+ * (any level), so every rule meets many partners. Change it only together with `TAG` in MatrixDataLabTest.tsx, so downloads from
+ * different setups never mix.
+ */
+export const DATA_OPTIONS: LabOptions = {
+  ...DEFAULT_OPTIONS,
+  kinds: [...KINDS],
+  numbers: ['double', 'grid', 'plus'],
+  dots: 'mixed',
+  stripes: true,
+  cols: true,
+  mode: 'random2',
+  fixedLevel: null,
+}
+
 /** Which puzzle of the visit gets which level: 1, 2, 3–4, 5–6, then 7 on. */
 export const levelOfRound = (round: number) => (round <= 1 ? 1 : round === 2 ? 2 : round <= 4 ? 3 : round <= 6 ? 4 : 5)
 /** The changes a level may have (one combination picked at random), as rule levels. */

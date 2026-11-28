@@ -837,6 +837,31 @@ export const HIDDEN: TestDefinition[] = [
     layout: 'full',
     Component: lazyTest(() => import('./matrix-lab/MatrixLabTest')),
   },
+  {
+    // A data tool, not a real test: one fixed setup for timing Matrix Puzzles' rules (see matrix-lab/MatrixDataLabTest.tsx).
+    id: 'matrix-data',
+    name: 'Matrix Data Lab',
+    icon: '🧪',
+    category: 'Thinking',
+    tagline: 'Solve matrix puzzles at your own pace, to measure how hard each rule is.',
+    skill: 'nothing yet: it times each puzzle rule',
+    howTo: [
+      'Each puzzle is a 3 × 3 grid with the last cell missing. Click the option that completes it.',
+      'Every puzzle has 2 rules at random. After each answer you see the rules and the right option.',
+      'Skip a puzzle you cannot give real attention, or press Don\'t count after an answer that was a guess.',
+      'No time limit, no end: stop with Finish whenever you like. Download the log when you have played a batch.',
+    ],
+    scoring: [
+      'Your number of right answers in this visit.',
+    ],
+    durationHint: 'as long as you like',
+    scoreLabel: 'Right answers this visit',
+    higherIsBetter: true,
+    formatScore: (s) => count(s, 'right answer'),
+    start: 'none',
+    layout: 'full',
+    Component: lazyTest(() => import('./matrix-lab/MatrixDataLabTest')),
+  },
 ]
 
 export const getTest = (id: string) => [...TESTS, ...PROTOTYPES, ...HIDDEN].find((t) => t.id === id)
