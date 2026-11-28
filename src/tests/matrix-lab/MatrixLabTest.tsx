@@ -29,13 +29,14 @@ const SHAPES: ((x: number, y: number, r: number) => string)[] = [
 ]
 const FILL = ['fill-zinc-950', 'fill-zinc-500', 'fill-zinc-100']
 /**
- * A white inner shape on a white outer one gets a black outline, so it still shows. It sits under the fill (only its
- * outer half shows), so the shape keeps its size. All other shapes keep the light outline (a dark edge would vanish on
- * the dark cell and make white shapes look smaller).
+ * A white inner shape (shape in shape) gets a black outline, so it also shows on a white outer shape. It sits under
+ * the fill (only its outer half shows), so the shape keeps its size. All other shapes keep the light outline (a dark
+ * edge would vanish on the dark cell and make white copies look smaller).
  */
 const WHITE_EDGE = { className: 'stroke-zinc-950', strokeWidth: 2, paintOrder: 'stroke' } as const
-const Shape = ({ s, x, y, r, fill, onWhite = false }: { s: number; x: number; y: number; r: number; fill: number; onWhite?: boolean }) => {
-  const black = fill === 2 && onWhite
+/** `inner`: the inner shape of shape in shape; white ones get the black outline, all others the light one. */
+const Shape = ({ s, x, y, r, fill, inner = false }: { s: number; x: number; y: number; r: number; fill: number; inner?: boolean }) => {
+  const black = fill === 2 && inner
   return <path d={SHAPES[s](x, y, r)} className={`${black ? WHITE_EDGE.className : 'stroke-zinc-200'} ${FILL[fill]}`} strokeWidth={black ? WHITE_EDGE.strokeWidth : 1} paintOrder={black ? WHITE_EDGE.paintOrder : undefined} strokeLinejoin="round" />
 }
 /** Spots for 1–9 copies (inside the ring of dots) and how big the copies are. */
@@ -62,7 +63,7 @@ function Figure({ kind, c }: { kind: LabPuzzle['kind']; c: LabCell }) {
   if (kind === 'order') return <>{l(c.order).map((s, i) => <Shape key={i} s={s} x={26 + i * 24} y={50} r={10} fill={n(c.fill)} />)}</>
   if (kind === 'nest') {
     const [o, i] = l(c.nest)
-    return <><Shape s={o} x={50} y={50} r={25} fill={n(c.ofill)} /><Shape s={i} x={50} y={o === 0 ? 55 : 50} r={9} fill={n(c.ifill)} onWhite={n(c.ofill) === 2} /></>
+    return <><Shape s={o} x={50} y={50} r={25} fill={n(c.ofill)} /><Shape s={i} x={50} y={o === 0 ? 55 : 50} r={9} fill={n(c.ifill)} inner /></>
   }
   if (kind === 'set') {
     const xs = l(c.set)
