@@ -385,9 +385,11 @@ export interface LabOptions {
   cols: boolean
   /**
    * levels: the changes follow the level plan (`LEVEL_PLAN`, by the puzzle's number in the visit);
-   * twoHard: exactly one figure rule and one dot rule, neither easy; mixed: the older loose mix.
+   * random2: 2 rules on 2 random parts (at least one on the figure), each at a random level the part allows, so every
+   * rule comes with many partners (for difficulty data); twoHard: one figure rule and one dot rule, neither easy;
+   * mixed: the older loose mix.
    */
-  mode: 'levels' | 'twoHard' | 'mixed'
+  mode: 'levels' | 'random2' | 'twoHard' | 'mixed'
   /** Levels mode: always this level (1–5), or null for the level by puzzle number. */
   fixedLevel: number | null
 }
@@ -505,6 +507,12 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random, round 
       if (!parts) continue
       parts.forEach((p, i) => add(ruleAt(p, need[i], opts, rand)))
       if (rules.length < need.length) continue
+    } else if (opts.mode === 'random2') {
+      const pool = shuffle([...KIND_PARTS[kind], ...(opts.dots !== 'off' ? ['dots'] : []), ...(opts.stripes ? ['stripe'] : [])] as Part[], rand)
+      const two = pool.slice(0, 2)
+      if (two.length < 2 || !two.some((p) => KIND_PARTS[kind].includes(p))) continue
+      for (const p of two) add(ruleAt(p, pick(PART_LEVELS[p], rand), opts, rand))
+      if (rules.length < 2) continue
     } else if (twoHard) {
       add(ruleFor(kind === 'copies' ? 'count' : kind, opts, true, rand))
       add(ruleFor('dots', opts, true, rand))

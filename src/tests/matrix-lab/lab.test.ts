@@ -183,6 +183,18 @@ describe('matrix lab: puzzles', () => {
     }
   })
 
+  it('2 random rules: two parts, at least one on the figure, and every level comes up', () => {
+    const levels = new Set<string>()
+    for (let n = 0; n < 600; n++) {
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'random2' })
+      expect(p.rules).toHaveLength(2)
+      expect(new Set(p.rules.map((r) => r.part)).size).toBe(2)
+      expect(p.rules.some((r) => !['dots', 'stripe'].includes(r.part))).toBe(true)
+      p.rules.forEach((r) => levels.add(r.level))
+    }
+    expect([...levels].sort()).toEqual(['easy', 'hard', 'medium'])
+  })
+
   it('what does not change stays plain: no stripes, white shapes', () => {
     for (let n = 0; n < 600; n++) {
       const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'levels' }, Math.random, 1 + (n % 8))
