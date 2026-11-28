@@ -28,8 +28,13 @@ const SHAPES: ((x: number, y: number, r: number) => string)[] = [
   (x, y, r) => `M${x + r * 0.25} ${y - r * 1.1}L${x - r * 0.7} ${y + r * 0.15}H${x - r * 0.05}L${x - r * 0.3} ${y + r * 1.1}L${x + r * 0.7} ${y - r * 0.2}H${x + r * 0.05}z`,
 ]
 const FILL = ['fill-zinc-950', 'fill-zinc-500', 'fill-zinc-100']
+/**
+ * White shapes get a black outline, so a white shape on (or in) a white one still shows. It sits under the fill
+ * (only its outer half shows), so small white shapes keep their full size.
+ */
+const WHITE_EDGE = { className: 'stroke-zinc-950', strokeWidth: 2, paintOrder: 'stroke' } as const
 const Shape = ({ s, x, y, r, fill }: { s: number; x: number; y: number; r: number; fill: number }) => (
-  <path d={SHAPES[s](x, y, r)} className={`stroke-zinc-200 ${FILL[fill]}`} strokeWidth="1" strokeLinejoin="round" />
+  <path d={SHAPES[s](x, y, r)} className={`${fill === 2 ? WHITE_EDGE.className : 'stroke-zinc-200'} ${FILL[fill]}`} strokeWidth={fill === 2 ? WHITE_EDGE.strokeWidth : 1} paintOrder={fill === 2 ? WHITE_EDGE.paintOrder : undefined} strokeLinejoin="round" />
 )
 /** Spots for 1–8 copies (inside the ring of dots) and how big the copies are. */
 const SPOTS: [number, number][][] = [
@@ -61,7 +66,7 @@ function Figure({ kind, c }: { kind: LabPuzzle['kind']; c: LabCell }) {
     const xs = l(c.set)
     return <>{xs.map((s, i) => <Shape key={i} s={s} x={SET_X[xs.length - 1][i]} y={50} r={xs.length === 4 ? 7.5 : 9} fill={n(c.fill)} />)}</>
   }
-  return <>{l(c.quad).map((v, i) => <rect key={i} x={31 + (i % 2) * 20} y={31 + Math.floor(i / 2) * 20} width={18} height={18} rx={2} fill={QUAD[v]} className="stroke-zinc-200" strokeWidth="1" />)}</>
+  return <>{l(c.quad).map((v, i) => <rect key={i} x={31 + (i % 2) * 20} y={31 + Math.floor(i / 2) * 20} width={18} height={18} rx={2} fill={QUAD[v]} className={v === 2 ? WHITE_EDGE.className : 'stroke-zinc-200'} strokeWidth={v === 2 ? WHITE_EDGE.strokeWidth : 1} paintOrder={v === 2 ? WHITE_EDGE.paintOrder : undefined} />)}</>
 }
 
 const stripes = (dir: number): CSSProperties => (dir < 0 ? {} : { backgroundImage: `repeating-linear-gradient(${dir * 45}deg, #3f3f46 0 2px, transparent 2px 12px)` })
