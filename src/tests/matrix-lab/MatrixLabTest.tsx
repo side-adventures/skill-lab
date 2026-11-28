@@ -282,6 +282,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
                 <p className="mb-1 text-zinc-400">Changes per puzzle</p>
                 <div className="flex flex-wrap gap-1">
                   <Chip on={opts.mode === 'levels'} onPress={() => setOpts((o) => ({ ...o, mode: 'levels' }))}>Levels</Chip>
+                  <Chip on={opts.mode === 'random2'} onPress={() => setOpts((o) => ({ ...o, mode: 'random2' }))}>2 random rules</Chip>
                   <Chip on={opts.mode === 'twoHard'} onPress={() => setOpts((o) => ({ ...o, mode: 'twoHard' }))}>2, none easy</Chip>
                   <Chip on={opts.mode === 'mixed'} onPress={() => setOpts((o) => ({ ...o, mode: 'mixed' }))}>Mixed</Chip>
                 </div>
@@ -294,6 +295,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
                     <p className="mt-1 text-[11px] text-zinc-600">By number: puzzle 1, 2, 3–4, 5–6, 7+. Dots and stripes can be among the changes when on.</p>
                   </>
                 )}
+                {opts.mode === 'random2' && <p className="mt-1 text-[11px] text-zinc-600">Any 2 rules at any level, at least one on the figure: the best mix for timing each rule.</p>}
                 {opts.mode === 'twoHard' && <p className="mt-1 text-[11px] text-zinc-600">Figure + dots. Dots, stripes and fill switches don't apply.</p>}
               </div>
               <div className="flex flex-wrap gap-1">
