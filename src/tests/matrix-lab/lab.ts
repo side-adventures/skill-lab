@@ -9,6 +9,8 @@ import { randInt, shuffle, type Rand } from '../../lib/random'
 
 /** 9 clearly different shapes (index = shape id). */
 export const SHAPE_NAMES = ['triangle', 'square', 'circle', 'star', 'cross', 'heart', 'moon', 'arrow', 'bolt']
+/** The shapes in use (ids above): moon and bolt are out (2026-11-28), too thin to read as small copies. */
+export const SHAPE_IDS = [0, 1, 2, 3, 4, 5, 7]
 /** Shapes with room for a shape inside (shape in shape): triangle, square, circle, cross, heart. */
 const ROOMY = [0, 1, 2, 4, 5]
 
@@ -21,7 +23,7 @@ export const KIND_NAMES: Record<Kind, string> = {
 
 /**
  * The parts of a cell, each a number or a short list:
- * - shape 0–8, count 1–9 (no tripling: 1 3 9 is too easy), fill 0–2 (black, grey, white): the copies;
+ * - shape (one of SHAPE_IDS), count 1–9 (no tripling: 1 3 9 is too easy), fill 0–2 (black, grey, white): the copies;
  * - order: 3 shape ids, drawn left to right;
  * - nest: [outer, inner] shape ids; ofill / ifill: their fills;
  * - set: 1–4 different shape ids in a row, in the order you read them: combining keeps the 1st cell's shapes first;
@@ -56,7 +58,7 @@ const swap = (xs: number[], i: number, j: number) => { const c = [...xs]; [c[i],
 const turnQ = (q: number[]) => [q[2], q[0], q[3], q[1]]
 
 export const PARTS: Record<Part, PartType> = {
-  shape: { valid: (v) => typeof v === 'number' && v >= 0 && v <= 8, near: (_, rand) => shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 3) },
+  shape: { valid: (v) => typeof v === 'number' && SHAPE_IDS.includes(v), near: (_, rand) => shuffle(SHAPE_IDS, rand).slice(0, 3) },
   count: {
     ...num(1, 9),
     ops: [(a, b) => (a as number) + (b as number), (a, b) => Math.abs((a as number) - (b as number)), (a, b) => (a as number) * (b as number)],
@@ -203,7 +205,7 @@ function baseRule(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabR
   const dir = dirFor(opts.cols, rand)
   const three3 = (xs: number[]) => shuffle(xs, rand).slice(0, 3)
   switch (part) {
-    case 'shape': return pick([sameRule, threeRule], rand)(part, three3([0, 1, 2, 3, 4, 5, 6, 7, 8]), dir, 'Shape', rand)
+    case 'shape': return pick([sameRule, threeRule], rand)(part, three3(SHAPE_IDS), dir, 'Shape', rand)
     case 'fill': case 'ofill': case 'ifill': {
       const name = { fill: 'Fill', ofill: 'Outer fill', ifill: 'Inner fill' }[part]
       const k = randInt(0, 2, rand)
@@ -260,13 +262,13 @@ function baseRule(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabR
         `dots:${k}`, or ? `Dots: A + B = C ${along(dir)}: the 3rd cell has all dots of the first two` : `Dots: shared dots disappear ${along(dir)}`)
     }
     case 'order': {
-      const sets = rand() < 0.5 ? [0, 1, 2].map(() => three3([0, 1, 2, 3, 4, 5, 6, 7, 8])) : (() => { const t = three3([0, 1, 2, 3, 4, 5, 6, 7, 8]); return [t, swap(t, 0, 1), [t[2], t[0], t[1]]] })()
+      const sets = rand() < 0.5 ? [0, 1, 2].map(() => three3(SHAPE_IDS)) : (() => { const t = three3(SHAPE_IDS); return [t, swap(t, 0, 1), [t[2], t[0], t[1]]] })()
       const k = pick([0, 1, 2, 4], rand)
       const M = PARTS.order.moves!
       if (k === 4) {
         // 4 shapes go round, 3 show at a time: 1 2 3 → 2 3 4 → 3 4 1 (or the other way).
         const d = pick([1, -1], rand)
-        const four = () => shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 4)
+        const four = () => shuffle(SHAPE_IDS, rand).slice(0, 4)
         const t0 = four()
         const cyc = rand() < 0.5 ? [0, 1, 2].map(four) : [t0, t0, t0]
         const st = [0, 1, 2].map(() => randInt(0, 3, rand))
@@ -319,7 +321,7 @@ function baseRule(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabR
     }
     case 'set': {
       const or = rand() < 0.5
-      const pool = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand).slice(0, 4)
+      const pool = shuffle(SHAPE_IDS, rand).slice(0, 4)
       const sub = () => shuffle(pool, rand).slice(0, randInt(1, 2, rand))
       const first = dir === 'col' ? 'top' : 'left'
       return combineRule(part, () => [sub(), sub()], PARTS.set.ops![or ? 0 : 2], dir, `set:${or ? 'or' : 'xor'}`, or
@@ -394,7 +396,7 @@ const KIND_PARTS: Record<Kind, Part[]> = {
   copies: ['shape', 'count', 'fill'], order: ['order', 'fill'], nest: ['nest', 'ofill', 'ifill'], set: ['set', 'fill'], quad: ['quad'],
 }
 const randomValue = (part: Part, rand: Rand): Val => {
-  const s9 = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], rand)
+  const s9 = shuffle(SHAPE_IDS, rand)
   switch (part) {
     case 'shape': return s9[0]
     case 'count': return randInt(1, 4, rand)

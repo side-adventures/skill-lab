@@ -29,22 +29,24 @@ const SHAPES: ((x: number, y: number, r: number) => string)[] = [
 ]
 const FILL = ['fill-zinc-950', 'fill-zinc-500', 'fill-zinc-100']
 /**
- * White shapes get a black outline, so a white shape on (or in) a white one still shows. It sits under the fill
- * (only its outer half shows), so small white shapes keep their full size.
+ * A white inner shape on a white outer one gets a black outline, so it still shows. It sits under the fill (only its
+ * outer half shows), so the shape keeps its size. All other shapes keep the light outline (a dark edge would vanish on
+ * the dark cell and make white shapes look smaller).
  */
 const WHITE_EDGE = { className: 'stroke-zinc-950', strokeWidth: 2, paintOrder: 'stroke' } as const
-const Shape = ({ s, x, y, r, fill }: { s: number; x: number; y: number; r: number; fill: number }) => (
-  <path d={SHAPES[s](x, y, r)} className={`${fill === 2 ? WHITE_EDGE.className : 'stroke-zinc-200'} ${FILL[fill]}`} strokeWidth={fill === 2 ? WHITE_EDGE.strokeWidth : 1} paintOrder={fill === 2 ? WHITE_EDGE.paintOrder : undefined} strokeLinejoin="round" />
-)
-/** Spots for 1–8 copies (inside the ring of dots) and how big the copies are. */
+const Shape = ({ s, x, y, r, fill, onWhite = false }: { s: number; x: number; y: number; r: number; fill: number; onWhite?: boolean }) => {
+  const black = fill === 2 && onWhite
+  return <path d={SHAPES[s](x, y, r)} className={`${black ? WHITE_EDGE.className : 'stroke-zinc-200'} ${FILL[fill]}`} strokeWidth={black ? WHITE_EDGE.strokeWidth : 1} paintOrder={black ? WHITE_EDGE.paintOrder : undefined} strokeLinejoin="round" />
+}
+/** Spots for 1–9 copies (inside the ring of dots) and how big the copies are. */
 const SPOTS: [number, number][][] = [
   [[50, 50]], [[33, 50], [67, 50]], [[50, 35], [33, 65], [67, 65]], [[35, 35], [65, 35], [35, 65], [65, 65]],
   [[31, 31], [69, 31], [50, 50], [31, 69], [69, 69]], [[29, 38], [50, 38], [71, 38], [29, 62], [50, 62], [71, 62]],
-  [[29, 30], [50, 30], [71, 30], [50, 50], [29, 70], [50, 70], [71, 70]],
-  [[29, 30], [50, 30], [71, 30], [39, 50], [61, 50], [29, 70], [50, 70], [71, 70]],
-  [[29, 29], [50, 29], [71, 29], [29, 50], [50, 50], [71, 50], [29, 71], [50, 71], [71, 71]],
+  [[27, 27], [50, 27], [73, 27], [50, 50], [27, 73], [50, 73], [73, 73]],
+  [[27, 27], [50, 27], [73, 27], [38, 50], [62, 50], [27, 73], [50, 73], [73, 73]],
+  [[27, 27], [50, 27], [73, 27], [27, 50], [50, 50], [73, 50], [27, 73], [50, 73], [73, 73]],
 ]
-const COPY_R = [17, 10, 10, 9.5, 7.5, 7, 6, 6, 6]
+const COPY_R = [17, 10, 10, 9.5, 7.5, 7, 7.5, 7.5, 7.5]
 /** Shape sets: 1–4 shapes in one row, in their order. */
 const SET_X = [[50], [38, 62], [28, 50, 72], [23, 41, 59, 77]]
 const EDGE: [number, number][] = [[8, 8], [50, 8], [92, 8], [92, 50], [92, 92], [50, 92], [8, 92], [8, 50]]
@@ -60,13 +62,13 @@ function Figure({ kind, c }: { kind: LabPuzzle['kind']; c: LabCell }) {
   if (kind === 'order') return <>{l(c.order).map((s, i) => <Shape key={i} s={s} x={26 + i * 24} y={50} r={10} fill={n(c.fill)} />)}</>
   if (kind === 'nest') {
     const [o, i] = l(c.nest)
-    return <><Shape s={o} x={50} y={50} r={25} fill={n(c.ofill)} /><Shape s={i} x={50} y={o === 0 ? 55 : 50} r={9} fill={n(c.ifill)} /></>
+    return <><Shape s={o} x={50} y={50} r={25} fill={n(c.ofill)} /><Shape s={i} x={50} y={o === 0 ? 55 : 50} r={9} fill={n(c.ifill)} onWhite={n(c.ofill) === 2} /></>
   }
   if (kind === 'set') {
     const xs = l(c.set)
     return <>{xs.map((s, i) => <Shape key={i} s={s} x={SET_X[xs.length - 1][i]} y={50} r={xs.length === 4 ? 7.5 : 9} fill={n(c.fill)} />)}</>
   }
-  return <>{l(c.quad).map((v, i) => <rect key={i} x={31 + (i % 2) * 20} y={31 + Math.floor(i / 2) * 20} width={18} height={18} rx={2} fill={QUAD[v]} className={v === 2 ? WHITE_EDGE.className : 'stroke-zinc-200'} strokeWidth={v === 2 ? WHITE_EDGE.strokeWidth : 1} paintOrder={v === 2 ? WHITE_EDGE.paintOrder : undefined} />)}</>
+  return <>{l(c.quad).map((v, i) => <rect key={i} x={31 + (i % 2) * 20} y={31 + Math.floor(i / 2) * 20} width={18} height={18} rx={2} fill={QUAD[v]} className="stroke-zinc-200" strokeWidth="1" />)}</>
 }
 
 const stripes = (dir: number): CSSProperties => (dir < 0 ? {} : { backgroundImage: `repeating-linear-gradient(${dir * 45}deg, #3f3f46 0 2px, transparent 2px 12px)` })

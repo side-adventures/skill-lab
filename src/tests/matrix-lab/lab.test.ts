@@ -151,6 +151,16 @@ describe('matrix lab: puzzles', () => {
     expect(seen).toBeGreaterThan(25)
   })
 
+  it('no moon or bolt anywhere', () => {
+    for (let n = 0; n < 1500; n++) {
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: n % 2 === 0 })
+      for (const c of [...p.cells, ...p.options]) {
+        const ids = [c.shape, ...((c.order as number[]) ?? []), ...((c.set as number[]) ?? []), ...((c.nest as number[]) ?? [])].filter((x) => x !== undefined)
+        expect(ids.some((x) => x === 6 || x === 8)).toBe(false)
+      }
+    }
+  })
+
   it('no stripes, no dots and rows only when turned off', () => {
     for (let n = 0; n < 200; n++) {
       const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, stripes: false, dots: 'off', cols: false })
