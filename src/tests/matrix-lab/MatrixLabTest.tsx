@@ -5,7 +5,7 @@ import { feedbackRing, useAnswerFlash } from '../../lib/game'
 import { useActionKey } from '../../lib/hooks'
 import type { TestComponentProps } from '../types'
 import {
-  DEFAULT_OPTIONS, KINDS, KIND_NAMES, LEVELS, makeLabPuzzle, type Level, type LabCell, type LabOptions, type LabPuzzle, type NumberRule,
+  DEFAULT_OPTIONS, KINDS, KIND_NAMES, LEVELS, LEVEL_RANK, makeLabPuzzle, type Level, type Part, type LabCell, type LabOptions, type LabPuzzle, type NumberRule,
 } from './lab'
 
 // ---- drawing ---------------------------------------------------------------------------------------------------------
@@ -87,7 +87,26 @@ function Cell({ p, c, className = '' }: { p: LabPuzzle; c: LabCell; className?: 
 
 // ---- settings and log (kept in this browser) -------------------------------------------------------------------------
 
-interface LogRow { ids: string[]; kind: string; ms: number; right: boolean }
+/** One answer. Older rows have only ids, kind, ms and right. */
+interface LogRow {
+  ids: string[]
+  kind: string
+  ms: number
+  right: boolean
+  /** When it was answered (ISO). */
+  at?: string
+  mode?: string
+  level?: number
+  /** The rule levels, sorted, e.g. "easy+medium+medium". */
+  combo?: string
+  /** Each rule's direction, in the order of `ids`. */
+  dirs?: string[]
+  /** The part the options split on. */
+  focus?: string
+  /** The part the wrong pick got wrong (its value differed from the answer). */
+  missed?: string[]
+}
+const comboOf = (levels: string[]) => [...levels].sort((a, b) => LEVEL_RANK[a as Level] - LEVEL_RANK[b as Level]).join(' + ')
 const STORE = 'skill-lab:matrix-lab'
 function load(): { opts: LabOptions; log: LogRow[] } {
   try {
@@ -97,7 +116,7 @@ function load(): { opts: LabOptions; log: LogRow[] } {
   return { opts: DEFAULT_OPTIONS, log: [] }
 }
 function save(opts: LabOptions, log: LogRow[]) {
-  try { localStorage.setItem(STORE, JSON.stringify({ opts, log: log.slice(-500) })) } catch { /* not saved */ }
+  try { localStorage.setItem(STORE, JSON.stringify({ opts, log: log.slice(-3000) })) } catch { /* not saved */ }
 }
 
 function Chip({ on, onPress, children }: { on: boolean; onPress: () => void; children: ReactNode }) {
@@ -119,27 +138,57 @@ const LevelTag = ({ level }: { level?: Level }) => (level ? <span className={`ml
 
 function median(xs: number[]) { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : 0 }
 
+type Group = 'rule' | 'combo' | 'level' | 'figure'
+const GROUPS: [Group, string][] = [['rule', 'Rule'], ['combo', 'Combination'], ['level', 'Level'], ['figure', 'Figure + combination']]
+const keysOf = (r: LogRow, g: Group): string[] =>
+  g === 'rule' ? [`figure:${r.kind}`, ...r.ids]
+  : g === 'level' ? [r.level ? `level ${r.level}` : 'no level']
+  : g === 'combo' ? [r.combo ?? '(old row)']
+  : [`${r.kind} · ${r.combo ?? '?'}`]
+
+/** Saves the log as a JSON file, for a closer look later. */
+function download(log: LogRow[]) {
+  const blob = new Blob([JSON.stringify({ lab: 'matrix-lab', exportedAt: new Date().toISOString(), log }, null, 1)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `matrix-lab-${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 function LogTable({ log }: { log: LogRow[] }) {
+  const [group, setGroup] = useState<Group>('combo')
+  const [onlyLevel, setOnlyLevel] = useState<number | null>(null)
+  const rowsIn = onlyLevel ? log.filter((r) => r.level === onlyLevel) : log
   const by = new Map<string, LogRow[]>()
-  for (const r of log) for (const id of [`figure:${r.kind}`, ...r.ids]) by.set(id, [...(by.get(id) ?? []), r])
+  for (const r of rowsIn) for (const k of keysOf(r, group)) by.set(k, [...(by.get(k) ?? []), r])
   const rows = [...by].sort(([a], [b]) => a.localeCompare(b))
   return (
-    <div className="h-full overflow-auto text-xs">
-      <table className="w-full tabular-nums">
-        <thead className="text-zinc-500"><tr><th className="text-left font-normal">Rule</th><th className="font-normal">Level</th><th className="font-normal">Tried</th><th className="font-normal">Right</th><th className="font-normal">Median time</th></tr></thead>
-        <tbody>
-          {rows.map(([id, rs]) => (
-            <tr key={id} className="border-t border-zinc-800">
-              <td className="py-0.5 text-zinc-300">{id}</td>
-              <td className="text-center"><LevelTag level={LEVELS[id]} /></td>
-              <td className="text-center">{rs.length}</td>
-              <td className="text-center">{Math.round((100 * rs.filter((r) => r.right).length) / rs.length)} %</td>
-              <td className="text-center">{(median(rs.map((r) => r.ms)) / 1000).toFixed(1)} s</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!rows.length && <p className="mt-4 text-zinc-500">Nothing answered yet.</p>}
+    <div className="flex h-full min-h-0 flex-col gap-1.5 text-xs">
+      <div className="flex flex-wrap gap-1">{GROUPS.map(([g, t]) => <Chip key={g} on={group === g} onPress={() => setGroup(g)}>{t}</Chip>)}</div>
+      <div className="flex flex-wrap gap-1">
+        <Chip on={onlyLevel === null} onPress={() => setOnlyLevel(null)}>All levels</Chip>
+        {[1, 2, 3, 4, 5].map((l) => <Chip key={l} on={onlyLevel === l} onPress={() => setOnlyLevel(l)}>{l}</Chip>)}
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <table className="w-full tabular-nums">
+          <thead className="text-zinc-500"><tr><th className="text-left font-normal">{GROUPS.find(([g]) => g === group)![1]}</th>{group === 'rule' && <th className="font-normal">Level</th>}<th className="font-normal">Tried</th><th className="font-normal">Right</th><th className="font-normal">Median</th></tr></thead>
+          <tbody>
+            {rows.map(([id, rs]) => (
+              <tr key={id} className="border-t border-zinc-800">
+                <td className="py-0.5 text-zinc-300">{id}</td>
+                {group === 'rule' && <td className="text-center"><LevelTag level={LEVELS[id]} /></td>}
+                <td className="text-center">{rs.length}</td>
+                <td className="text-center">{Math.round((100 * rs.filter((r) => r.right).length) / rs.length)} %</td>
+                <td className="text-center">{(median(rs.map((r) => r.ms)) / 1000).toFixed(1)} s</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!rows.length && <p className="mt-4 text-zinc-500">Nothing answered yet.</p>}
+      </div>
+      <div><Chip on={false} onPress={() => download(log)}>Download data ({log.length})</Chip></div>
     </div>
   )
 }
@@ -166,11 +215,18 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
     setPicked(i)
     signal(right)
     setSession((s) => ({ tried: s.tried + 1, right: s.right + +right }))
-    setData((d) => ({ ...d, log: [...d.log, { ids: puzzle.rules.map((r) => r.id), kind: puzzle.kind, ms: performance.now() - shownAt.current, right }] }))
+    const pick = puzzle.options[i]
+    const row: LogRow = {
+      ids: puzzle.rules.map((r) => r.id), kind: puzzle.kind, ms: Math.round(performance.now() - shownAt.current), right,
+      at: new Date().toISOString(), mode: opts.mode, level: puzzle.level, combo: comboOf(puzzle.rules.map((r) => r.level)),
+      dirs: puzzle.rules.map((r) => r.dir), focus: puzzle.focus,
+      ...(!right && { missed: (Object.keys(pick) as Part[]).filter((pt) => JSON.stringify(pick[pt]) !== JSON.stringify(puzzle.cells[8][pt])) }),
+    }
+    setData((d) => ({ ...d, log: [...d.log, row] }))
   }
   const next = () => {
     setPicked(null)
-    setPuzzle(makeLabPuzzle(opts))
+    setPuzzle(makeLabPuzzle(opts, Math.random, session.tried + 1))
   }
   useActionKey(next, picked !== null && !showLog)
   const finish = () => onFinish({ score: session.right, ...(session.tried === 0 && { failed: 'No answers — try a few puzzles!' }) })
@@ -179,7 +235,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
   return (
     <>
       <GameInfo
-        left={<InfoValue label="Tried" value={session.tried} />}
+        left={<><InfoValue label="Tried" value={session.tried} />{puzzle.level && <InfoValue label="Level" value={puzzle.level} />}</>}
         middle={done ? (picked === puzzle.answer ? <span className="text-emerald-300">Right</span> : <span className="text-rose-300">Not this one</span>) : `${KIND_NAMES[puzzle.kind]} · which figure completes the grid?`}
         right={<InfoValue label="Right" value={session.right} />}
       />
@@ -225,10 +281,20 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
               <div>
                 <p className="mb-1 text-zinc-400">Changes per puzzle</p>
                 <div className="flex flex-wrap gap-1">
-                  <Chip on={opts.twoHard} onPress={() => setOpts((o) => ({ ...o, twoHard: true }))}>2, none easy (figure + dots)</Chip>
-                  <Chip on={!opts.twoHard} onPress={() => setOpts((o) => ({ ...o, twoHard: false }))}>Mixed</Chip>
+                  <Chip on={opts.mode === 'levels'} onPress={() => setOpts((o) => ({ ...o, mode: 'levels' }))}>Levels</Chip>
+                  <Chip on={opts.mode === 'twoHard'} onPress={() => setOpts((o) => ({ ...o, mode: 'twoHard' }))}>2, none easy</Chip>
+                  <Chip on={opts.mode === 'mixed'} onPress={() => setOpts((o) => ({ ...o, mode: 'mixed' }))}>Mixed</Chip>
                 </div>
-                {opts.twoHard && <p className="mt-1 text-[11px] text-zinc-600">Dots, stripes and fill switches don't apply.</p>}
+                {opts.mode === 'levels' && (
+                  <>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <Chip on={opts.fixedLevel === null} onPress={() => setOpts((o) => ({ ...o, fixedLevel: null }))}>Level by number</Chip>
+                      {[1, 2, 3, 4, 5].map((l) => <Chip key={l} on={opts.fixedLevel === l} onPress={() => setOpts((o) => ({ ...o, fixedLevel: l }))}>{l}</Chip>)}
+                    </div>
+                    <p className="mt-1 text-[11px] text-zinc-600">By number: puzzle 1, 2, 3–4, 5–6, 7+. Dots and stripes can be among the changes when on.</p>
+                  </>
+                )}
+                {opts.mode === 'twoHard' && <p className="mt-1 text-[11px] text-zinc-600">Figure + dots. Dots, stripes and fill switches don't apply.</p>}
               </div>
               <div className="flex flex-wrap gap-1">
                 <Chip on={opts.stripes} onPress={() => setOpts((o) => ({ ...o, stripes: !o.stripes }))}>Stripes</Chip>

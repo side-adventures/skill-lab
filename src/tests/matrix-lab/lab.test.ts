@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_OPTIONS, KINDS, LEVELS, PARTS, key, makeLabPuzzle, type LabOptions, type Part } from './lab'
+import { DEFAULT_OPTIONS, KINDS, LEVELS, LEVEL_PLAN, PARTS, key, levelOfRound, makeLabPuzzle, type LabOptions, type Part } from './lab'
 
 describe('matrix lab: puzzles', () => {
   for (const kind of KINDS) {
     it(`${kind}: 9 cells, 8 distinct valid options, the answer among them`, () => {
-      const mixed: LabOptions = { ...DEFAULT_OPTIONS, kinds: [kind], twoHard: false }
-      const two: LabOptions = { ...DEFAULT_OPTIONS, kinds: [kind], twoHard: true }
+      const mixed: LabOptions = { ...DEFAULT_OPTIONS, kinds: [kind], mode: 'mixed' }
+      const two: LabOptions = { ...DEFAULT_OPTIONS, kinds: [kind], mode: 'twoHard' }
       const ids = new Set<string>()
       for (let n = 0; n < 400; n++) {
         const p = makeLabPuzzle(n % 2 ? mixed : two)
@@ -34,7 +34,7 @@ describe('matrix lab: puzzles', () => {
 
   it('number rules: doubling across rows and columns stays within 8 copies', () => {
     for (let n = 0; n < 300; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['copies'], numbers: ['grid'] })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'mixed', kinds: ['copies'], numbers: ['grid'] })
       for (const c of p.cells) expect(c.count).toBeLessThanOrEqual(8)
       expect(p.rules.some((r) => r.id === 'count:grid')).toBe(true)
     }
@@ -43,7 +43,7 @@ describe('matrix lab: puzzles', () => {
   it('shape in shape chain: each inner shape is the next outer one', () => {
     let seen = 0
     for (let n = 0; n < 400 && seen < 30; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['nest'], cols: false })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'mixed', kinds: ['nest'], cols: false })
       if (!p.rules.some((r) => r.id === 'nest:chain')) continue
       seen++
       const g = p.cells.map((c) => c.nest as number[])
@@ -59,7 +59,7 @@ describe('matrix lab: puzzles', () => {
   it('shape order window: 3 of 4 shapes show, moving one place per cell', () => {
     let seen = 0
     for (let n = 0; n < 600 && seen < 30; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['order'], cols: false })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'mixed', kinds: ['order'], cols: false })
       if (!p.rules.some((r) => r.id === 'order:window')) continue
       seen++
       const g = p.cells.map((c) => c.order as number[])
@@ -75,14 +75,14 @@ describe('matrix lab: puzzles', () => {
 
   it('shape in shape: both chain directions and both combine orders come up', () => {
     const ids = new Set<string>()
-    for (let n = 0; n < 600; n++) makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['nest'] }).rules.forEach((r) => ids.add(r.id))
+    for (let n = 0; n < 600; n++) makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'mixed', kinds: ['nest'] }).rules.forEach((r) => ids.add(r.id))
     for (const id of ['nest:chain', 'nest:chain-back', 'nest:combine', 'nest:combine-back']) expect(ids).toContain(id)
     expect(ids).not.toContain('nest:swap')
   })
 
   it('2 hard: exactly a hard figure rule and a hard dot rule, options split 4 × 2 between them', () => {
     for (let n = 0; n < 500; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: true })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'twoHard' })
       expect(p.rules).toHaveLength(2)
       expect(p.rules.every((r) => r.hard)).toBe(true)
       expect(p.rules.some((r) => r.part === 'dots')).toBe(true)
@@ -94,7 +94,7 @@ describe('matrix lab: puzzles', () => {
   it('copies go up to 9, never tripling', () => {
     let nine = 0
     for (let n = 0; n < 1500; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['copies'], numbers: ['step', 'plus', 'double', 'grid'] })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'mixed', kinds: ['copies'], numbers: ['step', 'plus', 'double', 'grid'] })
       for (const c of p.cells) { expect(c.count).toBeLessThanOrEqual(9); if (c.count === 9) nine++ }
       for (const r of [0, 3, 6]) expect([p.cells[r].count, p.cells[r + 1].count, p.cells[r + 2].count].join()).not.toMatch(/^(1,3,9|9,3,1)$/)
     }
@@ -104,7 +104,7 @@ describe('matrix lab: puzzles', () => {
   it('shape sets keep reading order: the 1st cell\'s shapes first', () => {
     let seen = 0
     for (let n = 0; n < 400; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['set'] })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'mixed', kinds: ['set'] })
       const r = p.rules.find((x) => x.part === 'set')!
       if (!r) continue
       seen++
@@ -123,7 +123,7 @@ describe('matrix lab: puzzles', () => {
 
   it('every rule has a level; A + B never reads as a step; no end swap; nest fills each once', () => {
     for (let n = 0; n < 1500; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: n % 3 === 0, numbers: ['plus', 'double', 'grid', 'step'] })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: n % 3 === 0 ? 'twoHard' : 'mixed', numbers: ['plus', 'double', 'grid', 'step'] })
       for (const r of p.rules) {
         expect(LEVELS[r.id], r.id).toBeDefined()
         expect(r.level).toBe(LEVELS[r.id])
@@ -140,7 +140,7 @@ describe('matrix lab: puzzles', () => {
   it('shape in shape, own rules: no line is the same figure three times', () => {
     let seen = 0
     for (let n = 0; n < 800; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['nest'] })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'mixed', kinds: ['nest'] })
       const r = p.rules.find((x) => x.id === 'nest:parts')
       if (!r) continue
       seen++
@@ -153,7 +153,7 @@ describe('matrix lab: puzzles', () => {
 
   it('no moon or bolt anywhere', () => {
     for (let n = 0; n < 1500; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: n % 2 === 0 })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: n % 2 === 0 ? 'twoHard' : 'mixed' })
       for (const c of [...p.cells, ...p.options]) {
         const ids = [c.shape, ...((c.order as number[]) ?? []), ...((c.set as number[]) ?? []), ...((c.nest as number[]) ?? [])].filter((x) => x !== undefined)
         expect(ids.some((x) => x === 6 || x === 8)).toBe(false)
@@ -161,9 +161,42 @@ describe('matrix lab: puzzles', () => {
     }
   })
 
+  it('levels mode: each puzzle has one of its level\'s combinations, at least one on the figure', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 30].map(levelOfRound)).toEqual([1, 2, 3, 3, 4, 4, 5, 5])
+    const sig = (xs: string[]) => [...xs].sort().join('+')
+    for (let n = 0; n < 1200; n++) {
+      const round = 1 + (n % 8)
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'levels' }, Math.random, round)
+      expect(p.level).toBe(levelOfRound(round))
+      const allowed = LEVEL_PLAN[p.level! - 1].map(sig)
+      expect(allowed).toContain(sig(p.rules.map((r) => r.level)))
+      expect(p.rules.some((r) => !['dots', 'stripe'].includes(r.part))).toBe(true)
+    }
+  })
+
+  it('a fixed level always gives that level', () => {
+    const sig = (xs: string[]) => [...xs].sort().join('+')
+    for (let n = 0; n < 300; n++) {
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'levels', fixedLevel: 5 }, Math.random, 1)
+      expect(p.level).toBe(5)
+      expect(LEVEL_PLAN[4].map(sig)).toContain(sig(p.rules.map((r) => r.level)))
+    }
+  })
+
+  it('what does not change stays plain: no stripes, white shapes', () => {
+    for (let n = 0; n < 600; n++) {
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'levels' }, Math.random, 1 + (n % 8))
+      const changing = new Set(p.rules.map((r) => r.part))
+      for (const c of p.cells) {
+        if (!changing.has('stripe')) expect(c.stripe).toBe(-1)
+        for (const f of ['fill', 'ofill', 'ifill'] as Part[]) if (f in c && !changing.has(f)) expect(c[f]).toBe(2)
+      }
+    }
+  })
+
   it('no stripes, no dots and rows only when turned off', () => {
     for (let n = 0; n < 200; n++) {
-      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, stripes: false, dots: 'off', cols: false })
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, mode: 'mixed', stripes: false, dots: 'off', cols: false })
       expect(p.cells.every((c) => c.stripe === -1 && c.dots === 0)).toBe(true)
       expect(p.options.every((c) => c.stripe === -1 && c.dots === 0)).toBe(true)
       expect(p.rules.some((r) => r.part === 'dots' || r.dir === 'col')).toBe(false)
