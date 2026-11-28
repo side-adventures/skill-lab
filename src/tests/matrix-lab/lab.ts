@@ -144,10 +144,10 @@ export const LEVELS: Record<string, Level> = {
   'count:same': 'easy', 'count:step': 'easy', 'count:double': 'medium', 'count:plus': 'medium', 'count:grid': 'medium',
   // Dots: so many patterns that even the simple rules take a moment.
   'dots:same': 'medium', 'dots:three': 'medium', 'dots:turn': 'hard', 'dots:or': 'hard', 'dots:xor': 'hard', 'dots:rowcol': 'hard',
-  'order:shift': 'medium', 'order:swaps': 'medium', 'order:window': 'medium',
+  'order:shift': 'easy', 'order:swaps': 'medium', 'order:window': 'medium',
   'nest:parts': 'medium', 'nest:combine': 'medium', 'nest:combine-back': 'medium', 'nest:chain': 'medium', 'nest:chain-back': 'medium',
-  'set:or': 'medium', 'set:xor': 'medium',
-  'quad:squares': 'easy', 'quad:turn': 'medium', 'quad:mix': 'hard', 'quad:darker': 'hard', 'quad:lighter': 'hard',
+  'set:or': 'easy', 'set:xor': 'medium',
+  'quad:squares': 'medium', 'quad:turn': 'medium', 'quad:mix': 'hard', 'quad:darker': 'hard', 'quad:lighter': 'hard',
 }
 /** Rules are built with a rough `hard` flag; the level table then decides. */
 const leveled = (r: LabRule | undefined) => {
@@ -192,7 +192,13 @@ const sparse = (lo: number, hi: number, n: number, rand: Rand) => maskOf(shuffle
 const dirFor = (cols: boolean, rand: Rand): Dir => (cols && rand() < 0.4 ? 'col' : 'row')
 
 /** The rules a part can get. `hard` false: only easy ones; true: only medium and hard ones. */
-const ruleFor = (part: Part, opts: LabOptions, hard: boolean, rand: Rand) => leveled(baseRule(part, opts, hard, rand))
+function ruleFor(part: Part, opts: LabOptions, hard: boolean, rand: Rand) {
+  // Asked for a rule that is not easy: draw again when the level table says this one is easy.
+  for (let n = 0; ; n++) {
+    const r = leveled(baseRule(part, opts, hard, rand))
+    if (!hard || !r || r.level !== 'easy' || n >= 30) return r
+  }
+}
 function baseRule(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabRule | undefined {
   const dir = dirFor(opts.cols, rand)
   const three3 = (xs: number[]) => shuffle(xs, rand).slice(0, 3)
@@ -285,8 +291,10 @@ function baseRule(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabR
         const os = three3(all)
         const is2 = three3(all)
         const d2: Dir = dir === 'row' && opts.cols && rand() < 0.5 ? 'col' : dir
-        const o = pick([sameRule, threeRule], rand)('shape', os, dir, '', rand).grid
-        const i = (o.some((v, n) => n && v !== o[0]) ? pick([sameRule, threeRule], rand) : threeRule)('shape', is2, d2, '', rand).grid
+        // Never both "the same" the same way: then every cell of a line would be one and the same figure.
+        const oSame = rand() < 0.5
+        const o = (oSame ? sameRule : threeRule)('shape', os, dir, '', rand).grid
+        const i = (oSame && d2 === dir ? threeRule : pick([sameRule, threeRule], rand))('shape', is2, d2, '', rand).grid
         return { part, id: 'nest:parts', text: `Shape in shape: the outer and the inner shape each follow their own rule (outer ${along(dir)}, inner ${along(d2)})`, dir, hard: false, level: 'easy', grid: o.map((v, n) => [v as number, i[n] as number]) }
       }
       const pair = () => { const s = shuffle(all, rand); return [[s[0], s[1]], [s[2], s[3]]] as [Val, Val] }
@@ -439,7 +447,7 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
       add(ruleFor('count', opts, opts.numbers.length > 0, rand))
       add(ruleFor(pick(['shape', 'fill'] as Part[], rand), opts, false, rand))
     } else if (kind === 'nest') {
-      add(ruleFor('nest', opts, rand() < 0.7, rand))
+      add(ruleFor('nest', opts, rand() < 0.5, rand))
       if (rand() < 0.5) rules.push(...nestFills(opts, rand))
     } else {
       add(ruleFor(kind, opts, kind !== 'quad' || rand() < 0.5, rand))
