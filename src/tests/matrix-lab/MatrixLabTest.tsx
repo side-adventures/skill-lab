@@ -157,7 +157,9 @@ function download(log: LogRow[]) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function LogTable({ log }: { log: LogRow[] }) {
+function LogTable({ log, onClear }: { log: LogRow[]; onClear: () => void }) {
+  // Clearing asks once more: the log can't be brought back (download it first to keep it).
+  const [confirm, setConfirm] = useState(false)
   const [group, setGroup] = useState<Group>('combo')
   const [onlyLevel, setOnlyLevel] = useState<number | null>(null)
   const rowsIn = onlyLevel ? log.filter((r) => r.level === onlyLevel) : log
@@ -188,7 +190,17 @@ function LogTable({ log }: { log: LogRow[] }) {
         </table>
         {!rows.length && <p className="mt-4 text-zinc-500">Nothing answered yet.</p>}
       </div>
-      <div><Chip on={false} onPress={() => download(log)}>Download data ({log.length})</Chip></div>
+      <div className="flex flex-wrap items-center gap-1">
+        <Chip on={false} onPress={() => download(log)}>Download data ({log.length})</Chip>
+        {!confirm && log.length > 0 && <Chip on={false} onPress={() => setConfirm(true)}>Clear log</Chip>}
+        {confirm && (
+          <>
+            <span className="text-[11px] text-rose-300">Delete all {log.length} answers?</span>
+            <Chip on={false} onPress={() => { onClear(); setConfirm(false) }}>Yes, clear</Chip>
+            <Chip on={false} onPress={() => setConfirm(false)}>Keep</Chip>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -262,7 +274,7 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
           ))}
         </div>
         <div className="flex h-full min-h-0 flex-col gap-2 self-stretch text-xs">
-          {showLog ? <LogTable log={log} /> : done ? (
+          {showLog ? <LogTable log={log} onClear={() => setData((d) => ({ ...d, log: [] }))} /> : done ? (
             <div className="min-h-0 flex-1 overflow-auto">
               <p className="mb-1 font-medium text-zinc-300">The rules</p>
               <ul className="list-disc space-y-1 pl-4 text-zinc-400">
