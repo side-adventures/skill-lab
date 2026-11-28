@@ -58,7 +58,7 @@ const swap = (xs: number[], i: number, j: number) => { const c = [...xs]; [c[i],
 const turnQ = (q: number[]) => [q[2], q[0], q[3], q[1]]
 
 export const PARTS: Record<Part, PartType> = {
-  shape: { valid: (v) => typeof v === 'number' && SHAPE_IDS.includes(v), near: (_, rand) => shuffle(SHAPE_IDS, rand).slice(0, 3) },
+  shape: { valid: (v) => typeof v === 'number' && SHAPE_IDS.includes(v), near: (_, rand) => shuffle(SHAPE_IDS, rand) },
   count: {
     ...num(1, 9),
     ops: [(a, b) => (a as number) + (b as number), (a, b) => Math.abs((a as number) - (b as number)), (a, b) => (a as number) * (b as number)],
@@ -90,7 +90,13 @@ export const PARTS: Record<Part, PartType> = {
     valid: (v) => Array.isArray(v) && v.length === 3,
     moves: [(v) => [(v as number[])[2], (v as number[])[0], (v as number[])[1]], (v) => [(v as number[])[1], (v as number[])[2], (v as number[])[0]],
       (v) => swap(v as number[], 0, 1), (v) => swap(v as number[], 1, 2), (v) => swap(v as number[], 0, 2)],
-    near: (v) => [swap(v as number[], 0, 1), swap(v as number[], 1, 2), swap(v as number[], 0, 2)],
+    // Every other order of the same shapes, then one shape swapped for another.
+    near: (v, rand) => {
+      const [a, b, c] = v as number[]
+      const perms = [[a, c, b], [b, a, c], [b, c, a], [c, a, b], [c, b, a]]
+      const other = shuffle(SHAPE_IDS.filter((x) => ![a, b, c].includes(x)), rand)
+      return [...perms, ...[0, 1, 2].map((i, k) => (v as number[]).map((x, j) => (j === i ? other[k % other.length] : x)))]
+    },
   },
   nest: {
     valid: (v) => Array.isArray(v) && v.length === 2 && v[0] !== v[1],
@@ -208,6 +214,7 @@ function baseRule(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabR
     case 'shape': return pick([sameRule, threeRule], rand)(part, three3(SHAPE_IDS), dir, 'Shape', rand)
     case 'fill': case 'ofill': case 'ifill': {
       const name = { fill: 'Fill', ofill: 'Outer fill', ifill: 'Inner fill' }[part]
+      if (part !== 'fill') return threeRule(part, three3([0, 1, 2]), dir, name, rand)
       const k = randInt(0, 2, rand)
       if (k === 0) return sameRule(part, three3([0, 1, 2]), dir, name)
       if (k === 1) return threeRule(part, three3([0, 1, 2]), dir, name, rand)
@@ -221,7 +228,7 @@ function baseRule(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabR
     }
     case 'count': {
       const hardNums = opts.numbers.filter((k) => k !== 'step')
-      const kinds = hard ? (opts.twoHard ? (hardNums.length ? hardNums : ['double', 'grid', 'plus']) : opts.numbers) : ['step', 'same']
+      const kinds = hard ? (opts.mode !== 'mixed' ? (hardNums.length ? hardNums : ['double', 'grid', 'plus']) : opts.numbers) : ['step', 'same']
       const k = pick(kinds.length ? kinds : ['step'], rand)
       if (k === 'same') return sameRule(part, three3([1, 2, 3, 4, 5, 6]), dir, 'Number')
       if (k === 'step') {
@@ -376,13 +383,61 @@ export interface LabOptions {
   stripes: boolean
   /** Rules may also run down the columns. */
   cols: boolean
-  /** Exactly 2 changing parts, neither easy: one figure rule and one dot rule; everything else stays the same. */
-  twoHard: boolean
+  /**
+   * levels: the changes follow the level plan (`LEVEL_PLAN`, by the puzzle's number in the visit);
+   * twoHard: exactly one figure rule and one dot rule, neither easy; mixed: the older loose mix.
+   */
+  mode: 'levels' | 'twoHard' | 'mixed'
+  /** Levels mode: always this level (1–5), or null for the level by puzzle number. */
+  fixedLevel: number | null
 }
-export const DEFAULT_OPTIONS: LabOptions = { kinds: [...KINDS], numbers: ['double', 'grid', 'plus'], dots: 'mixed', stripes: true, cols: true, twoHard: true }
+export const DEFAULT_OPTIONS: LabOptions = { kinds: [...KINDS], numbers: ['double', 'grid', 'plus'], dots: 'mixed', stripes: true, cols: true, mode: 'levels', fixedLevel: null }
+
+/** Which puzzle of the visit gets which level: 1, 2, 3–4, 5–6, then 7 on. */
+export const levelOfRound = (round: number) => (round <= 1 ? 1 : round === 2 ? 2 : round <= 4 ? 3 : round <= 6 ? 4 : 5)
+/** The changes a level may have (one combination picked at random), as rule levels. */
+export const LEVEL_PLAN: Level[][][] = [
+  [['easy']],
+  [['medium']],
+  [['easy', 'medium']],
+  [['easy', 'hard'], ['medium', 'medium']],
+  [['easy', 'easy', 'hard'], ['easy', 'medium', 'medium'], ['medium', 'hard']],
+]
+/** The rule levels each part can have. */
+const PART_LEVELS: Record<Part, Level[]> = {
+  shape: ['easy'], fill: ['easy'], ofill: ['easy'], ifill: ['easy'], stripe: ['easy'], count: ['easy', 'medium'],
+  dots: ['medium', 'hard'], order: ['easy', 'medium'], nest: ['medium'], set: ['easy', 'medium'], quad: ['medium', 'hard'],
+}
+/** A rule for `part` at exactly `level` (or nothing when it doesn't come up). */
+function ruleAt(part: Part, level: Level, opts: LabOptions, rand: Rand) {
+  for (let n = 0; n < 80; n++) {
+    const r = ruleFor(part, opts, level === 'easy' ? rand() < 0.2 : rand() < 0.8, rand)
+    if (r?.level === level) return r
+  }
+  return undefined
+}
+/** Parts of `kind` (plus dots / stripes when on) that carry `need`, at least one on the figure itself. */
+function planParts(kind: Kind, need: Level[], opts: LabOptions, rand: Rand): Part[] | undefined {
+  let pool = [...KIND_PARTS[kind], ...(opts.dots !== 'off' ? ['dots'] : []), ...(opts.stripes ? ['stripe'] : [])] as Part[]
+  // A single change needs 8 different values for the options: fills (3), stripes (4) and shapes (7) can't.
+  if (need.length === 1) pool = pool.filter((p) => !['fill', 'ofill', 'ifill', 'stripe', 'shape'].includes(p))
+  for (let t = 0; t < 20; t++) {
+    const order = shuffle(pool, rand)
+    const used: Part[] = []
+    const ok = need.every((l) => {
+      const p = order.find((x) => !used.includes(x) && PART_LEVELS[x].includes(l))
+      if (p) used.push(p)
+      return !!p
+    })
+    if (ok && used.some((p) => KIND_PARTS[kind].includes(p))) return used
+  }
+  return undefined
+}
 
 export interface LabPuzzle {
   kind: Kind
+  /** In "levels" mode: the level this puzzle was made for. */
+  level?: number
   rules: LabRule[]
   cells: LabCell[]
   options: LabCell[]
@@ -434,14 +489,23 @@ function wrongValues(rule: LabRule | undefined, part: Part, cells: LabCell[], n:
     .sort((m, o) => m.k - o.k).slice(0, n).map((m) => m.w)
 }
 
-export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPuzzle {
+/** `round`: the puzzle's number in the visit (sets the level in "levels" mode). */
+export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random, round = 1): LabPuzzle {
   const kinds = opts.kinds.length ? opts.kinds : KINDS
-  for (;;) {
+  const twoHard = opts.mode === 'twoHard'
+  const level = opts.fixedLevel ?? levelOfRound(round)
+  for (let tries = 0; ; tries++) {
     const kind = pick(kinds, rand)
     const rules: LabRule[] = []
     const add = (r: LabRule | undefined) => { if (r) rules.push(r) }
-    // The figure: one rule to work out, plus at most one easy one.
-    if (opts.twoHard) {
+    // A level the switches can't make (e.g. only the 2 × 2 grid, dots and stripes off, level 1) falls back to the loose mix.
+    if (opts.mode === 'levels' && tries < 300) {
+      const need = pick(LEVEL_PLAN[level - 1], rand)
+      const parts = planParts(kind, need, opts, rand)
+      if (!parts) continue
+      parts.forEach((p, i) => add(ruleAt(p, need[i], opts, rand)))
+      if (rules.length < need.length) continue
+    } else if (twoHard) {
       add(ruleFor(kind === 'copies' ? 'count' : kind, opts, true, rand))
       add(ruleFor('dots', opts, true, rand))
       if (rules.length < 2) continue
@@ -456,16 +520,18 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
       if (kind !== 'quad' && rand() < 0.4) add(ruleFor('fill', opts, false, rand))
     }
     if (rules.length === 0) continue
-    if (opts.dots !== 'off' && !opts.twoHard) {
+    if (opts.dots !== 'off' && opts.mode === 'mixed') {
       const hard = opts.dots === 'hard' || (opts.dots === 'mixed' && rand() < 0.4)
       if (opts.dots !== 'mixed' || rand() < 0.75) add(ruleFor('dots', opts, hard, rand))
     }
-    if (opts.stripes && !opts.twoHard && rand() < 0.6) add(ruleFor('stripe', opts, false, rand))
+    if (opts.stripes && opts.mode === 'mixed' && rand() < 0.6) add(ruleFor('stripe', opts, false, rand))
 
     const parts = [...KIND_PARTS[kind], 'dots', 'stripe'] as Part[]
     const fixed = Object.fromEntries(parts.map((pt) => [pt, randomValue(pt, rand)])) as LabCell
-    if (!opts.stripes) fixed.stripe = -1
-    if (opts.dots === 'off' && !opts.twoHard) fixed.dots = 0
+    // What doesn't change stays plain: no stripes, white shapes.
+    fixed.stripe = -1
+    for (const f of ['fill', 'ofill', 'ifill'] as Part[]) if (f in fixed) fixed[f] = 2
+    if (opts.dots === 'off' && opts.mode === 'mixed') fixed.dots = 0
     const cells: LabCell[] = Array.from({ length: 9 }, (_, i) => {
       const c: LabCell = { ...fixed }
       for (const r of rules) c[r.part] = r.grid[i]
@@ -491,6 +557,6 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
     const opts8 = [answerCell[focusRule.part]!, ...wf].flatMap((f) =>
       (w2 ? [answerCell[w2.part]!, w2.w] : [undefined]).map((s) => ({ ...answerCell, [focusRule.part]: f, ...(w2 && { [w2.part]: s }) })))
     const options = shuffle(opts8, rand)
-    return { kind, rules, cells, options, answer: options.findIndex((o) => key(o) === key(answerCell)), focus: focusRule.part }
+    return { kind, level: opts.mode === 'levels' ? level : undefined, rules, cells, options, answer: options.findIndex((o) => key(o) === key(answerCell)), focus: focusRule.part }
   }
 }
