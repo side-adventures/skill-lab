@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_OPTIONS, KINDS, LEVELS, LEVEL_PLAN, PARTS, key, levelOfRound, makeLabPuzzle, type LabOptions, type Part } from './lab'
+import { DATA_OPTIONS, DEFAULT_OPTIONS, KINDS, LEVELS, LEVEL_PLAN, PARTS, key, levelOfRound, makeLabPuzzle, type LabOptions, type Part } from './lab'
 
 describe('matrix lab: puzzles', () => {
   for (const kind of KINDS) {
@@ -193,6 +193,16 @@ describe('matrix lab: puzzles', () => {
       p.rules.forEach((r) => levels.add(r.level))
     }
     expect([...levels].sort()).toEqual(['easy', 'hard', 'medium'])
+  })
+
+  it('data lab setup: 2 random rules over all figures', () => {
+    const kinds = new Set<string>()
+    for (let n = 0; n < 400; n++) {
+      const p = makeLabPuzzle(DATA_OPTIONS)
+      expect(p.rules).toHaveLength(2)
+      kinds.add(p.kind)
+    }
+    expect(kinds.size).toBe(KINDS.length)
   })
 
   it('what does not change stays plain: no stripes, white shapes', () => {
