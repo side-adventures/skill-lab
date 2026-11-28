@@ -139,6 +139,20 @@ describe('matrix lab: puzzles', () => {
     }
   })
 
+  it('shape in shape, own rules: no line is the same figure three times', () => {
+    let seen = 0
+    for (let n = 0; n < 800; n++) {
+      const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, kinds: ['nest'] })
+      const r = p.rules.find((x) => x.id === 'nest:parts')
+      if (!r) continue
+      seen++
+      const g = p.cells.map((c) => key(c.nest))
+      const lines = r.dir === 'col' ? [[0, 3, 6], [1, 4, 7], [2, 5, 8]] : [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+      expect(lines.some(([a, b, c]) => g[a] === g[b] && g[b] === g[c])).toBe(false)
+    }
+    expect(seen).toBeGreaterThan(25)
+  })
+
   it('no stripes, no dots and rows only when turned off', () => {
     for (let n = 0; n < 200; n++) {
       const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: false, stripes: false, dots: 'off', cols: false })
