@@ -552,10 +552,10 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random, round 
 
     const parts = [...KIND_PARTS[kind], 'dots', 'stripe'] as Part[]
     const fixed = Object.fromEntries(parts.map((pt) => [pt, randomValue(pt, rand)])) as LabCell
-    // What doesn't change stays plain: no stripes, white shapes.
+    // What doesn't change stays plain: no stripes, no dots, white shapes.
     fixed.stripe = -1
+    fixed.dots = 0
     for (const f of ['fill', 'ofill', 'ifill'] as Part[]) if (f in fixed) fixed[f] = 2
-    if (opts.dots === 'off' && opts.mode === 'mixed') fixed.dots = 0
     const cells: LabCell[] = Array.from({ length: 9 }, (_, i) => {
       const c: LabCell = { ...fixed }
       for (const r of rules) c[r.part] = r.grid[i]
