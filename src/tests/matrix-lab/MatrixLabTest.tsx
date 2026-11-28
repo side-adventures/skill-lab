@@ -224,9 +224,18 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
     }
     setData((d) => ({ ...d, log: [...d.log, row] }))
   }
+  // An answer taken back with "Don't count" (a guess, a distraction): out of the log and the counts.
+  const [uncounted, setUncounted] = useState(false)
   const next = () => {
     setPicked(null)
+    setUncounted(false)
     setPuzzle(makeLabPuzzle(opts, Math.random, session.tried + 1))
+  }
+  const dontCount = () => {
+    if (picked === null || uncounted) return
+    setUncounted(true)
+    setData((d) => ({ ...d, log: d.log.slice(0, -1) }))
+    setSession((s) => ({ tried: s.tried - 1, right: s.right - +(picked === puzzle.answer) }))
   }
   useActionKey(next, picked !== null && !showLog)
   const finish = () => onFinish({ score: session.right, ...(session.tried === 0 && { failed: 'No answers — try a few puzzles!' }) })
@@ -306,6 +315,9 @@ export default function MatrixLabTest({ onFinish }: TestComponentProps) {
           )}
           <div className="mt-auto flex gap-1.5">
             <Chip on={showLog} onPress={() => setShowLog((s) => !s)}>{showLog ? 'Close log' : `Log (${log.length})`}</Chip>
+            {!done && <Chip on={false} onPress={next}>Skip</Chip>}
+            {done && !uncounted && <Chip on={false} onPress={dontCount}>Don't count</Chip>}
+            {done && uncounted && <span className="self-center text-[11px] text-zinc-500">Not counted</span>}
             <span className="flex-1" />
             <Chip on={false} onPress={finish}>Finish</Chip>
           </div>
