@@ -24,7 +24,6 @@ describe('matrix lab: puzzles', () => {
         expect(varied.every((pt) => changing.has(pt))).toBe(true)
         expect(new Set(p.options.map((o) => key(o[p.focus]))).size).toBe(varied.length > 1 ? 4 : 8)
         if (kind === 'nest') for (const c of [...p.cells, ...p.options]) {
-          expect(c.ofill).not.toBe(c.ifill)
           expect((c.nest as number[]).every((x) => [0, 1, 2, 4, 5].includes(x))).toBe(true)
         }
         p.rules.forEach((r) => ids.add(r.id))
@@ -122,7 +121,7 @@ describe('matrix lab: puzzles', () => {
     expect(seen).toBeGreaterThan(50)
   })
 
-  it('every rule has a level; A + B never reads as a step; no end swap; nest fills each once and never equal', () => {
+  it('every rule has a level; A + B never reads as a step; no end swap; nest fills each once', () => {
     for (let n = 0; n < 1500; n++) {
       const p = makeLabPuzzle({ ...DEFAULT_OPTIONS, twoHard: n % 3 === 0, numbers: ['plus', 'double', 'grid', 'step'] })
       for (const r of p.rules) {
@@ -135,7 +134,6 @@ describe('matrix lab: puzzles', () => {
         }
         if (r.part === 'ofill' || r.part === 'ifill') expect(r.id).toMatch(/three$/)
       }
-      if (p.kind === 'nest') for (const c of p.cells) expect(c.ofill).not.toBe(c.ifill)
     }
   })
 

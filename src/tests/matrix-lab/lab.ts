@@ -353,14 +353,14 @@ function baseRule(part: Part, opts: LabOptions, hard: boolean, rand: Rand): LabR
   }
 }
 
-/** Outer and inner fill: each colour once per line, and never the same colour inside and outside one cell. */
+/**
+ * Outer and inner fill: each colour once per line, each picked on its own, so inside and outside may share a colour
+ * (white shapes get a black outline, so white in white still reads).
+ */
 function nestFills(opts: LabOptions, rand: Rand): LabRule[] {
-  const dir = dirFor(opts.cols, rand)
-  const o = leveled(threeRule('ofill', shuffle([0, 1, 2], rand), dir, 'Outer fill', rand))!
-  const k = pick([1, 2], rand)
-  const i: LabRule = { part: 'ifill', id: 'ifill:three', dir, hard: false, level: 'easy', grid: o.grid.map((v) => ((v as number) + k) % 3),
-    text: `Inner fill: also each colour once in ${each(dir)}, never the outer fill's colour` }
-  return [o, leveled(i)!]
+  const o = leveled(threeRule('ofill', shuffle([0, 1, 2], rand), dirFor(opts.cols, rand), 'Outer fill', rand))!
+  const i = leveled(threeRule('ifill', shuffle([0, 1, 2], rand), dirFor(opts.cols, rand), 'Inner fill', rand))!
+  return [o, i]
 }
 
 // ---- puzzles ---------------------------------------------------------------------------------------------------------
@@ -399,7 +399,7 @@ const randomValue = (part: Part, rand: Rand): Val => {
     case 'shape': return s9[0]
     case 'count': return randInt(1, 4, rand)
     case 'fill': case 'ofill': return randInt(0, 2, rand)
-    case 'ifill': return 2
+    case 'ifill': return randInt(0, 2, rand)
     case 'stripe': return randInt(0, 3, rand)
     case 'dots': return sparse(0, 2, 8, rand)
     case 'order': return s9.slice(0, 3)
@@ -464,14 +464,13 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
     const fixed = Object.fromEntries(parts.map((pt) => [pt, randomValue(pt, rand)])) as LabCell
     if (!opts.stripes) fixed.stripe = -1
     if (opts.dots === 'off' && !opts.twoHard) fixed.dots = 0
-    if (kind === 'nest' && fixed.ofill === 2) fixed.ifill = 0
     const cells: LabCell[] = Array.from({ length: 9 }, (_, i) => {
       const c: LabCell = { ...fixed }
       for (const r of rules) c[r.part] = r.grid[i]
       return c
     })
     // The inner shape always stands out from the outer one.
-    if (kind === 'nest' && cells.some((c) => c.ofill === c.ifill || !PARTS.nest.valid(c.nest!))) continue
+    if (kind === 'nest' && cells.some((c) => !PARTS.nest.valid(c.nest!))) continue
     // A line rule must not leave the grid looking constant.
     if (rules.some((r) => new Set(r.grid.map(key)).size < 2)) continue
 
@@ -489,7 +488,6 @@ export function makeLabPuzzle(opts: LabOptions, rand: Rand = Math.random): LabPu
     if (!wf) continue
     const opts8 = [answerCell[focusRule.part]!, ...wf].flatMap((f) =>
       (w2 ? [answerCell[w2.part]!, w2.w] : [undefined]).map((s) => ({ ...answerCell, [focusRule.part]: f, ...(w2 && { [w2.part]: s }) })))
-    if (kind === 'nest' && opts8.some((o) => o.ofill === o.ifill)) continue
     const options = shuffle(opts8, rand)
     return { kind, rules, cells, options, answer: options.findIndex((o) => key(o) === key(answerCell)), focus: focusRule.part }
   }
