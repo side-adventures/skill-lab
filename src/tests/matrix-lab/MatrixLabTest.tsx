@@ -159,7 +159,8 @@ function download(log: LogRow[], name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function LogTable({ log, onClear, name }: { log: LogRow[]; onClear: () => void; name: string }) {
+/** `levels`: show the Level view and the level filter (not in the Data Lab, whose puzzles have no level). */
+function LogTable({ log, onClear, name, levels = true }: { log: LogRow[]; onClear: () => void; name: string; levels?: boolean }) {
   // Clearing asks once more: the log can't be brought back (download it first to keep it).
   const [confirm, setConfirm] = useState(false)
   const [group, setGroup] = useState<Group>('combo')
@@ -170,11 +171,13 @@ function LogTable({ log, onClear, name }: { log: LogRow[]; onClear: () => void; 
   const rows = [...by].sort(([a], [b]) => a.localeCompare(b))
   return (
     <div className="flex h-full min-h-0 flex-col gap-1.5 text-xs">
-      <div className="flex flex-wrap gap-1">{GROUPS.map(([g, t]) => <Chip key={g} on={group === g} onPress={() => setGroup(g)}>{t}</Chip>)}</div>
-      <div className="flex flex-wrap gap-1">
-        <Chip on={onlyLevel === null} onPress={() => setOnlyLevel(null)}>All levels</Chip>
-        {[1, 2, 3, 4, 5].map((l) => <Chip key={l} on={onlyLevel === l} onPress={() => setOnlyLevel(l)}>{l}</Chip>)}
-      </div>
+      <div className="flex flex-wrap gap-1">{GROUPS.filter(([g]) => levels || g !== 'level').map(([g, t]) => <Chip key={g} on={group === g} onPress={() => setGroup(g)}>{t}</Chip>)}</div>
+      {levels && (
+        <div className="flex flex-wrap gap-1">
+          <Chip on={onlyLevel === null} onPress={() => setOnlyLevel(null)}>All levels</Chip>
+          {[1, 2, 3, 4, 5].map((l) => <Chip key={l} on={onlyLevel === l} onPress={() => setOnlyLevel(l)}>{l}</Chip>)}
+        </div>
+      )}
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full tabular-nums">
           <thead className="text-zinc-500"><tr><th className="text-left font-normal">{GROUPS.find(([g]) => g === group)![1]}</th>{group === 'rule' && <th className="font-normal">Level</th>}<th className="font-normal">Tried</th><th className="font-normal">Right</th><th className="font-normal">Median</th></tr></thead>
@@ -286,7 +289,7 @@ export function MatrixLab({ onFinish, fixed, store, name, tag, about }: TestComp
           ))}
         </div>
         <div className="flex h-full min-h-0 flex-col gap-2 self-stretch text-xs">
-          {showLog ? <LogTable log={log} name={name} onClear={() => setData((d) => ({ ...d, log: [] }))} /> : done ? (
+          {showLog ? <LogTable log={log} name={name} levels={!fixed} onClear={() => setData((d) => ({ ...d, log: [] }))} /> : done ? (
             <div className="min-h-0 flex-1 overflow-auto">
               <p className="mb-1 font-medium text-zinc-300">The rules</p>
               <ul className="list-disc space-y-1 pl-4 text-zinc-400">
